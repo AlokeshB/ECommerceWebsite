@@ -1,0 +1,24 @@
+/* Smooth search bar appearance */
+.animate__fadeInRight {
+  animation: fadeInRight 0.3s ease-in-out;
+}
+
+@keyframes fadeInRight {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+/* Customizing Bootstrap Modal for a modern look */
+.modal-content {
+  border-radius: 15px;
+}
+
+.navbar-brand {
+  letter-spacing: 1px;
+}
+
+/* Icon hover effects */
+.btn-link:hover {
+  transform: scale(1.1);
+  transition: transform 0.2s ease;
+}
