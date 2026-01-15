@@ -1,64 +1,79 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect } from "react";
 
 const CartContext = createContext();
 
 export const useCart = () => useContext(CartContext);
 
 export const CartProvider = ({ children }) => {
-  const [cartItems, setCartItems] = useState([]);
+  const [cartItems, setCartItems] = useState(() => {
+    const localData = localStorage.getItem("eshop_cart");
+    return localData ? JSON.parse(localData) : [];
+  });
 
-  // Load cart from local storage on startup (Optional but good for UX)
   useEffect(() => {
-    const savedCart = localStorage.getItem('eshop_cart');
-    if (savedCart) setCartItems(JSON.parse(savedCart));
-  }, []);
-
-  // Save to local storage whenever cart changes
-  useEffect(() => {
-    localStorage.setItem('eshop_cart', JSON.stringify(cartItems));
+    localStorage.setItem("eshop_cart", JSON.stringify(cartItems));
   }, [cartItems]);
 
   const addToCart = (product) => {
-    setCartItems(prev => {
-      // Check if item already exists
-      const existing = prev.find(item => item.id === product.id);
-      if (existing) {
-        // Increment quantity
-        return prev.map(item => 
-          item.id === product.id ? { ...item, qty: item.qty + 1 } : item
+    setCartItems((prevItems) => {
+      const existingItem = prevItems.find((item) => item.id === product.id);
+      if (existingItem) {
+        return prevItems.map((item) =>
+          item.id === product.id
+            ? { ...item, qty: (item.qty || 1) + 1 } // Using 'qty' to match your Cart.jsx
+            : item
         );
       }
-      // Add new item with qty 1
-      return [...prev, { ...product, qty: 1 }];
+      return [...prevItems, { ...product, qty: 1 }];
     });
   };
 
   const removeFromCart = (id) => {
-    setCartItems(prev => prev.filter(item => item.id !== id));
+    setCartItems((prevItems) => prevItems.filter((item) => item.id !== id));
   };
 
-  const updateQuantity = (id, delta) => {
-    setCartItems(prev => prev.map(item => {
-      if (item.id === id) {
-        const newQty = item.qty + delta;
-        return newQty > 0 ? { ...item, qty: newQty } : item;
-      }
-      return item;
-    }));
+  const updateQuantity = (id, amount) => {
+    setCartItems((prevItems) =>
+      prevItems.map((item) => {
+        if (item.id === id) {
+          const newQty = (item.qty || 1) + amount;
+          return { ...item, qty: newQty > 0 ? newQty : 1 };
+        }
+        return item;
+      })
+    );
   };
 
-  // Helper to get total count of items (e.g. 2 shirts + 1 pant = 3 items)
+  // FIX FOR ERROR: This calculates the total count for Navbar and Cart header
   const getCartCount = () => {
-    return cartItems.reduce((total, item) => total + item.qty, 0);
+    return cartItems.reduce((total, item) => total + (item.qty || 1), 0);
   };
 
-  // Helper to get total price
   const getCartTotal = () => {
-    return cartItems.reduce((total, item) => total + (item.price * item.qty), 0);
+    return cartItems.reduce(
+      (total, item) => total + item.price * (item.qty || 1),
+      0
+    );
+  };
+
+  // FIX FOR CHECKOUT: Clears cart after order success
+  const clearCart = () => {
+    setCartItems([]);
+    localStorage.removeItem("eshop_cart");
   };
 
   return (
-    <CartContext.Provider value={{ cartItems, addToCart, removeFromCart, updateQuantity, getCartCount, getCartTotal }}>
+    <CartContext.Provider
+      value={{
+        cartItems,
+        addToCart,
+        removeFromCart,
+        updateQuantity,
+        getCartCount,
+        getCartTotal,
+        clearCart,
+      }}
+    >
       {children}
     </CartContext.Provider>
   );

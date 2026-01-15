@@ -1,47 +1,76 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useCart } from '../context/CartContext';
-import Navbar from '../components/layout/Navbar';
-import { MapPin, CreditCard, ChevronRight, CheckCircle, Truck, ShieldCheck, Loader2 } from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useCart } from "../context/CartContext";
+import { useAuth } from "../context/AuthContext";
+import Navbar from "../components/layout/Navbar";
+import Login from "../pages/Login";
+import {
+  MapPin,
+  ChevronRight,
+  CheckCircle,
+  ShieldCheck,
+  Loader2,
+  Lock,
+} from "lucide-react";
 
 const Checkout = () => {
   const { cartItems, getCartTotal, clearCart } = useCart();
+  const { user } = useAuth();
   const navigate = useNavigate();
-  
-  // States
+
   const [isProcessing, setIsProcessing] = useState(false);
   const [orderPlaced, setOrderPlaced] = useState(false);
-  const [selectedAddress, setSelectedAddress] = useState('default');
-  const [paymentMethod, setPaymentMethod] = useState('upi');
+  const [selectedAddress, setSelectedAddress] = useState("default");
+  const [paymentMethod, setPaymentMethod] = useState("upi");
 
-  // Mock User Auth Check (Simulating your existing Navbar user state)
-  const [user, setUser] = useState(JSON.parse(localStorage.getItem('user')) || null);
-
+  // Redirect if empty cart
   useEffect(() => {
-    if (!user) {
-      // Redirect or show login if no user is found
-      alert("Please login to proceed with the checkout.");
-      navigate('/'); 
-    }
-    if (cartItems.length === 0 && !orderPlaced) {
-      navigate('/cart');
+    if (user && cartItems.length === 0 && !orderPlaced) {
+      navigate("/cart");
     }
   }, [user, cartItems, navigate, orderPlaced]);
 
   const handlePlaceOrder = () => {
     setIsProcessing(true);
-    // Simulate API delay
+
+    // 1. CREATE ORDER OBJECT
+    const orderId = "ORD" + Math.floor(100000 + Math.random() * 900000); // Random 6 digit ID
+    const newOrder = {
+      id: orderId,
+      userId: user.id,
+      items: cartItems,
+      total: getCartTotal(),
+      date: new Date().toLocaleDateString("en-IN", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      }),
+      status: "Ordered", // Initial Status
+      address: user.address,
+      city: user.city,
+      zip: user.zip,
+      paymentMethod: paymentMethod,
+    };
+
+    // 2. SIMULATE API CALL
     setTimeout(() => {
       setIsProcessing(false);
-      setOrderPlaced(true);
-      // Simulate Order ID generation
-      const orderId = "ORD" + Math.floor(Math.random() * 1000000);
-      
+      setOrderPlaced(true); // Show Success Screen
+
+      // 3. SAVE TO LOCAL STORAGE (Simulating Database)
+      const existingOrders =
+        JSON.parse(localStorage.getItem("eshop_orders")) || [];
+      localStorage.setItem(
+        "eshop_orders",
+        JSON.stringify([newOrder, ...existingOrders])
+      );
+
+      // 4. CLEAR CART & REDIRECT
       setTimeout(() => {
-        clearCart(); // Empty cart after success
-        navigate(`/tracking/${orderId}`);
-      }, 3000);
-    }, 2500);
+        clearCart();
+        navigate(`/tracking/${orderId}`); // Redirect to unique tracking page
+      }, 2000);
+    }, 2000);
   };
 
   if (orderPlaced) {
@@ -49,11 +78,36 @@ const Checkout = () => {
       <div className="min-vh-100 d-flex flex-column align-items-center justify-content-center bg-white">
         <div className="text-center animate__animated animate__zoomIn">
           <CheckCircle size={80} className="text-success mb-3" />
-          <h2 className="fw-bold">Thank you, {user?.name}!</h2>
-          <p className="text-muted fs-5">Your order has been placed successfully.</p>
-          <div className="mt-4">
-            <Loader2 className="spinner-border text-primary border-0" />
-            <p className="small text-muted mt-2">Redirecting to order tracking...</p>
+          <h2 className="fw-bold">Order Placed!</h2>
+          <p className="text-muted fs-5">Thank you, {user?.fullName}.</p>
+          <div className="mt-4 d-flex align-items-center justify-content-center gap-2">
+            <Loader2
+              className="spinner-border text-primary border-0"
+              size={20}
+            />
+            <span className="small text-muted">Redirecting to tracking...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="bg-light min-vh-100 d-flex flex-column">
+        <Navbar />
+        <div className="flex-grow-1 d-flex align-items-center justify-content-center py-5">
+          <div
+            className="card border-0 shadow-lg p-4"
+            style={{ maxWidth: "400px", width: "100%" }}
+          >
+            <div className="text-center mb-4">
+              <div className="bg-primary-subtle text-primary rounded-circle d-inline-flex p-3 mb-3">
+                <Lock size={32} />
+              </div>
+              <h4 className="fw-bold">Checkout Securely</h4>
+              <Login />
+            </div>
           </div>
         </div>
       </div>
@@ -65,69 +119,58 @@ const Checkout = () => {
       <Navbar />
       <div className="container py-4">
         <div className="row g-4">
-          {/* LEFT: Checkout Steps */}
           <div className="col-lg-8">
-            {/* 1. Delivery Address */}
+            {/* Address Section */}
             <div className="card border-0 shadow-sm mb-3">
-              <div className="card-header bg-white py-3 d-flex align-items-center gap-2">
-                <span className="badge bg-primary">1</span>
-                <h6 className="mb-0 fw-bold">DELIVERY ADDRESS</h6>
+              <div className="card-header bg-white py-3">
+                <h6 className="mb-0 fw-bold">1. DELIVERY ADDRESS</h6>
               </div>
               <div className="card-body">
-                <div className={`p-3 border rounded mb-2 ${selectedAddress === 'default' ? 'border-primary bg-light' : ''}`} onClick={() => setSelectedAddress('default')} style={{cursor:'pointer'}}>
+                <div className="p-3 border rounded border-primary bg-light">
                   <div className="d-flex justify-content-between">
-                    <span className="fw-bold">{user?.name}</span>
+                    <span className="fw-bold">{user.fullName}</span>
                     <span className="badge bg-secondary">HOME</span>
                   </div>
-                  <p className="small text-muted mb-0 mt-1">
-                    123, Market Street, Apartment 4B, Chennai, TN - 600001
+                  <p className="small text-muted mb-0 mt-1 d-flex gap-2">
+                    <MapPin size={16} className="text-primary flex-shrink-0" />
+                    {user.address
+                      ? `${user.address}, ${user.city} - ${user.zip}`
+                      : "Address not provided"}
                   </p>
                 </div>
-                <button className="btn btn-link text-decoration-none small p-0 mt-2 fw-bold">+ Add a new address</button>
               </div>
             </div>
 
-            {/* 2. Order Summary */}
-            <div className="card border-0 shadow-sm mb-3">
-              <div className="card-header bg-white py-3 d-flex align-items-center gap-2">
-                <span className="badge bg-primary">2</span>
-                <h6 className="mb-0 fw-bold">ORDER SUMMARY ({cartItems.length} Items)</h6>
-              </div>
-              <div className="card-body p-0">
-                {cartItems.map(item => (
-                  <div key={item.id} className="d-flex gap-3 p-3 border-bottom align-items-center">
-                    <div className="bg-light rounded p-2" style={{width: '60px', height: '60px', fontSize: '1.5rem', textAlign: 'center'}}>{item.img}</div>
-                    <div className="flex-grow-1">
-                      <h6 className="small fw-bold mb-0">{item.name}</h6>
-                      <span className="text-muted x-small">Qty: {item.qty}</span>
-                    </div>
-                    <span className="fw-bold small">₹{item.price * item.qty}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* 3. Payment Options */}
+            {/* Payment Section */}
             <div className="card border-0 shadow-sm">
-              <div className="card-header bg-white py-3 d-flex align-items-center gap-2">
-                <span className="badge bg-primary">3</span>
-                <h6 className="mb-0 fw-bold">PAYMENT OPTIONS</h6>
+              <div className="card-header bg-white py-3">
+                <h6 className="mb-0 fw-bold">2. PAYMENT METHOD</h6>
               </div>
               <div className="card-body">
-                {['upi', 'card', 'cod'].map(method => (
-                  <div key={method} className={`form-check p-3 border rounded mb-2 ${paymentMethod === method ? 'border-primary bg-light' : ''}`}>
-                    <input 
-                      className="form-check-input ms-0 me-3" 
-                      type="radio" 
-                      name="payment" 
-                      id={method} 
+                {["upi", "card", "cod"].map((method) => (
+                  <div
+                    key={method}
+                    className={`form-check p-3 border rounded mb-2 ${
+                      paymentMethod === method ? "border-primary bg-light" : ""
+                    }`}
+                  >
+                    <input
+                      className="form-check-input me-2"
+                      type="radio"
+                      name="payment"
+                      id={method}
                       checked={paymentMethod === method}
                       onChange={() => setPaymentMethod(method)}
                     />
-                    <label className="form-check-label fw-bold text-uppercase small" htmlFor={method}>
-                      {method === 'upi' && 'PhonePe / Google Pay / UPI'}
-                      {method === 'card' && 'Credit / Debit / ATM Card'}
-                      {method === 'cod' && 'Cash on Delivery'}
+                    <label
+                      className="form-check-label fw-bold text-uppercase small"
+                      htmlFor={method}
+                    >
+                      {method === "upi"
+                        ? "UPI / PhonePe / GPay"
+                        : method === "card"
+                        ? "Credit / Debit Card"
+                        : "Cash on Delivery"}
                     </label>
                   </div>
                 ))}
@@ -135,44 +178,46 @@ const Checkout = () => {
             </div>
           </div>
 
-          {/* RIGHT: Price Details */}
           <div className="col-lg-4">
-            <div className="card border-0 shadow-sm sticky-top" style={{top: '90px'}}>
+            <div
+              className="card border-0 shadow-sm sticky-top"
+              style={{ top: "90px" }}
+            >
               <div className="card-body">
-                <h6 className="text-muted fw-bold small border-bottom pb-2">PRICE DETAILS</h6>
+                <h6 className="text-muted fw-bold small border-bottom pb-2">
+                  PRICE DETAILS
+                </h6>
                 <div className="d-flex justify-content-between my-3">
                   <span>Price ({cartItems.length} items)</span>
-                  <span>₹{getCartTotal()}</span>
+                  <span>₹{getCartTotal().toLocaleString()}</span>
                 </div>
                 <div className="d-flex justify-content-between mb-3 text-success">
-                  <span>Delivery Charges</span>
+                  <span>Delivery</span>
                   <span>FREE</span>
                 </div>
                 <hr />
                 <div className="d-flex justify-content-between mb-4">
-                  <h5 className="fw-bold">Amount Payable</h5>
-                  <h5 className="fw-bold text-primary">₹{getCartTotal()}</h5>
+                  <h5 className="fw-bold">Total Payable</h5>
+                  <h5 className="fw-bold text-primary">
+                    ₹{getCartTotal().toLocaleString()}
+                  </h5>
                 </div>
-                
-                <button 
-                  className="btn btn-primary w-100 py-3 fw-bold shadow-sm d-flex align-items-center text-white justify-content-center gap-2"
+                <button
+                  className="btn btn-primary w-100 py-3 fw-bold shadow-sm d-flex align-items-center justify-content-center gap-2"
                   onClick={handlePlaceOrder}
                   disabled={isProcessing}
                 >
                   {isProcessing ? (
                     <>
-                      <Loader2 className="spinner-border spinner-border-sm border-0" />
+                      <Loader2 className="spinner-border spinner-border-sm" />{" "}
                       PROCESSING...
                     </>
                   ) : (
-                    <>CONFIRM ORDER <ChevronRight size={18} /></>
+                    <>
+                      CONFIRM ORDER <ChevronRight size={18} />
+                    </>
                   )}
                 </button>
-                
-                <div className="mt-3 p-2 bg-light rounded text-center">
-                  <ShieldCheck size={16} className="text-success me-1" />
-                  <span className="x-small text-muted">Safe and Secure Payments</span>
-                </div>
               </div>
             </div>
           </div>
