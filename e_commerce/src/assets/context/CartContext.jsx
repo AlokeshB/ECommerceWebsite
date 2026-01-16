@@ -5,11 +5,17 @@ const CartContext = createContext();
 export const useCart = () => useContext(CartContext);
 
 export const CartProvider = ({ children }) => {
+  // CHANGE 1: Initialize state from Local Storage
   const [cartItems, setCartItems] = useState(() => {
-    const localData = localStorage.getItem("eshop_cart");
-    return localData ? JSON.parse(localData) : [];
+    try {
+      const localData = localStorage.getItem("eshop_cart");
+      return localData ? JSON.parse(localData) : [];
+    } catch (error) {
+      return [];
+    }
   });
 
+  // CHANGE 2: Update Local Storage whenever cartItems changes
   useEffect(() => {
     localStorage.setItem("eshop_cart", JSON.stringify(cartItems));
   }, [cartItems]);
@@ -19,9 +25,7 @@ export const CartProvider = ({ children }) => {
       const existingItem = prevItems.find((item) => item.id === product.id);
       if (existingItem) {
         return prevItems.map((item) =>
-          item.id === product.id
-            ? { ...item, qty: (item.qty || 1) + 1 } // Using 'qty' to match your Cart.jsx
-            : item
+          item.id === product.id ? { ...item, qty: (item.qty || 1) + 1 } : item
         );
       }
       return [...prevItems, { ...product, qty: 1 }];
@@ -44,7 +48,6 @@ export const CartProvider = ({ children }) => {
     );
   };
 
-  // FIX FOR ERROR: This calculates the total count for Navbar and Cart header
   const getCartCount = () => {
     return cartItems.reduce((total, item) => total + (item.qty || 1), 0);
   };
@@ -56,7 +59,7 @@ export const CartProvider = ({ children }) => {
     );
   };
 
-  // FIX FOR CHECKOUT: Clears cart after order success
+  // CHANGE 3: Only clear cart when order is actually placed
   const clearCart = () => {
     setCartItems([]);
     localStorage.removeItem("eshop_cart");
