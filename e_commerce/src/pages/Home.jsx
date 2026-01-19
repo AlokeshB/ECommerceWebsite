@@ -1,8 +1,8 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import Navbar from "../components/layout/Navbar";
-import Sidebar from "../components/layout/Sidebar";
-import Footer from "../components/layout/Footer";
+import Navbar from "../components/Navbar";
+import Sidebar from "../components/Sidebar";
+import Footer from "../components/Footer";
 import { ShoppingCart, Zap } from "lucide-react";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext"; // Import Auth to check login status
@@ -105,7 +105,7 @@ const Home = () => {
           <div className="container">
             {/* Hero Section */}
             <div className="bg-primary text-white rounded-3 p-5 mb-4 shadow-sm text-center animate__animated animate__fadeIn">
-              <h1 className="display-4 fw-bold">Welcome to FASHIONIFY</h1>
+              <h1 className="display-4 fw-bold">Welcome to FASHION-HUB</h1>
               <p className="lead">
                 Discover the best deals on premium products today.
               </p>

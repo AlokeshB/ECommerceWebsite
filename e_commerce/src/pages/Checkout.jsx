@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
-import Navbar from "../components/layout/Navbar";
+import Navbar from "../components/Navbar";
 import Login from "../pages/Login";
 import {
   MapPin,
