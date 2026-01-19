@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import Navbar from "../components/layout/Navbar";
+import Navbar from "../components/Navbar";
 import { useAuth } from "../context/AuthContext";
 import {
   Package,

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import Navbar from "../components/layout/Navbar";
+import Navbar from "../components/Navbar";
 import { Check, Package, Truck, Home, MapPin, Loader2 } from "lucide-react";
 
 const OrderTracking = () => {
