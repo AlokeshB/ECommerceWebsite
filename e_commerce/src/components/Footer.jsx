@@ -9,7 +9,7 @@ const Footer = () => {
           
           {/* Column 1: Brand Info */}
           <div className="col-md-4">
-            <h5 className="fw-bold text-primary mb-3">FASHIONIFY</h5>
+            <h5 className="fw-bold text-primary mb-3">FASHION-HUB</h5>
             <p className="text-primary small">
               Your one-stop destination for premium products. We ensure quality, 
               fast delivery, and the best customer experience.

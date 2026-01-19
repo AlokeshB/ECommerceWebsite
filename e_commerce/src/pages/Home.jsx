@@ -8,64 +8,64 @@ import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext"; // Import Auth to check login status
 
 // 1. UNIQUE PRODUCT DATA (Fixes the "same card repeating" issue)
-// const PRODUCTS = [
-//   {
-//     id: 101,
-//     name: "Premium Wireless Headphones",
-//     price: 2999,
-//     img: "🎧",
-//     category: "Electronics",
-//   },
-//   {
-//     id: 102,
-//     name: "Smart Fitness Watch",
-//     price: 4500,
-//     img: "⌚",
-//     category: "Wearables",
-//   },
-//   {
-//     id: 103,
-//     name: "Classic Denim Jacket",
-//     price: 1899,
-//     img: "🧥",
-//     category: "Fashion",
-//   },
-//   {
-//     id: 104,
-//     name: "Running Sports Shoes",
-//     price: 3200,
-//     img: "👟",
-//     category: "Fashion",
-//   },
-//   {
-//     id: 105,
-//     name: "Leather Travel Wallet",
-//     price: 899,
-//     img: "👛",
-//     category: "Accessories",
-//   },
-//   {
-//     id: 106,
-//     name: "Mechanical Gaming Keyboard",
-//     price: 5499,
-//     img: "⌨️",
-//     category: "Electronics",
-//   },
-//   {
-//     id: 107,
-//     name: "Polarized Sunglasses",
-//     price: 1200,
-//     img: "🕶️",
-//     category: "Fashion",
-//   },
-//   {
-//     id: 108,
-//     name: "Portable Bluetooth Speaker",
-//     price: 2100,
-//     img: "🔊",
-//     category: "Electronics",
-//   },
-// ];
+const PRODUCTS = [
+  {
+    id: 101,
+    name: "Premium Wireless Headphones",
+    price: 2999,
+    img: "🎧",
+    category: "Electronics",
+  },
+  {
+    id: 102,
+    name: "Smart Fitness Watch",
+    price: 4500,
+    img: "⌚",
+    category: "Wearables",
+  },
+  {
+    id: 103,
+    name: "Classic Denim Jacket",
+    price: 1899,
+    img: "🧥",
+    category: "Fashion",
+  },
+  {
+    id: 104,
+    name: "Running Sports Shoes",
+    price: 3200,
+    img: "👟",
+    category: "Fashion",
+  },
+  {
+    id: 105,
+    name: "Leather Travel Wallet",
+    price: 899,
+    img: "👛",
+    category: "Accessories",
+  },
+  {
+    id: 106,
+    name: "Mechanical Gaming Keyboard",
+    price: 5499,
+    img: "⌨️",
+    category: "Electronics",
+  },
+  {
+    id: 107,
+    name: "Polarized Sunglasses",
+    price: 1200,
+    img: "🕶️",
+    category: "Fashion",
+  },
+  {
+    id: 108,
+    name: "Portable Bluetooth Speaker",
+    price: 2100,
+    img: "🔊",
+    category: "Electronics",
+  },
+];
 
 const Home = () => {
   const { addToCart } = useCart();
@@ -105,7 +105,7 @@ const Home = () => {
           <div className="container">
             {/* Hero Section */}
             <div className="bg-primary text-white rounded-3 p-5 mb-4 shadow-sm text-center animate__animated animate__fadeIn">
-              <h1 className="display-4 fw-bold">Welcome to FASHIONIFY</h1>
+              <h1 className="display-4 fw-bold">Welcome to FASHION-HUB</h1>
               <p className="lead">
                 Discover the best deals on premium products today.
               </p>

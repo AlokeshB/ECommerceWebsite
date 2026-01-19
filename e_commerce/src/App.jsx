@@ -1,12 +1,12 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.min.css'; // Ensure Bootstrap is imported here or in main.jsx
-import Home from './assets/pages/Home';
-import Cart from './assets/pages/Cart';
+import Home from './pages/Home';
+import Cart from './pages/Cart';
 // import Checkout from './assets/pages/Checkout';
-import OrderTracking from './assets/pages/OrderTracking';
-import Checkout from './assets/pages/Checkout';
-import UserProfile from './assets/pages/UserProfile';
+import OrderTracking from './pages/OrderTracking';
+import Checkout from './pages/Checkout';
+import UserProfile from './pages/UserProfile';
 
 function App() {
   return (

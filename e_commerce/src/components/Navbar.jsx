@@ -8,13 +8,13 @@ import {
   Grid,
   Power,
 } from "lucide-react";
-import Login from "../../pages/Login";
-import Register from "../../pages/Register";
+import Login from "../pages/Login";
+import Register from "../pages/Register";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./Layout.css";
 import { CATEGORY_DATA } from "./categories";
-import { useCart } from "../../context/CartContext.jsx";
-import { useAuth } from "../../context/AuthContext.jsx";
+import { useCart } from "../context/CartContext.jsx";
+import { useAuth } from "../context/AuthContext.jsx";
 
 const Navbar = () => {
   const navigate = useNavigate();
@@ -62,7 +62,7 @@ const Navbar = () => {
             className="navbar-brand fw-bold text-primary d-flex align-items-center gap-2"
             to="/"
           >
-            <span style={{ letterSpacing: "1px" }}>FASHIONIFY</span>
+            <span style={{ letterSpacing: "1px" }}>FASHION-HUB</span>
           </Link>
 
           {/* Categories Button */}
