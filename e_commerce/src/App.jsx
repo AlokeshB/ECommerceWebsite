@@ -7,7 +7,7 @@ import Cart from './pages/Cart';
 import OrderTracking from './pages/OrderTracking';
 import Checkout from './pages/Checkout';
 import UserProfile from './pages/UserProfile';
-
+ 
 function App() {
   return (
     <Router>
@@ -22,5 +22,5 @@ function App() {
     </Router>
   );
 }
-
+ 
 export default App;

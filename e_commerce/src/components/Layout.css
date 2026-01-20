@@ -1,24 +1,265 @@
-/* Smooth search bar appearance */
+/* ===== NAVBAR STYLES ===== */
+.navbar {
+  background-color: #ffffff !important;
+  border-bottom: 1px solid #e8e8e8;
+  padding: 12px 0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+ 
+.navbar-brand {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: #000000 !important;
+  text-transform: uppercase;
+  padding: 0;
+}
+ 
+.navbar-brand:hover {
+  color: #666666 !important;
+}
+ 
+/* Navbar buttons and links */
+.navbar .btn-link {
+  color: #000000;
+  text-decoration: none;
+  padding: 0.5rem 0;
+  transition: all 0.3s ease;
+  border: none;
+}
+ 
+.navbar .btn-link:hover {
+  color: #666666;
+  transform: none;
+}
+ 
+.navbar-light .navbar-text {
+  color: #333333 !important;
+}
+ 
+/* Search bar styles */
 .animate__fadeInRight {
   animation: fadeInRight 0.3s ease-in-out;
 }
-
+ 
 @keyframes fadeInRight {
   from { opacity: 0; transform: translateX(20px); }
   to { opacity: 1; transform: translateX(0); }
 }
-
-/* Customizing Bootstrap Modal for a modern look */
+ 
+.input-group input.form-control {
+  border-radius: 4px;
+  border: 1px solid #e0e0e0;
+  padding: 8px 12px;
+  font-size: 14px;
+}
+ 
+.input-group input.form-control:focus {
+  border-color: #000000;
+  box-shadow: 0 0 0 0.2rem rgba(0, 0, 0, 0.1);
+}
+ 
+/* Category button */
+.btn-light {
+  background-color: #f5f5f5 !important;
+  border: 1px solid #e0e0e0 !important;
+  color: #000000 !important;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+ 
+.btn-light:hover {
+  background-color: #eeeeee !important;
+  border-color: #cccccc !important;
+}
+ 
+/* Badge styles */
+.badge {
+  background-color: #ff6b6b !important;
+  font-size: 12px;
+  padding: 4px 6px;
+}
+ 
+/* Cart counter badge */
+.badge.rounded-pill {
+  min-width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+ 
+/* ===== MODAL STYLES ===== */
 .modal-content {
-  border-radius: 15px;
+  border-radius: 8px;
+  border: 1px solid #e8e8e8;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
 }
-
-.navbar-brand {
-  letter-spacing: 1px;
+ 
+.modal-header {
+  background-color: #f8f8f8;
+  border-bottom: 1px solid #e8e8e8;
+  padding: 16px 24px;
 }
-
-/* Icon hover effects */
-.btn-link:hover {
-  transform: scale(1.1);
-  transition: transform 0.2s ease;
+ 
+.modal-header .modal-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #000000;
+}
+ 
+.modal-body {
+  padding: 24px;
+}
+ 
+.modal-footer {
+  background-color: #f8f8f8;
+  border-top: 1px solid #e8e8e8;
+  padding: 16px 24px;
+}
+ 
+.btn-close {
+  opacity: 0.7;
+  transition: opacity 0.3s ease;
+}
+ 
+.btn-close:hover {
+  opacity: 1;
+}
+ 
+/* ===== ICON HOVER EFFECTS ===== */
+.icon-link:hover {
+  transform: none;
+  opacity: 0.7;
+  transition: opacity 0.3s ease;
+}
+ 
+/* ===== GENERAL UTILITIES ===== */
+.bg-light-subtle {
+  background-color: #f5f5f5 !important;
+}
+ 
+.border-0 {
+  border: none !important;
+}
+ 
+.shadow-sm {
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08) !important;
+}
+ 
+.text-primary {
+  color: #000000 !important;
+}
+ 
+.bg-primary {
+  background-color: #000000 !important;
+  border-color: #000000 !important;
+}
+ 
+.text-muted {
+  color: #999999 !important;
+}
+ 
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .navbar {
+    padding: 10px 0;
+  }
+ 
+  .navbar-brand {
+    font-size: 16px;
+  }
+ 
+  .input-group {
+    width: 150px !important;
+  }
+ 
+  .modal-dialog {
+    margin: 10px;
+  }
+}
+ 
+/* ===== MEGA MENU (centered hover dropdown) ===== */
+.nav-categories {
+  position: relative;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  flex: 1;
+  display: flex !important;
+  justify-content: center;
+  gap: 1rem;
+}
+ 
+.nav-item {
+  position: relative;
+}
+ 
+.nav-item .mega-menu {
+  display: none;
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(1100px, 95vw);
+  max-width: calc(100vw - 20px);
+  background: #ffffff;
+  border: 1px solid #e8e8e8;
+  box-shadow: 0 12px 30px rgba(0,0,0,0.12);
+  padding: 24px;
+  z-index: 1100;
+  border-radius: 6px;
+  max-height: 65vh;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+ 
+.mega-inner {
+  max-width: 1050px;
+  margin: 0 auto;
+}
+ 
+.mega-inner .row {
+  gap: 18px;
+}
+ 
+.nav-item:hover .mega-menu,
+.nav-item .mega-menu:hover {
+  display: block;
+}
+ 
+.mega-menu .fw-bold.small {
+  font-size: 13px;
+  color: #000;
+}
+ 
+.mega-menu a {
+  color: #666666;
+  transition: color 0.15s ease;
+}
+.mega-menu a:hover {
+  color: #000000;
+}
+ 
+/* Ensure grid items wrap so small categories fit */
+.mega-menu .row {
+  display: flex;
+  flex-wrap: wrap;
+}
+.mega-menu .col-4 {
+  flex: 0 0 25%;
+  max-width: 25%;
+}
+ 
+@media (max-width: 991px) {
+  .nav-item .mega-menu {
+    position: static;
+    transform: none;
+    width: 100%;
+    box-shadow: none;
+    border: none;
+    padding: 12px 0;
+  }
 }

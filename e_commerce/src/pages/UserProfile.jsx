@@ -16,19 +16,19 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-
+ 
 const UserProfile = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
-
+ 
   // --- STATE MANAGEMENT ---
   const [activeTab, setActiveTab] = useState("orders");
   const [isEditing, setIsEditing] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
   const [orders, setOrders] = useState([]);
-
+ 
   // Profile Data State
   const [profileData, setProfileData] = useState({
     firstName: "",
@@ -39,7 +39,7 @@ const UserProfile = () => {
     age: "",
     profilePic: null,
   });
-
+ 
   // Address Data State
   const [addresses, setAddresses] = useState([]);
   const [newAddress, setNewAddress] = useState({
@@ -49,14 +49,14 @@ const UserProfile = () => {
     state: "",
   });
   const [showAddAddress, setShowAddAddress] = useState(false);
-
+ 
   // --- INITIALIZATION ---
   useEffect(() => {
     if (!user) {
       navigate("/");
       return;
     }
-
+ 
     // 1. Load User Data (Merge Auth User with LocalStorage Data)
     const savedProfile =
       JSON.parse(localStorage.getItem("eshop_user_profile")) || {};
@@ -69,7 +69,7 @@ const UserProfile = () => {
       age: savedProfile.age || "",
       profilePic: savedProfile.profilePic || null,
     });
-
+ 
     // 2. Load Addresses
     const savedAddresses =
       JSON.parse(localStorage.getItem("eshop_addresses")) || [];
@@ -85,12 +85,12 @@ const UserProfile = () => {
     } else {
       setAddresses(savedAddresses);
     }
-
+ 
     // 3. Load Orders (Mocking Fetch from Local Storage for "My Orders")
     const savedOrders = JSON.parse(localStorage.getItem("eshop_orders")) || [];
     setOrders(savedOrders);
   }, [user, navigate]);
-
+ 
   // --- CAMERA FUNCTIONS ---
   const startCamera = async () => {
     setShowCamera(true);
@@ -107,7 +107,7 @@ const UserProfile = () => {
       setShowCamera(false);
     }
   };
-
+ 
   const captureImage = () => {
     const video = videoRef.current;
     const canvas = canvasRef.current;
@@ -116,14 +116,14 @@ const UserProfile = () => {
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
       context.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
-
+ 
       const imageSrc = canvas.toDataURL("image/png");
-
+ 
       // Stop Stream
       const stream = video.srcObject;
       const tracks = stream.getTracks();
       tracks.forEach((track) => track.stop());
-
+ 
       // Save to State & LocalStorage
       const updatedProfile = { ...profileData, profilePic: imageSrc };
       setProfileData(updatedProfile);
@@ -134,7 +134,7 @@ const UserProfile = () => {
       setShowCamera(false);
     }
   };
-
+ 
   const closeCamera = () => {
     if (videoRef.current && videoRef.current.srcObject) {
       const tracks = videoRef.current.srcObject.getTracks();
@@ -142,12 +142,12 @@ const UserProfile = () => {
     }
     setShowCamera(false);
   };
-
+ 
   // --- PROFILE LOGIC ---
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     let updatedData = { ...profileData, [name]: value };
-
+ 
     // Auto-calculate Age
     if (name === "dob") {
       const birthDate = new Date(value);
@@ -159,40 +159,40 @@ const UserProfile = () => {
       }
       updatedData.age = age;
     }
-
+ 
     setProfileData(updatedData);
   };
-
+ 
   const saveProfileChanges = () => {
     localStorage.setItem("eshop_user_profile", JSON.stringify(profileData));
     setIsEditing(false);
     alert("Profile updated successfully!");
   };
-
+ 
   // --- ADDRESS LOGIC ---
   const addAddress = () => {
     if (!newAddress.street || !newAddress.city)
       return alert("Please fill details");
-
+ 
     const addressStr = `${newAddress.street}, ${newAddress.city}, ${newAddress.state} - ${newAddress.zip}`;
     const newAddrObj = { id: Date.now(), type: "Custom", value: addressStr };
-
+ 
     const updatedAddresses = [...addresses, newAddrObj];
     setAddresses(updatedAddresses);
     localStorage.setItem("eshop_addresses", JSON.stringify(updatedAddresses));
-
+ 
     setNewAddress({ street: "", city: "", zip: "", state: "" });
     setShowAddAddress(false);
   };
-
+ 
   const removeAddress = (id) => {
     const updated = addresses.filter((addr) => addr.id !== id);
     setAddresses(updated);
     localStorage.setItem("eshop_addresses", JSON.stringify(updated));
   };
-
+ 
   if (!user) return null;
-
+ 
   return (
     <div className="bg-light min-vh-100">
       <Navbar />
@@ -217,13 +217,13 @@ const UserProfile = () => {
                       className="w-100 h-100 object-fit-cover"
                     />
                   ) : (
-                    <div className="w-100 h-100 d-flex align-items-center justify-content-center text-primary fs-1 fw-bold">
+                    <div className="w-100 h-100 d-flex align-items-center justify-content-center text-dark fs-1 fw-bold">
                       {user.firstName
                         ? user.firstName.charAt(0).toUpperCase()
                         : "U"}
                     </div>
                   )}
-
+ 
                   {/* Camera Button */}
                   <button
                     onClick={startCamera}
@@ -233,17 +233,17 @@ const UserProfile = () => {
                     <Camera size={14} className="text-white" />
                   </button>
                 </div>
-
+ 
                 <h5 className="fw-bold mb-0">{user.firstName}</h5>
                 <p className="text-muted small text-truncate">{user.email}</p>
               </div>
-
+ 
               {/* Sidebar Menu */}
               <div className="list-group list-group-flush">
                 <button
                   className={`list-group-item list-group-item-action border-0 py-3 ${
                     activeTab === "orders"
-                      ? "bg-primary-subtle fw-bold text-primary"
+                      ? "bg-light fw-bold text-dark"
                       : ""
                   }`}
                   onClick={() => setActiveTab("orders")}
@@ -253,7 +253,7 @@ const UserProfile = () => {
                 <button
                   className={`list-group-item list-group-item-action border-0 py-3 ${
                     activeTab === "profile"
-                      ? "bg-primary-subtle fw-bold text-primary"
+                      ? "bg-light fw-bold text-dark"
                       : ""
                   }`}
                   onClick={() => setActiveTab("profile")}
@@ -263,7 +263,7 @@ const UserProfile = () => {
                 <button
                   className={`list-group-item list-group-item-action border-0 py-3 ${
                     activeTab === "address"
-                      ? "bg-primary-subtle fw-bold text-primary"
+                      ? "bg-light fw-bold text-dark"
                       : ""
                   }`}
                   onClick={() => setActiveTab("address")}
@@ -282,7 +282,7 @@ const UserProfile = () => {
               </div>
             </div>
           </div>
-
+ 
           {/* CONTENT AREA */}
           <div className="col-lg-9">
             <div className="bg-white rounded shadow-sm p-4 h-100 position-relative">
@@ -316,14 +316,14 @@ const UserProfile = () => {
                     ></canvas>
                     <button
                       onClick={captureImage}
-                      className="btn btn-primary w-100"
+                      className="btn btn-dark w-100"
                     >
                       <Camera size={18} className="me-2" /> Capture
                     </button>
                   </div>
                 </div>
               )}
-
+ 
               {/* --- MY ORDERS TAB --- */}
               {activeTab === "orders" && (
                 <div className="animate__animated animate__fadeIn">
@@ -335,7 +335,7 @@ const UserProfile = () => {
                       <Package size={40} className="mb-3 opacity-25" />
                       <h5>No orders placed yet.</h5>
                       <button
-                        className="btn btn-outline-primary btn-sm mt-2"
+                        className="btn btn-outline-dark btn-sm mt-2"
                         onClick={() => navigate("/")}
                       >
                         Start Shopping
@@ -361,7 +361,7 @@ const UserProfile = () => {
                                 ).toLocaleDateString()}
                               </p>
                             </div>
-                            <span className="fw-bold text-primary">
+                            <span className="fw-bold text-dark">
                               ₹{order.total}
                             </span>
                           </div>
@@ -370,7 +370,7 @@ const UserProfile = () => {
                               {order.items ? order.items.length : 0} items
                             </span>
                             <button
-                              className="btn btn-sm btn-outline-primary d-flex align-items-center gap-1"
+                              className="btn btn-sm btn-outline-dark d-flex align-items-center gap-1"
                               onClick={() =>
                                 navigate(`/tracking/${order.id || "new"}`)
                               }
@@ -384,7 +384,7 @@ const UserProfile = () => {
                   )}
                 </div>
               )}
-
+ 
               {/* --- PROFILE INFO TAB --- */}
               {activeTab === "profile" && (
                 <div className="animate__animated animate__fadeIn">
@@ -392,7 +392,7 @@ const UserProfile = () => {
                     <h5 className="fw-bold mb-0">Personal Information</h5>
                     {!isEditing ? (
                       <button
-                        className="btn btn-sm btn-outline-primary"
+                        className="btn btn-sm btn-outline-dark"
                         onClick={() => setIsEditing(true)}
                       >
                         <Edit2 size={14} className="me-1" /> Edit
@@ -406,7 +406,7 @@ const UserProfile = () => {
                       </button>
                     )}
                   </div>
-
+ 
                   <div className="row g-3">
                     <div className="col-md-6">
                       <label className="small text-muted fw-bold">
@@ -431,7 +431,7 @@ const UserProfile = () => {
                         disabled
                       />
                     </div>
-
+ 
                     <div className="col-md-6">
                       <label className="small text-muted fw-bold">
                         Email Address
@@ -462,7 +462,7 @@ const UserProfile = () => {
                         disabled={!isEditing}
                       />
                     </div>
-
+ 
                     {/* NEW FIELDS: Alt Mobile, DOB, Age */}
                     <div className="col-md-6">
                       <label className="small text-muted fw-bold">
@@ -507,20 +507,20 @@ const UserProfile = () => {
                   </div>
                 </div>
               )}
-
+ 
               {/* --- MANAGE ADDRESS TAB --- */}
               {activeTab === "address" && (
                 <div className="animate__animated animate__fadeIn">
                   <div className="d-flex justify-content-between align-items-center mb-4 border-bottom pb-2">
                     <h5 className="fw-bold mb-0">Saved Addresses</h5>
                     <button
-                      className="btn btn-sm btn-primary"
+                      className="btn btn-sm btn-dark"
                       onClick={() => setShowAddAddress(!showAddAddress)}
                     >
                       <Plus size={16} className="me-1" /> Add New
                     </button>
                   </div>
-
+ 
                   {/* Add Address Form */}
                   {showAddAddress && (
                     <div className="card p-3 mb-4 bg-light border-0">
@@ -599,7 +599,7 @@ const UserProfile = () => {
                       </div>
                     </div>
                   )}
-
+ 
                   <div className="d-flex flex-column gap-3">
                     {addresses.map((addr) => (
                       <div
@@ -640,5 +640,5 @@ const UserProfile = () => {
     </div>
   );
 };
-
+ 
 export default UserProfile;

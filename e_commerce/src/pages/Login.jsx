@@ -2,31 +2,31 @@ import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext"; // Import Global Auth
 import { AlertCircle, Lock, User } from "lucide-react";
-
+ 
 const Login = ({ onLogin }) => {
   // 1. HOOKS & STATE
   const { login } = useAuth(); // Access the global login function
   const navigate = useNavigate();
   const location = useLocation();
-
+ 
   const [credentials, setCredentials] = useState({
     identifier: "", // Can be UserID OR Email
     password: "",
   });
   const [error, setError] = useState("");
-
+ 
   // 2. HANDLERS
   const handleChange = (e) => {
     setCredentials({ ...credentials, [e.target.name]: e.target.value });
     if (error) setError(""); // Clear error on typing
   };
-
+ 
   const handleSubmit = (e) => {
     e.preventDefault();
-
+ 
     // A. Fetch Users from "Database" (LocalStorage)
     const storedUsers = JSON.parse(localStorage.getItem("eshop_users")) || [];
-
+ 
     // B. Find User Matching Logic
     // Check if Input matches (UserID OR Email) AND Password matches
     const validUser = storedUsers.find(
@@ -35,14 +35,14 @@ const Login = ({ onLogin }) => {
           user.email === credentials.identifier) &&
         user.password === credentials.password
     );
-
+ 
     if (validUser) {
       // C. SUCCESS: Update Global State
       login(validUser);
-
+ 
       // Close Modal if function provided
       if (onLogin) onLogin(validUser);
-
+ 
       // D. REDIRECT LOGIC
       // Check if user came from a specific page (like Cart), otherwise go Home
       // 'location.state?.from' is set by protected routes (we will add this to Cart later)
@@ -53,7 +53,7 @@ const Login = ({ onLogin }) => {
       setError("Invalid User ID/Email or Password. Please try again.");
     }
   };
-
+ 
   return (
     <form onSubmit={handleSubmit} className="animate__animated animate__fadeIn">
       {/* Error Alert */}
@@ -62,7 +62,7 @@ const Login = ({ onLogin }) => {
           <AlertCircle size={16} /> {error}
         </div>
       )}
-
+ 
       {/* Input: User ID or Email */}
       <div className="mb-3">
         <label className="form-label text-muted small fw-bold">
@@ -83,7 +83,7 @@ const Login = ({ onLogin }) => {
           />
         </div>
       </div>
-
+ 
       {/* Input: Password */}
       <div className="mb-3">
         <label className="form-label text-muted small fw-bold">Password</label>
@@ -102,7 +102,7 @@ const Login = ({ onLogin }) => {
           />
         </div>
       </div>
-
+ 
       {/* Forgot Password Link */}
       <div className="d-flex justify-content-end mb-4">
         <button
@@ -113,16 +113,17 @@ const Login = ({ onLogin }) => {
           Forgot Password?
         </button>
       </div>
-
+ 
       {/* Submit Button */}
       <button
         type="submit"
-        className="btn btn-primary w-100 py-3 fw-bold shadow-sm"
+        className="btn btn-dark w-100 py-3 fw-bold shadow-sm"
       >
         Login Securely
       </button>
     </form>
   );
 };
-
+ 
 export default Login;
+ 

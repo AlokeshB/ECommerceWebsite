@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { CheckCircle, AlertTriangle, Copy } from "lucide-react";
-
+ 
 const Register = ({ onRegisterSuccess }) => {
-
+ 
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -13,34 +13,34 @@ const Register = ({ onRegisterSuccess }) => {
     city: "",
     zip: "",
   });
-
+ 
   const [error, setError] = useState("");
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [generatedId, setGeneratedId] = useState("");
-
+ 
   // 2. VALIDATION PATTERNS
   const patterns = {
     email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
     mobile: /^[6-9]\d{9}$/, // Starts with 6-9, followed by 9 digits
     password: /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{6,}$/, // Min 6 chars, 1 letter, 1 number
   };
-
+ 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
     // Clear error when user types
     if (error) setError("");
   };
-
+ 
   const handleSubmit = (e) => {
     e.preventDefault();
-
+ 
     // 3. LOGIC & VALIDATION CHECKS
-
+ 
     // Check Empty Fields
     if (!formData.fullName || !formData.address) {
       return setError("Please fill in all required fields.");
     }
-
+ 
     // Check Patterns
     if (!patterns.email.test(formData.email)) {
       return setError("Invalid Email Address format.");
@@ -55,17 +55,17 @@ const Register = ({ onRegisterSuccess }) => {
         "Password must be at least 6 characters and contain a number."
       );
     }
-
+ 
     // Check Password Match
     if (formData.password !== formData.confirmPassword) {
       return setError("Passwords do not match!");
     }
-
+ 
     // 4. GENERATE UNIQUE USER ID (firstName_randomNumber)
     const firstName = formData.fullName.trim().split(" ")[0].toLowerCase();
     const randomNum = Math.floor(1000 + Math.random() * 9000);
     const uniqueID = `${firstName}_${randomNum}`;
-
+ 
     // 5. SAVE TO DATABASE (LocalStorage)
     // Create the final user object
     const newUser = {
@@ -73,34 +73,34 @@ const Register = ({ onRegisterSuccess }) => {
       id: uniqueID,
       registeredAt: new Date().toISOString(),
     };
-
+ 
     // Fetch existing users, check for duplicates, and save
     const existingUsers = JSON.parse(localStorage.getItem("eshop_users")) || [];
-
+ 
     const emailExists = existingUsers.some((u) => u.email === formData.email);
     if (emailExists) return setError("This Email is already registered.");
-
+ 
     localStorage.setItem(
       "eshop_users",
       JSON.stringify([...existingUsers, newUser])
     );
-
+ 
     // 6. SHOW SUCCESS MODAL
     setGeneratedId(uniqueID);
     setShowSuccessModal(true);
     setError("");
   };
-
+ 
   const handleCloseModal = () => {
     setShowSuccessModal(false);
     if (onRegisterSuccess) onRegisterSuccess(); // Switch to Login View
   };
-
+ 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(generatedId);
     alert("ID copied to clipboard!");
   };
-
+ 
   return (
     <>
       <form
@@ -113,7 +113,7 @@ const Register = ({ onRegisterSuccess }) => {
             <AlertTriangle size={16} /> {error}
           </div>
         )}
-
+ 
         <div className="row g-3">
           {/* Full Name */}
           <div className="col-12">
@@ -129,7 +129,7 @@ const Register = ({ onRegisterSuccess }) => {
               required
             />
           </div>
-
+ 
           {/* Mobile & Email */}
           <div className="col-md-6">
             <label className="form-label text-muted small fw-bold">
@@ -157,7 +157,7 @@ const Register = ({ onRegisterSuccess }) => {
               required
             />
           </div>
-
+ 
           {/* Address Section */}
           <div className="col-12">
             <label className="form-label text-muted small fw-bold">
@@ -196,7 +196,7 @@ const Register = ({ onRegisterSuccess }) => {
               required
             />
           </div>
-
+ 
           {/* Password Section */}
           <div className="col-md-6">
             <label className="form-label text-muted small fw-bold">
@@ -225,7 +225,7 @@ const Register = ({ onRegisterSuccess }) => {
             />
           </div>
         </div>
-
+ 
         <div className="mt-4">
           <button
             type="submit"
@@ -235,7 +235,7 @@ const Register = ({ onRegisterSuccess }) => {
           </button>
         </div>
       </form>
-
+ 
       {/* SUCCESS MODAL POPUP */}
       {showSuccessModal && (
         <div
@@ -249,12 +249,12 @@ const Register = ({ onRegisterSuccess }) => {
             <CheckCircle size={50} className="text-success mb-3" />
             <h4 className="fw-bold text-success">Registration Successful!</h4>
             <p className="text-muted small">Your account has been created.</p>
-
-            <div className="bg-light p-3 rounded border border-primary border-opacity-25 mb-3 position-relative">
+ 
+            <div className="bg-light p-3 rounded border border-dark border-opacity-25 mb-3 position-relative">
               <span className="small text-muted d-block text-uppercase fw-bold mb-1">
                 Your Login ID
               </span>
-              <span className="fw-bold text-primary fs-4">{generatedId}</span>
+              <span className="fw-bold text-dark fs-4">{generatedId}</span>
               <button
                 onClick={copyToClipboard}
                 className="btn btn-sm btn-link position-absolute top-50 end-0 translate-middle-y text-muted"
@@ -263,11 +263,11 @@ const Register = ({ onRegisterSuccess }) => {
                 <Copy size={16} />
               </button>
             </div>
-
+ 
             <p className="small text-danger fst-italic">
               * Please save this ID. You will need it (or your Email) to log in.
             </p>
-
+ 
             <button
               className="btn btn-dark w-100 fw-bold"
               onClick={handleCloseModal}
@@ -280,5 +280,5 @@ const Register = ({ onRegisterSuccess }) => {
     </>
   );
 };
-
+ 
 export default Register;

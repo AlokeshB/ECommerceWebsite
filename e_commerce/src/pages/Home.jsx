@@ -6,7 +6,7 @@ import Footer from "../components/Footer";
 import { ShoppingCart, Zap } from "lucide-react";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext"; // Import Auth to check login status
-
+ 
 // 1. UNIQUE PRODUCT DATA (Fixes the "same card repeating" issue)
 const PRODUCTS = [
   {
@@ -66,12 +66,12 @@ const PRODUCTS = [
     category: "Electronics",
   },
 ];
-
+ 
 const Home = () => {
   const { addToCart } = useCart();
   const { user } = useAuth(); // Access global user state
   const navigate = useNavigate();
-
+ 
   // 2. PROTECTED BUY NOW LOGIC
   const handleBuyNow = (product) => {
     if (!user) {
@@ -80,31 +80,31 @@ const Home = () => {
       alert("Please login to purchase items!");
       return;
     }
-
+ 
     // If logged in, add to cart and go to checkout/cart
     addToCart(product);
     navigate("/cart");
   };
-
+ 
   const handleAddToCart = (product) => {
     // Add unique product object to cart
     addToCart(product);
     // Optional: show a small toast or notification
   };
-
+ 
   return (
     <div className="d-flex flex-column min-vh-100 bg-light">
       <Navbar />
-
+ 
       <div className="d-flex flex-grow-1 container-fluid px-0">
-        <aside className="d-none d-md-block">
+        <aside className="d-none">
           <Sidebar />
         </aside>
-
+ 
         <main className="flex-grow-1 p-4">
           <div className="container">
-            {/* Hero Section */}
-            <div className="bg-primary text-white rounded-3 p-5 mb-4 shadow-sm text-center animate__animated animate__fadeIn">
+          {/* Hero Section */}
+            <div className="bg-dark text-white rounded-2 p-5 mb-4 shadow-sm text-center animate__animated animate__fadeIn">
               <h1 className="display-4 fw-bold">Welcome to FASHION-HUB</h1>
               <p className="lead">
                 Discover the best deals on premium products today.
@@ -113,9 +113,9 @@ const Home = () => {
                 Shop Now
               </button>
             </div>
-
+ 
             <h4 className="fw-bold mb-3">Featured Products</h4>
-
+ 
             {/* 3. DYNAMIC PRODUCT GRID */}
             <div className="row g-3 g-md-4">
               {PRODUCTS.map((product) => (
@@ -131,12 +131,12 @@ const Home = () => {
                     >
                       {product.img}
                     </div>
-
+ 
                     {/* Product Details */}
                     <div className="card-body p-2 p-md-3">
                       <div className="mb-1">
                         <span
-                          className="badge bg-light text-primary border mb-2"
+                          className="badge bg-light text-dark border mb-2"
                           style={{ fontSize: "10px" }}
                         >
                           {product.category}
@@ -148,20 +148,20 @@ const Home = () => {
                       >
                         {product.name}
                       </h6>
-                      <p className="text-primary fw-bold mb-2">
+                      <p className="text-dark fw-bold mb-2">
                         ₹{product.price.toLocaleString("en-IN")}.00
                       </p>
-
+ 
                       <div className="d-flex flex-column flex-xl-row gap-2 mt-2">
                         <button
-                          className="btn btn-outline-primary btn-sm flex-fill d-flex align-items-center justify-content-center gap-1 px-1"
+                          className="btn btn-outline-dark btn-sm flex-fill d-flex align-items-center justify-content-center gap-1 px-1"
                           onClick={() => handleAddToCart(product)}
                         >
                           <ShoppingCart size={14} />
                           <span style={{ fontSize: "12px" }}>Add to Cart</span>
                         </button>
                         <button
-                          className="btn btn-primary btn-sm flex-fill d-flex align-items-center justify-content-center gap-1 px-1"
+                          className="btn btn-dark btn-sm flex-fill d-flex align-items-center justify-content-center gap-1 px-1"
                           onClick={() => handleBuyNow(product)}
                         >
                           <Zap size={14} />
@@ -176,10 +176,10 @@ const Home = () => {
           </div>
         </main>
       </div>
-
+ 
       <Footer />
     </div>
   );
 };
-
+ 
 export default Home;
