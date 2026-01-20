@@ -7,10 +7,8 @@ import {
   X,
   Power,
 } from "lucide-react";
-import Login from "../pages/Login";
-import Register from "../pages/Register";
 import "bootstrap/dist/css/bootstrap.min.css";
-import "./Layout.css";
+import "../styles/Layout.css";
 import { CATEGORY_DATA } from "./categories";
 import { useCart } from "../context/CartContext.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
@@ -24,30 +22,22 @@ const Navbar = () => {
   const { user, logout } = useAuth();
  
   const [showSearch, setShowSearch] = useState(false);
-  const [showAuthModal, setShowAuthModal] = useState(false);
-  const [isRegistering, setIsRegistering] = useState(false);
  
-  // 1. Handle Login Success
-  const handleLoginSuccess = () => {
-    setShowAuthModal(false);
-    // No need to set local state; AuthContext handles the 'user' globally
-  };
- 
-  // 2. Handle Logout
-  const handleLogout = (e) => {
-    e.stopPropagation(); // Prevent triggering handleUserAction if nested
-    if (window.confirm("Are you sure you want to logout?")) {
-      logout();
-      navigate("/");
-    }
-  };
- 
-  // 3. Handle User Icon / Profile Click
+  // 1. Handle User Icon / Profile Click
   const handleUserAction = () => {
     if (user) {
       navigate("/profile");
     } else {
-      setShowAuthModal(true);
+      navigate("/login");
+    }
+  };
+
+  // 2. Handle Logout
+  const handleLogout = (e) => {
+    e.stopPropagation();
+    if (window.confirm("Are you sure you want to logout?")) {
+      logout();
+      navigate("/");
     }
   };
  
@@ -57,7 +47,7 @@ const Navbar = () => {
         <div className="container">
           {/* Brand */}
           <Link
-            className="navbar-brand fw-bold text-primary d-flex align-items-center gap-2"
+            className="navbar-brand fw-bold d-flex align-items-center gap-2"
             to="/"
           >
             <span style={{ letterSpacing: "0.5px" }}>FASHION-HUB</span>
@@ -200,10 +190,7 @@ const Navbar = () => {
                     className="bg-primary-subtle text-primary rounded-circle d-flex align-items-center justify-content-center fw-bold"
                     style={{ width: "32px", height: "32px" }}
                   >
-                    {/* Fallback to 'U' if fullName is missing */}
-                    {user.fullName
-                      ? user.fullName.charAt(0).toUpperCase()
-                      : "U"}
+                    {user.fullName ? user.fullName.charAt(0).toUpperCase() : "U"}
                   </div>
                   <div className="d-none d-md-block">
                     <p
@@ -217,7 +204,6 @@ const Navbar = () => {
                     </span>
                   </div>
                 </div>
- 
                 <button
                   className="btn btn-link text-danger p-0 border-0 mb-0"
                   onClick={handleLogout}
@@ -229,7 +215,7 @@ const Navbar = () => {
             ) : (
               <button
                 className="btn btn-link text-dark p-0"
-                onClick={() => setShowAuthModal(true)}
+                onClick={handleUserAction}
               >
                 <UserIcon size={22} />
               </button>
@@ -237,58 +223,8 @@ const Navbar = () => {
           </div>
         </div>
       </nav>
- 
-      {/* --- MODALS (Categories & Auth) --- */}
-      {/* ... keeping your existing modal code here as it was structurally sound ... */}
-      {/* Auth Modal Code remains same as your snippet */}
-      {showAuthModal && (
-        <div
-          className="modal show d-block"
-          style={{ backgroundColor: "rgba(0,0,0,0.5)", zIndex: 1070 }}
-        >
-          <div className="modal-dialog modal-dialog-centered">
-            <div className="modal-content border-0 shadow-lg">
-              <div className="modal-header border-0 pb-0">
-                <button
-                  type="button"
-                  className="btn-close"
-                  onClick={() => setShowAuthModal(false)}
-                ></button>
-              </div>
-              <div className="modal-body pt-0 px-4 pb-4 text-center">
-                <h4 className="fw-bold">
-                  {isRegistering ? "Join Fashionify" : "Welcome Back"}
-                </h4>
-                <p className="text-muted small mb-4">
-                  Access your orders and profile
-                </p>
- 
-                {isRegistering ? (
-                  <Register onRegisterSuccess={() => setIsRegistering(false)} />
-                ) : (
-                  <Login onLogin={handleLoginSuccess} />
-                )}
- 
-                <div className="mt-4">
-                  <span className="text-muted small">
-                    {isRegistering
-                      ? "Already have an account?"
-                      : "New to Fashionify?"}
-                  </span>
-                  <button
-                    className="btn btn-link btn-sm fw-bold text-decoration-none"
-                    onClick={() => setIsRegistering(!isRegistering)}
-                  >
-                    {isRegistering ? "Login Now" : "Register Here"}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </>
   );
 };
- 
+
 export default Navbar;
