@@ -5,7 +5,6 @@ import {
   User as UserIcon,
   ShoppingCart,
   X,
-  Grid,
   Power,
 } from "lucide-react";
 import Login from "../pages/Login";
@@ -15,26 +14,25 @@ import "./Layout.css";
 import { CATEGORY_DATA } from "./categories";
 import { useCart } from "../context/CartContext.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
-
+ 
 const Navbar = () => {
   const navigate = useNavigate();
-
+ 
   // Destructure functions from contexts
   // Ensure these names match exactly what is in your Context Provider 'value' prop
   const { getCartCount } = useCart();
   const { user, logout } = useAuth();
-
+ 
   const [showSearch, setShowSearch] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
-  const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
-
+ 
   // 1. Handle Login Success
   const handleLoginSuccess = () => {
     setShowAuthModal(false);
     // No need to set local state; AuthContext handles the 'user' globally
   };
-
+ 
   // 2. Handle Logout
   const handleLogout = (e) => {
     e.stopPropagation(); // Prevent triggering handleUserAction if nested
@@ -43,7 +41,7 @@ const Navbar = () => {
       navigate("/");
     }
   };
-
+ 
   // 3. Handle User Icon / Profile Click
   const handleUserAction = () => {
     if (user) {
@@ -52,7 +50,7 @@ const Navbar = () => {
       setShowAuthModal(true);
     }
   };
-
+ 
   return (
     <>
       <nav className="navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top">
@@ -62,19 +60,87 @@ const Navbar = () => {
             className="navbar-brand fw-bold text-primary d-flex align-items-center gap-2"
             to="/"
           >
-            <span style={{ letterSpacing: "1px" }}>FASHION-HUB</span>
+            <span style={{ letterSpacing: "0.5px" }}>FASHION-HUB</span>
           </Link>
-
-          {/* Categories Button */}
-          <button
-            className="btn btn-light d-flex align-items-center gap-2 ms-3 border-0 bg-light-subtle text-dark"
-            onClick={() => setShowCategoryModal(true)}
-            style={{ borderRadius: "20px", padding: "8px 16px" }}
-          >
-            <Grid size={18} />
-            <span className="fw-bold small d-none d-md-inline">Categories</span>
-          </button>
-
+ 
+          {/* Category Links (hover to open centered mega-menu) */}
+          <div className="d-flex align-items-center gap-4 ms-4 d-none d-md-flex nav-categories">
+            {/* Women */}
+            <div className="nav-item position-relative">
+              <a href="#" className="text-dark text-decoration-none fw-bold small px-2" style={{ fontSize: "14px" }}>
+                WOMEN
+              </a>
+              <div className="mega-menu">
+                <div className="mega-inner">
+                  <div className="row g-3 justify-content-center">
+                    {(CATEGORY_DATA.find(c=>c.id==="women")?.subcategories || []).map((sub,i)=>(
+                      <div className="col-4" key={i}>
+                        <div className="fw-bold small mb-2">{sub.name}</div>
+                        <ul className="list-unstyled">
+                          {sub.types.map((t,j)=>(
+                            <li key={j}>
+                              <a href="#" className="text-muted text-decoration-none small" onClick={(e)=>e.preventDefault()}>{t}</a>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+ 
+            {/* Men */}
+            <div className="nav-item position-relative">
+              <a href="#" className="text-dark text-decoration-none fw-bold small px-2" style={{ fontSize: "14px" }}>
+                MEN
+              </a>
+              <div className="mega-menu">
+                <div className="mega-inner">
+                  <div className="row g-3 justify-content-center">
+                    {(CATEGORY_DATA.find(c=>c.id==="men")?.subcategories || []).map((sub,i)=>(
+                      <div className="col-4" key={i}>
+                        <div className="fw-bold small mb-2">{sub.name}</div>
+                        <ul className="list-unstyled">
+                          {sub.types.map((t,j)=>(
+                            <li key={j}>
+                              <a href="#" className="text-muted text-decoration-none small" onClick={(e)=>e.preventDefault()}>{t}</a>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+ 
+            {/* Kids */}
+            <div className="nav-item position-relative">
+              <a href="#" className="text-dark text-decoration-none fw-bold small px-2" style={{ fontSize: "14px" }}>
+                KIDS
+              </a>
+              <div className="mega-menu">
+                <div className="mega-inner">
+                  <div className="row g-3 justify-content-center">
+                    {(CATEGORY_DATA.find(c=>c.id==="kids")?.subcategories || []).map((sub,i)=>(
+                      <div className="col-4" key={i}>
+                        <div className="fw-bold small mb-2">{sub.name}</div>
+                        <ul className="list-unstyled">
+                          {sub.types.map((t,j)=>(
+                            <li key={j}>
+                              <a href="#" className="text-muted text-decoration-none small" onClick={(e)=>e.preventDefault()}>{t}</a>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+ 
           {/* Right Side Icons */}
           <div className="d-flex align-items-center gap-3 ms-auto">
             {/* Search Toggle */}
@@ -106,7 +172,7 @@ const Navbar = () => {
                 </button>
               )}
             </div>
-
+ 
             {/* Cart Icon */}
             <Link
               to="/cart"
@@ -121,7 +187,7 @@ const Navbar = () => {
                 {getCartCount ? getCartCount() : 0}
               </span>
             </Link>
-
+ 
             {/* USER PROFILE & LOGOUT LOGIC */}
             {user ? (
               <div className="d-flex align-items-center gap-3 ps-2 border-start">
@@ -151,7 +217,7 @@ const Navbar = () => {
                     </span>
                   </div>
                 </div>
-
+ 
                 <button
                   className="btn btn-link text-danger p-0 border-0 mb-0"
                   onClick={handleLogout}
@@ -171,54 +237,9 @@ const Navbar = () => {
           </div>
         </div>
       </nav>
-
+ 
       {/* --- MODALS (Categories & Auth) --- */}
       {/* ... keeping your existing modal code here as it was structurally sound ... */}
-
-      {/* Category Modal Code remains same as your snippet */}
-      {showCategoryModal && (
-        <div
-          className="modal show d-block"
-          style={{ backgroundColor: "rgba(0,0,0,0.6)", zIndex: 1060 }}
-          onClick={() => setShowCategoryModal(false)}
-        >
-          <div
-            className="modal-dialog modal-xl modal-dialog-centered"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="modal-content border-0 shadow-lg rounded-4">
-              <div className="modal-header border-0 bg-light">
-                <h5 className="modal-title fw-bold">Browse Categories</h5>
-                <button
-                  type="button"
-                  className="btn-close"
-                  onClick={() => setShowCategoryModal(false)}
-                ></button>
-              </div>
-              <div className="modal-body p-4">
-                <div className="row g-4">
-                  {CATEGORY_DATA.map((cat) => (
-                    <div className="col-md-3" key={cat.id}>
-                      <div className="d-flex align-items-center gap-2 mb-2 text-primary">
-                        <cat.icon size={18} />
-                        <h6 className="fw-bold mb-0">{cat.title}</h6>
-                      </div>
-                      <ul className="list-unstyled ps-4">
-                        {cat.subcategories.map((sub, i) => (
-                          <li key={i} className="small text-muted mb-1">
-                            {sub.name}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Auth Modal Code remains same as your snippet */}
       {showAuthModal && (
         <div
@@ -241,13 +262,13 @@ const Navbar = () => {
                 <p className="text-muted small mb-4">
                   Access your orders and profile
                 </p>
-
+ 
                 {isRegistering ? (
                   <Register onRegisterSuccess={() => setIsRegistering(false)} />
                 ) : (
                   <Login onLogin={handleLoginSuccess} />
                 )}
-
+ 
                 <div className="mt-4">
                   <span className="text-muted small">
                     {isRegistering
@@ -269,5 +290,5 @@ const Navbar = () => {
     </>
   );
 };
-
+ 
 export default Navbar;

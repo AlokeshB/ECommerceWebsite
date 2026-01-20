@@ -5,34 +5,33 @@ const Sidebar = () => {
   const [price, setPrice] = useState(2500);
   const min = 0;
   const max = 10000;
-
+ 
   // Calculate percentage to position the tooltip accurately
   const getPlacement = () => ((price - min) / (max - min)) * 100;
-
+ 
   const [openSections, setOpenSections] = useState({
     women: true, // Default open
     fabric: true,
   });
-
+ 
   const toggleSection = (id) => {
     setOpenSections((prev) => ({ ...prev, [id]: !prev[id] }));
   };
-
+ 
   return (
     <div
       className="bg-white border-end h-100 p-3 overflow-auto"
-      style={{ minWidth: "260px", height: "calc(100vh - 80px)" }}
-    //   {...props}
+      style={{ minWidth: "260px", height: "calc(100vh - 80px)", borderColor: "#e8e8e8" }}
     >
       <div className="d-flex align-items-center justify-content-between mb-4">
-        <h6 className="fw-bold mb-0 d-flex align-items-center gap-2 text-primary">
+        <h6 className="fw-bold mb-0 d-flex align-items-center gap-2 text-dark">
           <Filter size={20} /> Filters
         </h6>
         <span className="text-muted small" style={{ cursor: "pointer" }}>
           Clear All
         </span>
       </div>
-
+ 
       {/* --- 1. PRIMARY CATEGORIES (Dynamic Render) --- */}
       {CATEGORY_DATA.map((cat) => (
         <div className="mb-4 border-bottom pb-3" key={cat.id}>
@@ -50,7 +49,7 @@ const Sidebar = () => {
               <ChevronRight size={14} />
             )}
           </div>
-
+ 
           {openSections[cat.id] && (
             <div className="animate__animated animate__fadeIn ms-1">
               {cat.subcategories.map((sub, idx) => (
@@ -79,7 +78,7 @@ const Sidebar = () => {
           )}
         </div>
       ))}
-
+ 
       {/* --- 2. TECHNICAL FILTERS (Dynamic Render) --- */}
       {TECHNICAL_FILTERS.map((filter, index) => (
         <div className="mb-4" key={index}>
@@ -97,7 +96,7 @@ const Sidebar = () => {
               <ChevronRight size={14} />
             )}
           </div>
-
+ 
           {openSections[filter.title] && (
             <div className="animate__animated animate__fadeIn ms-1">
               <div className="d-flex flex-wrap gap-2">
@@ -121,18 +120,18 @@ const Sidebar = () => {
           )}
         </div>
       ))}
-
+ 
       {/* Price Range Section */}
       <div className="mb-4">
         <h6 className="small fw-bold text-uppercase text-muted mb-3">
           Price Range
         </h6>
-
+ 
         {/* Container for the range and the tooltip */}
         <div className="position-relative pt-4">
           {/* Dynamic Tooltip Pointer */}
           <div
-            className="position-absolute badge bg-primary"
+            className="position-absolute badge bg-dark"
             style={{
               left: `calc(${getPlacement()}% + (${
                 8 - getPlacement() * 0.15
@@ -158,7 +157,7 @@ const Sidebar = () => {
           <span>₹{max}+</span>
         </div>
       </div>
-
+ 
       {/* Rating Section */}
       {/* <div>
         <h6 className="small fw-bold text-uppercase text-muted mb-3">Rating</h6>
@@ -175,5 +174,5 @@ const Sidebar = () => {
     </div>
   );
 };
-
+ 
 export default Sidebar;

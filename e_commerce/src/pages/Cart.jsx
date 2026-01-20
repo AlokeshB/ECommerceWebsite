@@ -5,7 +5,7 @@ import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { useCart } from "../context/CartContext";
 import { Trash2, Plus, Minus, ArrowLeft, ShieldCheck } from "lucide-react";
-
+ 
 const Cart = () => {
   const {
     cartItems,
@@ -14,10 +14,10 @@ const Cart = () => {
     getCartTotal,
     getCartCount,
   } = useCart();
-
+ 
   const { user } = useAuth();
   const navigate = useNavigate();
-
+ 
   const handleCheckout = () => {
     if (!user) {
       alert("Please log in to place your order.");
@@ -27,13 +27,13 @@ const Cart = () => {
       navigate("/checkout");
     }
   };
-
+ 
   // Safely calculate totals
   const totalAmount = getCartTotal ? getCartTotal() : 0;
   const discount = totalAmount > 1000 ? 200 : 0;
   const deliveryCharges = totalAmount > 500 || totalAmount === 0 ? 0 : 40;
   const finalAmount = totalAmount - discount + deliveryCharges;
-
+ 
   return (
     <>
       <Navbar />
@@ -42,7 +42,7 @@ const Cart = () => {
           <h4 className="fw-bold mb-4">
             Shopping Cart ({getCartCount ? getCartCount() : 0} items)
           </h4>
-
+ 
           {cartItems.length === 0 ? (
             /* EMPTY STATE */
             <div className="text-center py-5 bg-white rounded shadow-sm">
@@ -53,7 +53,7 @@ const Cart = () => {
               />
               <h5 className="mt-3">Your cart is empty!</h5>
               <p className="text-muted">Add items to it now.</p>
-              <Link to="/" className="btn btn-primary px-4 mt-2">
+              <Link to="/" className="btn btn-dark px-4 mt-2">
                 Shop Now
               </Link>
             </div>
@@ -79,14 +79,14 @@ const Cart = () => {
                       >
                         {item.img}
                       </div>
-
+ 
                       {/* Details */}
                       <div className="flex-grow-1">
                         <h6 className="fw-bold mb-1">{item.name}</h6>
                         <p className="text-muted small mb-1">
                           Seller: RetailNet
                         </p>
-
+ 
                         <div className="d-flex align-items-center gap-2 mb-2">
                           <span className="fw-bold fs-5">
                             ₹{item.price * (item.qty || 1)}
@@ -98,7 +98,7 @@ const Cart = () => {
                             20% Off
                           </span>
                         </div>
-
+ 
                         {/* Controls */}
                         <div className="d-flex align-items-center gap-4">
                           <div className="d-flex align-items-center gap-2">
@@ -133,17 +133,17 @@ const Cart = () => {
                     </div>
                   ))}
                 </div>
-
+ 
                 <div className="d-flex justify-content-end mt-3">
                   <Link
                     to="/"
-                    className="btn btn-outline-primary d-flex align-items-center gap-2"
+                    className="btn btn-outline-dark d-flex align-items-center gap-2"
                   >
                     <ArrowLeft size={16} /> Continue Shopping
                   </Link>
                 </div>
               </div>
-
+ 
               {/* RIGHT COLUMN: Price Details */}
               <div className="col-lg-4">
                 <div
@@ -153,19 +153,19 @@ const Cart = () => {
                   <h6 className="text-muted text-uppercase fw-bold small border-bottom pb-2">
                     Price Details
                   </h6>
-
+ 
                   <div className="d-flex justify-content-between mb-2 mt-3">
                     <span>
                       Price ({getCartCount ? getCartCount() : 0} items)
                     </span>
                     <span>₹{totalAmount}</span>
                   </div>
-
+ 
                   <div className="d-flex justify-content-between mb-2 text-success">
                     <span>Discount</span>
                     <span>- ₹{discount}</span>
                   </div>
-
+ 
                   <div className="d-flex justify-content-between mb-3">
                     <span>Delivery Charges</span>
                     <span
@@ -174,21 +174,21 @@ const Cart = () => {
                       {deliveryCharges === 0 ? "Free" : `₹${deliveryCharges}`}
                     </span>
                   </div>
-
+ 
                   <hr className="border-dashed" />
-
+ 
                   <div className="d-flex justify-content-between mb-4">
                     <span className="fw-bold fs-5">Total Amount</span>
                     <span className="fw-bold fs-5">₹{finalAmount}</span>
                   </div>
-
+ 
                   <button
-                    className="btn btn-primary w-100 py-3 fw-bold shadow-sm text-white"
+                    className="btn btn-dark w-100 py-3 fw-bold shadow-sm text-white"
                     onClick={handleCheckout}
                   >
                     PLACE ORDER
                   </button>
-
+ 
                   <div className="mt-3 d-flex align-items-center justify-content-center gap-2 text-muted small">
                     <ShieldCheck size={16} />
                     <span>
@@ -205,5 +205,5 @@ const Cart = () => {
     </>
   );
 };
-
+ 
 export default Cart;

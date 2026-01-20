@@ -2,29 +2,29 @@ import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import { Check, Package, Truck, Home, MapPin, Loader2 } from "lucide-react";
-
+ 
 const OrderTracking = () => {
   const { orderId } = useParams();
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
-
+ 
   useEffect(() => {
     // 1. Fetch orders from "Database"
     const storedOrders = JSON.parse(localStorage.getItem("eshop_orders")) || [];
     // 2. Find the matching order
     const foundOrder = storedOrders.find((o) => o.id === orderId);
-
+ 
     setOrder(foundOrder);
     setLoading(false);
   }, [orderId]);
-
+ 
   const steps = [
     { status: "Ordered", icon: Check, label: "Order Placed" },
     { status: "Packed", icon: Package, label: "Packed" },
     { status: "Shipped", icon: Truck, label: "Shipped" },
     { status: "Delivered", icon: Home, label: "Delivered" },
   ];
-
+ 
   // Logic to determine active steps
   const getStepStatus = (stepLabel) => {
     const statusMap = { Ordered: 1, Packed: 2, Shipped: 3, Delivered: 4 };
@@ -34,27 +34,27 @@ const OrderTracking = () => {
     if (stepVal === currentStatusVal) return "active";
     return "pending";
   };
-
+ 
   if (loading)
     return (
       <div className="min-vh-100 d-flex align-items-center justify-content-center">
-        <Loader2 className="spinner-border text-primary" />
+        <Loader2 className="spinner-border text-dark" />
       </div>
     );
-
+ 
   if (!order)
     return (
       <div className="min-vh-100 bg-light">
         <Navbar />
         <div className="container py-5 text-center">
           <h3>Order not found!</h3>
-          <Link to="/" className="btn btn-primary mt-3">
+          <Link to="/" className="btn btn-dark mt-3">
             Go Home
           </Link>
         </div>
       </div>
     );
-
+ 
   return (
     <div className="bg-light min-vh-100 pb-5">
       <Navbar />
@@ -75,7 +75,7 @@ const OrderTracking = () => {
                   Payment: {order.paymentMethod.toUpperCase()}
                 </span>
               </div>
-
+ 
               {/* Progress Bar */}
               <div className="position-relative py-4 mb-4">
                 <div className="progress" style={{ height: "4px" }}>
@@ -88,10 +88,10 @@ const OrderTracking = () => {
                     return (
                       <div key={idx} className="text-center bg-light px-2">
                         <div
-                          className={`rounded-circle d-flex align-items-center justify-content-center mx-auto mb-2 shadow-sm 
+                          className={`rounded-circle d-flex align-items-center justify-content-center mx-auto mb-2 shadow-sm
                           ${
                             status === "active" || status === "completed"
-                              ? "bg-primary text-white"
+                              ? "bg-dark text-white"
                               : "bg-white text-muted border"
                           }`}
                           style={{ width: "40px", height: "40px" }}
@@ -100,7 +100,7 @@ const OrderTracking = () => {
                         </div>
                         <span
                           className={`small fw-bold ${
-                            status === "active" ? "text-primary" : "text-muted"
+                            status === "active" ? "text-dark" : "text-muted"
                           }`}
                         >
                           {step.label}
@@ -110,7 +110,7 @@ const OrderTracking = () => {
                   })}
                 </div>
               </div>
-
+ 
               {/* Order Items */}
               <div className="bg-light p-3 rounded mb-3">
                 <h6 className="fw-bold mb-3">Items in this order</h6>
@@ -137,12 +137,12 @@ const OrderTracking = () => {
                   </div>
                 ))}
               </div>
-
+ 
               {/* Address */}
-              <div className="d-flex align-items-start gap-2 p-3 border rounded border-primary bg-primary-subtle">
-                <MapPin className="text-primary mt-1" size={18} />
+              <div className="d-flex align-items-start gap-2 p-3 border rounded border-dark bg-light">
+                <MapPin className="text-dark mt-1" size={18} />
                 <div>
-                  <h6 className="small fw-bold mb-1 text-primary">
+                  <h6 className="small fw-bold mb-1 text-dark">
                     Delivery Address
                   </h6>
                   <p className="small text-dark mb-0">
@@ -151,9 +151,9 @@ const OrderTracking = () => {
                 </div>
               </div>
             </div>
-
+ 
             <div className="text-center">
-              <Link to="/" className="btn btn-primary px-5 fw-bold">
+              <Link to="/" className="btn btn-dark px-5 fw-bold">
                 Continue Shopping
               </Link>
             </div>
@@ -163,5 +163,5 @@ const OrderTracking = () => {
     </div>
   );
 };
-
+ 
 export default OrderTracking;

@@ -1,8 +1,8 @@
-import { 
-  Shirt, User, Baby, Star, RefreshCw, 
-  Scissors, Layers, Activity, Snowflake, Globe 
+import {
+  Shirt, User, Baby, Star, RefreshCw,
+  Scissors, Layers, Activity, Snowflake, Globe
 } from 'lucide-react';
-
+ 
 export const CATEGORY_DATA = [
   {
     id: 'women',

@@ -12,27 +12,27 @@ import {
   Loader2,
   Lock,
 } from "lucide-react";
-
+ 
 const Checkout = () => {
   const { cartItems, getCartTotal, clearCart } = useCart();
   const { user } = useAuth();
   const navigate = useNavigate();
-
+ 
   const [isProcessing, setIsProcessing] = useState(false);
   const [orderPlaced, setOrderPlaced] = useState(false);
   const [selectedAddress, setSelectedAddress] = useState("default");
   const [paymentMethod, setPaymentMethod] = useState("upi");
-
+ 
   // Redirect if empty cart
   useEffect(() => {
     if (user && cartItems.length === 0 && !orderPlaced) {
       navigate("/cart");
     }
   }, [user, cartItems, navigate, orderPlaced]);
-
+ 
   const handlePlaceOrder = () => {
     setIsProcessing(true);
-
+ 
     // 1. CREATE ORDER OBJECT
     const orderId = "ORD" + Math.floor(100000 + Math.random() * 900000); // Random 6 digit ID
     const newOrder = {
@@ -51,12 +51,12 @@ const Checkout = () => {
       zip: user.zip,
       paymentMethod: paymentMethod,
     };
-
+ 
     // 2. SIMULATE API CALL
     setTimeout(() => {
       setIsProcessing(false);
       setOrderPlaced(true); // Show Success Screen
-
+ 
       // 3. SAVE TO LOCAL STORAGE (Simulating Database)
       const existingOrders =
         JSON.parse(localStorage.getItem("eshop_orders")) || [];
@@ -64,7 +64,7 @@ const Checkout = () => {
         "eshop_orders",
         JSON.stringify([newOrder, ...existingOrders])
       );
-
+ 
       // 4. CLEAR CART & REDIRECT
       setTimeout(() => {
         clearCart();
@@ -72,7 +72,7 @@ const Checkout = () => {
       }, 2000);
     }, 2000);
   };
-
+ 
   if (orderPlaced) {
     return (
       <div className="min-vh-100 d-flex flex-column align-items-center justify-content-center bg-white">
@@ -82,7 +82,7 @@ const Checkout = () => {
           <p className="text-muted fs-5">Thank you, {user?.fullName}.</p>
           <div className="mt-4 d-flex align-items-center justify-content-center gap-2">
             <Loader2
-              className="spinner-border text-primary border-0"
+              className="spinner-border text-dark border-0"
               size={20}
             />
             <span className="small text-muted">Redirecting to tracking...</span>
@@ -91,7 +91,7 @@ const Checkout = () => {
       </div>
     );
   }
-
+ 
   if (!user) {
     return (
       <div className="bg-light min-vh-100 d-flex flex-column">
@@ -102,7 +102,7 @@ const Checkout = () => {
             style={{ maxWidth: "400px", width: "100%" }}
           >
             <div className="text-center mb-4">
-              <div className="bg-primary-subtle text-primary rounded-circle d-inline-flex p-3 mb-3">
+              <div className="bg-dark text-white rounded-circle d-inline-flex p-3 mb-3">
                 <Lock size={32} />
               </div>
               <h4 className="fw-bold">Checkout Securely</h4>
@@ -113,7 +113,7 @@ const Checkout = () => {
       </div>
     );
   }
-
+ 
   return (
     <div className="bg-light min-vh-100">
       <Navbar />
@@ -132,7 +132,7 @@ const Checkout = () => {
                     <span className="badge bg-secondary">HOME</span>
                   </div>
                   <p className="small text-muted mb-0 mt-1 d-flex gap-2">
-                    <MapPin size={16} className="text-primary flex-shrink-0" />
+                    <MapPin size={16} className="text-dark flex-shrink-0" />
                     {user.address
                       ? `${user.address}, ${user.city} - ${user.zip}`
                       : "Address not provided"}
@@ -140,7 +140,7 @@ const Checkout = () => {
                 </div>
               </div>
             </div>
-
+ 
             {/* Payment Section */}
             <div className="card border-0 shadow-sm">
               <div className="card-header bg-white py-3">
@@ -177,7 +177,7 @@ const Checkout = () => {
               </div>
             </div>
           </div>
-
+ 
           <div className="col-lg-4">
             <div
               className="card border-0 shadow-sm sticky-top"
@@ -198,12 +198,12 @@ const Checkout = () => {
                 <hr />
                 <div className="d-flex justify-content-between mb-4">
                   <h5 className="fw-bold">Total Payable</h5>
-                  <h5 className="fw-bold text-primary">
+                  <h5 className="fw-bold text-dark">
                     ₹{getCartTotal().toLocaleString()}
                   </h5>
                 </div>
                 <button
-                  className="btn btn-primary w-100 py-3 fw-bold shadow-sm d-flex align-items-center justify-content-center gap-2"
+                  className="btn btn-dark w-100 py-3 fw-bold shadow-sm d-flex align-items-center justify-content-center gap-2"
                   onClick={handlePlaceOrder}
                   disabled={isProcessing}
                 >
@@ -226,5 +226,5 @@ const Checkout = () => {
     </div>
   );
 };
-
+ 
 export default Checkout;
