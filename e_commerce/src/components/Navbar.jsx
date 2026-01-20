@@ -57,9 +57,13 @@ const Navbar = () => {
           <div className="d-flex align-items-center gap-4 ms-4 d-none d-md-flex nav-categories">
             {/* Women */}
             <div className="nav-item position-relative">
-              <a href="#" className="text-dark text-decoration-none fw-bold small px-2" style={{ fontSize: "14px" }}>
+              <button 
+                onClick={() => navigate("/category/women")}
+                className="text-dark text-decoration-none fw-bold small px-2 border-0 bg-transparent cursor-pointer" 
+                style={{ fontSize: "14px" }}
+              >
                 WOMEN
-              </a>
+              </button>
               <div className="mega-menu">
                 <div className="mega-inner">
                   <div className="row g-3 justify-content-center">
@@ -82,9 +86,13 @@ const Navbar = () => {
  
             {/* Men */}
             <div className="nav-item position-relative">
-              <a href="#" className="text-dark text-decoration-none fw-bold small px-2" style={{ fontSize: "14px" }}>
+              <button 
+                onClick={() => navigate("/category/men")}
+                className="text-dark text-decoration-none fw-bold small px-2 border-0 bg-transparent cursor-pointer" 
+                style={{ fontSize: "14px" }}
+              >
                 MEN
-              </a>
+              </button>
               <div className="mega-menu">
                 <div className="mega-inner">
                   <div className="row g-3 justify-content-center">
@@ -107,9 +115,13 @@ const Navbar = () => {
  
             {/* Kids */}
             <div className="nav-item position-relative">
-              <a href="#" className="text-dark text-decoration-none fw-bold small px-2" style={{ fontSize: "14px" }}>
+              <button 
+                onClick={() => navigate("/category/kids")}
+                className="text-dark text-decoration-none fw-bold small px-2 border-0 bg-transparent cursor-pointer" 
+                style={{ fontSize: "14px" }}
+              >
                 KIDS
-              </a>
+              </button>
               <div className="mega-menu">
                 <div className="mega-inner">
                   <div className="row g-3 justify-content-center">
