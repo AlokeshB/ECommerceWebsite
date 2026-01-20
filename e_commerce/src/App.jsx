@@ -12,7 +12,7 @@ import ProductDetail from './pages/ProductDetail';
 import CategoryProducts from './pages/CategoryProducts';
 import AdminDashboard from './pages/AdminDashboard';
 import ProtectedAdminRoute from './routes/ProtectedAdminRoute';
- 
+
 function App() {
   return (
     <Router>
@@ -38,5 +38,5 @@ function App() {
     </Router>
   );
 }
- 
+
 export default App;
