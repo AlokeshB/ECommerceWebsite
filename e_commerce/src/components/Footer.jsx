@@ -59,6 +59,12 @@ const Footer = () => {
                 <Mail size={16} className="text-dark flex-shrink-0" />
                 <span className="text-muted">support@eshop.com</span>
               </li>
+              <li className="d-flex align-items-center gap-2">
+                <div className="text-dark flex-shrink-0">
+                  <h6 className="text-muted">Contributors</h6>
+                <span className="text-muted">Ahan Sarkar <br />Aminur Rahman <br />Purbadri Ghosh <br />Alokesh Bhattacharya </span>
+                </div>
+              </li>
             </ul>
           </div>
         </div>
