@@ -1,14 +1,13 @@
-import {React} from 'react';
+import React from 'react';
 import { Facebook, Twitter, Instagram, Mail, Phone, MapPin } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
- 
+import { Link } from 'react-router-dom';
+
 const Footer = () => {
   return (
     <footer className="bg-light border-top text-dark pt-5 pb-4 mt-auto">
       <div className="container">
         <div className="row g-4">
-         
-          {/* Column 1: Brand Info */}
+          {/* Brand Info */}
           <div className="col-md-4">
             <h5 className="fw-bold text-dark mb-3">FASHION-HUB</h5>
             <p className="text-muted small">
@@ -22,30 +21,18 @@ const Footer = () => {
             </div>
           </div>
  
-          {/* Column 2: Quick Links */}
+          {/* Quick Links */}
           <div className="col-md-2 col-6">
             <h6 className="fw-bold text-dark mb-3">Quick Links</h6>
             <ul className="list-unstyled text-muted small d-flex flex-column gap-2">
               <li><a href="#" className="text-decoration-none text-muted">Home</a></li>
               <li><a href="#" className="text-decoration-none text-muted">Shop</a></li>
               <li><a href="#" className="text-decoration-none text-muted">About Us</a></li>
-              {/* <li><a href="#" className="text-decoration-none text-muted">Contact</a></li> */}
-              <li><Link to ="/profile" className="text-decoration-none text-muted">Order Status</Link></li>
+              <li><Link to="/profile" className="text-decoration-none text-muted">Order Status</Link></li>
             </ul>
           </div>
- 
-          {/* Column 3: Customer Care */}
-          {/* <div className="col-md-2 col-6">
-            <h6 className="fw-bold text-dark mb-3">Support</h6>
-            <ul className="list-unstyled text-muted small d-flex flex-column gap-2">
-              <li><a href="#" className="text-decoration-none text-muted">FAQ</a></li>
-              <li><a href="#" className="text-decoration-none text-muted">Shipping</a></li>
-              <li><a href="#" className="text-decoration-none text-muted">Returns</a></li>
-              <li><a href="#" className="text-decoration-none text-muted">Order Status</a></li>
-            </ul>
-          </div> */}
- 
-          {/* Column 4: Contact Info */}
+
+          {/* Contact Info */}
           <div className="col-md-4">
             <h6 className="fw-bold text-dark mb-3">Contact Us</h6>
             <ul className="list-unstyled text-muted small d-flex flex-column gap-3">
@@ -61,12 +48,6 @@ const Footer = () => {
                 <Mail size={16} className="text-dark flex-shrink-0" />
                 <span className="text-muted">support@fashionhub.com</span>
               </li>
-              {/* <li className="d-flex align-items-center gap-2">
-                <div className="text-dark flex-shrink-0">
-                  <h6 className="text-muted">Contributors</h6>
-                <span className="text-muted">Ahan Sarkar <br />Aminur Rahman <br />Purbadri Ghosh <br />Alokesh Bhattacharya </span>
-                </div>
-              </li> */}
             </ul>
           </div>
           <div className="col-md-2 col-6">
@@ -79,9 +60,7 @@ const Footer = () => {
             </ul>
           </div>
         </div>
- 
         <hr className="border-secondary my-4" />
-       
         <div className="text-center text-muted small">
           &copy; {new Date().getFullYear()} E-Commerce Platform. All rights reserved.
         </div>
@@ -89,5 +68,5 @@ const Footer = () => {
     </footer>
   );
 };
- 
+
 export default Footer;

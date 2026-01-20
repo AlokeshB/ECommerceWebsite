@@ -5,46 +5,33 @@ import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { useCart } from "../context/CartContext";
 import { Trash2, Plus, Minus, ArrowLeft, ShieldCheck } from "lucide-react";
- 
+
 const Cart = () => {
-  const {
-    cartItems,
-    updateQuantity,
-    removeFromCart,
-    getCartTotal,
-    getCartCount,
-  } = useCart();
- 
+  const { cartItems, updateQuantity, removeFromCart, getCartTotal, getCartCount } = useCart();
   const { user } = useAuth();
   const navigate = useNavigate();
- 
+
   const handleCheckout = () => {
     if (!user) {
       alert("Please log in to place your order.");
-      // Optional: Navigate to login page passing the return url
-      // navigate("/login", { state: { from: "/cart" } });
     } else {
       navigate("/checkout");
     }
   };
- 
-  // Safely calculate totals
-  const totalAmount = getCartTotal ? getCartTotal() : 0;
+
+  const totalAmount = getCartTotal?.() || 0;
   const discount = totalAmount > 1000 ? 200 : 0;
   const deliveryCharges = totalAmount > 500 || totalAmount === 0 ? 0 : 40;
   const finalAmount = totalAmount - discount + deliveryCharges;
- 
+
   return (
     <>
       <Navbar />
       <div className="d-flex flex-column min-vh-100 bg-light">
         <div className="container py-4 flex-grow-1">
-          <h4 className="fw-bold mb-4">
-            Shopping Cart ({getCartCount ? getCartCount() : 0} items)
-          </h4>
- 
+          <h4 className="fw-bold mb-4">Shopping Cart ({getCartCount?.() || 0} items)</h4>
+
           {cartItems.length === 0 ? (
-            /* EMPTY STATE */
             <div className="text-center py-5 bg-white rounded shadow-sm">
               <img
                 src="https://cdni.iconscout.com/illustration/premium/thumb/empty-cart-2130356-1800917.png"
@@ -59,47 +46,32 @@ const Cart = () => {
             </div>
           ) : (
             <div className="row g-4">
-              {/* LEFT COLUMN: Cart Items */}
+              {/* Cart Items */}
               <div className="col-lg-8">
                 <div className="bg-white rounded shadow-sm overflow-hidden">
                   {cartItems.map((item, index) => (
-                    <div
-                      className="p-3 border-bottom d-flex gap-3 align-items-start"
-                      // Use item.id, fall back to index if id is missing to prevent React errors
-                      key={item.id || index}
-                    >
-                      {/* Image */}
+                    <div key={item.id || index} className="p-3 border-bottom d-flex gap-3 align-items-start">
                       <div
-                        className="bg-light rounded d-flex align-items-center justify-content-center"
-                        style={{
-                          width: "100px",
-                          height: "100px",
-                          fontSize: "2rem",
-                        }}
+                        className="bg-light rounded d-flex align-items-center justify-content-center flex-shrink-0"
+                        style={{ width: "100px", height: "100px", fontSize: "2rem" }}
                       >
-                        {item.img}
+                        {item.image ? (
+                          <img src={item.image} alt={item.name} style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }} />
+                        ) : (
+                          item.img
+                        )}
                       </div>
- 
-                      {/* Details */}
+
                       <div className="flex-grow-1">
                         <h6 className="fw-bold mb-1">{item.name}</h6>
-                        <p className="text-muted small mb-1">
-                          Seller: RetailNet
-                        </p>
- 
+                        <p className="text-muted small mb-1">Seller: RetailNet</p>
+
                         <div className="d-flex align-items-center gap-2 mb-2">
-                          <span className="fw-bold fs-5">
-                            ₹{item.price * (item.qty || 1)}
-                          </span>
-                          <span className="text-muted small text-decoration-line-through">
-                            ₹{item.price * (item.qty || 1) + 500}
-                          </span>
-                          <span className="text-success small fw-bold">
-                            20% Off
-                          </span>
+                          <span className="fw-bold fs-5">₹{item.price * (item.qty || 1)}</span>
+                          <span className="text-muted small text-decoration-line-through">₹{item.price * (item.qty || 1) + 500}</span>
+                          <span className="text-success small fw-bold">20% Off</span>
                         </div>
- 
-                        {/* Controls */}
+
                         <div className="d-flex align-items-center gap-4">
                           <div className="d-flex align-items-center gap-2">
                             <button
@@ -110,9 +82,7 @@ const Cart = () => {
                             >
                               <Minus size={14} />
                             </button>
-                            <span className="fw-bold px-2">
-                              {item.qty || 1}
-                            </span>
+                            <span className="fw-bold px-2">{item.qty || 1}</span>
                             <button
                               className="btn btn-sm btn-outline-secondary rounded-circle p-1"
                               style={{ width: "28px", height: "28px" }}
@@ -133,67 +103,50 @@ const Cart = () => {
                     </div>
                   ))}
                 </div>
- 
+
                 <div className="d-flex justify-content-end mt-3">
-                  <Link
-                    to="/"
-                    className="btn btn-outline-dark d-flex align-items-center gap-2"
-                  >
+                  <Link to="/" className="btn btn-outline-dark d-flex align-items-center gap-2">
                     <ArrowLeft size={16} /> Continue Shopping
                   </Link>
                 </div>
               </div>
- 
-              {/* RIGHT COLUMN: Price Details */}
+
+              {/* Price Summary */}
               <div className="col-lg-4">
-                <div
-                  className="bg-white rounded shadow-sm p-3 position-sticky"
-                  style={{ top: "90px" }}
-                >
-                  <h6 className="text-muted text-uppercase fw-bold small border-bottom pb-2">
-                    Price Details
-                  </h6>
- 
+                <div className="bg-white rounded shadow-sm p-3 position-sticky" style={{ top: "90px" }}>
+                  <h6 className="text-muted text-uppercase fw-bold small border-bottom pb-2">Price Details</h6>
+
                   <div className="d-flex justify-content-between mb-2 mt-3">
-                    <span>
-                      Price ({getCartCount ? getCartCount() : 0} items)
-                    </span>
+                    <span>Price ({getCartCount?.() || 0} items)</span>
                     <span>₹{totalAmount}</span>
                   </div>
- 
+
                   <div className="d-flex justify-content-between mb-2 text-success">
                     <span>Discount</span>
                     <span>- ₹{discount}</span>
                   </div>
- 
+
                   <div className="d-flex justify-content-between mb-3">
                     <span>Delivery Charges</span>
-                    <span
-                      className={deliveryCharges === 0 ? "text-success" : ""}
-                    >
+                    <span className={deliveryCharges === 0 ? "text-success" : ""}>
                       {deliveryCharges === 0 ? "Free" : `₹${deliveryCharges}`}
                     </span>
                   </div>
- 
+
                   <hr className="border-dashed" />
- 
+
                   <div className="d-flex justify-content-between mb-4">
                     <span className="fw-bold fs-5">Total Amount</span>
                     <span className="fw-bold fs-5">₹{finalAmount}</span>
                   </div>
- 
-                  <button
-                    className="btn btn-dark w-100 py-3 fw-bold shadow-sm text-white"
-                    onClick={handleCheckout}
-                  >
+
+                  <button className="btn btn-dark w-100 py-3 fw-bold shadow-sm" onClick={handleCheckout}>
                     PLACE ORDER
                   </button>
- 
+
                   <div className="mt-3 d-flex align-items-center justify-content-center gap-2 text-muted small">
                     <ShieldCheck size={16} />
-                    <span>
-                      Safe and Secure Payments. 100% Authentic products.
-                    </span>
+                    <span>Safe and Secure Payments. 100% Authentic products.</span>
                   </div>
                 </div>
               </div>
@@ -205,5 +158,5 @@ const Cart = () => {
     </>
   );
 };
- 
+
 export default Cart;

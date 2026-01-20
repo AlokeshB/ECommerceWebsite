@@ -22,8 +22,7 @@ const Login = () => {
       return;
     }
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       setError("Please enter a valid email address");
       return;
     }
@@ -36,7 +35,6 @@ const Login = () => {
         fullName: isAdmin ? "System Administrator" : email.split("@")[0],
         role: isAdmin ? "admin" : "user",
       };
-
       login(userData);
       navigate(isAdmin ? "/admin" : "/");
       setLoading(false);
@@ -51,8 +49,7 @@ const Login = () => {
           <div className="row justify-content-center">
             <div className="col-12 col-md-5">
               <button onClick={() => navigate("/")} className="btn btn-link text-dark p-0 d-flex align-items-center gap-2 mb-4">
-                <ArrowLeft size={20} />
-                Back to Home
+                <ArrowLeft size={20} /> Back to Home
               </button>
 
               <div className="card shadow-sm border-0">
@@ -70,12 +67,28 @@ const Login = () => {
                   <form onSubmit={handleSubmit}>
                     <div className="mb-3">
                       <label className="form-label fw-bold small">Email Address</label>
-                      <input type="email" className="form-control" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} disabled={loading} required />
+                      <input
+                        type="email"
+                        className="form-control"
+                        placeholder="you@example.com"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        disabled={loading}
+                        required
+                      />
                     </div>
 
                     <div className="mb-4">
                       <label className="form-label fw-bold small">Password</label>
-                      <input type="password" className="form-control" placeholder="Enter your password" value={password} onChange={(e) => setPassword(e.target.value)} disabled={loading} required />
+                      <input
+                        type="password"
+                        className="form-control"
+                        placeholder="Enter your password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        disabled={loading}
+                        required
+                      />
                     </div>
 
                     <button type="submit" className="btn btn-dark w-100 fw-bold py-2 mb-3" disabled={loading}>
