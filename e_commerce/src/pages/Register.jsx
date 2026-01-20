@@ -158,7 +158,7 @@ const Register = () => {
                         className="form-control"
                         id="name"
                         name="name"
-                        placeholder="John Doe"
+                        placeholder="Enter your full name"
                         value={formData.name}
                         onChange={handleChange}
                         disabled={loading}
@@ -212,7 +212,7 @@ const Register = () => {
                         className="form-control"
                         id="phoneNo"
                         name="phoneNo"
-                        placeholder="9876543210"
+                        placeholder="Enter 10-digit number"
                         value={formData.phoneNo}
                         onChange={handleChange}
                         maxLength="10"

@@ -1,5 +1,6 @@
-import React from 'react';
+import {React} from 'react';
 import { Facebook, Twitter, Instagram, Mail, Phone, MapPin } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
  
 const Footer = () => {
   return (
@@ -28,12 +29,13 @@ const Footer = () => {
               <li><a href="#" className="text-decoration-none text-muted">Home</a></li>
               <li><a href="#" className="text-decoration-none text-muted">Shop</a></li>
               <li><a href="#" className="text-decoration-none text-muted">About Us</a></li>
-              <li><a href="#" className="text-decoration-none text-muted">Contact</a></li>
+              {/* <li><a href="#" className="text-decoration-none text-muted">Contact</a></li> */}
+              <li><Link to ="/profile" className="text-decoration-none text-muted">Order Status</Link></li>
             </ul>
           </div>
  
           {/* Column 3: Customer Care */}
-          <div className="col-md-2 col-6">
+          {/* <div className="col-md-2 col-6">
             <h6 className="fw-bold text-dark mb-3">Support</h6>
             <ul className="list-unstyled text-muted small d-flex flex-column gap-2">
               <li><a href="#" className="text-decoration-none text-muted">FAQ</a></li>
@@ -41,7 +43,7 @@ const Footer = () => {
               <li><a href="#" className="text-decoration-none text-muted">Returns</a></li>
               <li><a href="#" className="text-decoration-none text-muted">Order Status</a></li>
             </ul>
-          </div>
+          </div> */}
  
           {/* Column 4: Contact Info */}
           <div className="col-md-4">
@@ -53,18 +55,27 @@ const Footer = () => {
               </li>
               <li className="d-flex align-items-center gap-2">
                 <Phone size={16} className="text-dark flex-shrink-0" />
-                <span className="text-muted">+91 98765 43210</span>
+                <span className="text-muted">+91 86973 29250</span>
               </li>
               <li className="d-flex align-items-center gap-2">
                 <Mail size={16} className="text-dark flex-shrink-0" />
-                <span className="text-muted">support@eshop.com</span>
+                <span className="text-muted">support@fashionhub.com</span>
               </li>
-              <li className="d-flex align-items-center gap-2">
+              {/* <li className="d-flex align-items-center gap-2">
                 <div className="text-dark flex-shrink-0">
                   <h6 className="text-muted">Contributors</h6>
                 <span className="text-muted">Ahan Sarkar <br />Aminur Rahman <br />Purbadri Ghosh <br />Alokesh Bhattacharya </span>
                 </div>
-              </li>
+              </li> */}
+            </ul>
+          </div>
+          <div className="col-md-2 col-6">
+            <h6 className="fw-bold text-dark mb-3">Contributors</h6>
+            <ul className="list-unstyled text-muted small d-flex flex-column gap-2">
+              <li className="text-decoration-none text-muted">AHAN SARKAR</li>
+              <li className="text-decoration-none text-muted">AMINUR RAHMAN</li>
+              <li className="text-decoration-none text-muted">PURBADRI GHOSH</li>
+              <li className="text-decoration-none text-muted">ALOKESH BHATTACHARYA</li>
             </ul>
           </div>
         </div>
