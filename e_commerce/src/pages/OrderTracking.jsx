@@ -11,12 +11,22 @@ const OrderTracking = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+<<<<<<< Updated upstream
     if (orderId && getOrderById) {
       const foundOrder = getOrderById(orderId);
       setOrder(foundOrder);
       setLoading(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
+=======
+    // 1. Fetch orders from "Database"
+    const storedOrders = JSON.parse(localStorage.getItem("fhub_orders")) || [];
+    // 2. Find the matching order
+    const foundOrder = storedOrders.find((o) => o.id === orderId);
+ 
+    setOrder(foundOrder);
+    setLoading(false);
+>>>>>>> Stashed changes
   }, [orderId]);
  
   const steps = [
