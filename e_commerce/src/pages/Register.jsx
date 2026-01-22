@@ -21,9 +21,9 @@ const Register = () => {
     name: "",
     email: "",
     phoneNo: "",
+    address: "",
     password: "",
-    confirmPassword: "",
-    age: "",
+    confirmPassword: ""
   });
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -36,9 +36,9 @@ const Register = () => {
   };
 
   const validateForm = (data) => {
-    const { name, email, phoneNo, password, confirmPassword, age } = data;
+    const { name, email, phoneNo, password, confirmPassword, address } = data;
 
-    if (!name || !age || !email || !password || !confirmPassword || !phoneNo) {
+    if (!name  || !email || !password || !confirmPassword || !phoneNo || !address) {
       return "Please fill in all fields.";
     }
     if (!/^[A-Za-z\s]{2,}$/.test(name)) {
@@ -49,12 +49,6 @@ const Register = () => {
     }
     if (!/^[0-9]{10}$/.test(phoneNo)) {
       return "Phone number must be 10 digits.";
-    }
-    if (parseInt(age) < 18) {
-      return "You must be at least 18 years old to register.";
-    }
-    if (parseInt(age) > 100) {
-      return "Please enter a valid age.";
     }
     if (password.length < 8) {
       return "Password must be at least 8 characters long.";
@@ -75,7 +69,7 @@ const Register = () => {
       setError(validationError);
       return;
     }
-
+    localStorage.setItem("fhub_registered_user", JSON.stringify(formData));
     setLoading(true);
     setTimeout(() => {
       login({
@@ -83,8 +77,10 @@ const Register = () => {
         fullName: formData.name,
         email: formData.email,
         phone: formData.phoneNo,
+        address: formData.address,
         role: "user",
       });
+      console.log(formData);
       setSuccess("Registration successful! Redirecting to login...");
       setLoading(false);
       setTimeout(() => navigate("/login"), 1500);
@@ -133,17 +129,6 @@ const Register = () => {
                     />
 
                     <FormField
-                      label="Age"
-                      id="age"
-                      type="number"
-                      name="age"
-                      placeholder="25"
-                      value={formData.age}
-                      onChange={handleChange}
-                      disabled={loading}
-                    />
-
-                    <FormField
                       label="Email Address"
                       id="email"
                       type="email"
@@ -165,6 +150,23 @@ const Register = () => {
                       maxLength="10"
                       disabled={loading}
                     />
+
+                    <div className="mb-3">
+                      <label htmlFor="address" className="form-label fw-bold small">
+                        Address
+                      </label>
+                      <textarea
+                        id="address"
+                        name="address"
+                        className="form-control"
+                        placeholder="Enter your full address"
+                        value={formData.address}
+                        onChange={handleChange}
+                        disabled={loading}
+                        rows="3"
+                        required
+                      />
+                    </div>
 
                     <FormField
                       label="Password"

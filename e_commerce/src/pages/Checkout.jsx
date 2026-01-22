@@ -52,9 +52,11 @@ const Checkout = () => {
       deliveryCharges,
       totalAmount: finalAmount,
       paymentMethod,
-      address: user?.address || "Default Address",
-      city: user?.city || "City",
-      zip: user?.zip || "000000",
+      address: user?.address || "No address provided",
+      city: user?.city || "N/A",
+      zip: user?.zip || "N/A",
+      date: new Date().toLocaleDateString("en-IN"),
+      total: finalAmount,
     });
 
     // Simulate API call

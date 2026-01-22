@@ -7,7 +7,7 @@ export const useOrder = () => useContext(OrderContext);
 export const OrderProvider = ({ children }) => {
   const [orders, setOrders] = useState(() => {
     try {
-      const localOrders = localStorage.getItem("eshop_orders");
+      const localOrders = localStorage.getItem("fhub_orders");
       return localOrders ? JSON.parse(localOrders) : [];
     } catch {
       return [];
@@ -15,7 +15,7 @@ export const OrderProvider = ({ children }) => {
   });
 
   useEffect(() => {
-    localStorage.setItem("eshop_orders", JSON.stringify(orders));
+    localStorage.setItem("fhub_orders", JSON.stringify(orders));
   }, [orders]);
 
   const createOrder = (orderData) => {
