@@ -29,10 +29,17 @@ const Login = () => {
     setLoading(true);
     setTimeout(() => {
       const isAdmin = email === "admin@fashionhub.com" && password === "admin123";
+      const registeredData = JSON.parse(localStorage.getItem("fhub_registered_user"));
+      if (!isAdmin && (!registeredData || registeredData.email !== email)) {
+        setError("Invalid email or user not found.");
+        setLoading(false);
+        return;
+      }
       const userData = {
         email,
-        fullName: isAdmin ? "System Administrator" : email.split("@")[0],
+        fullName: isAdmin ? "System Administrator" : registeredData.name,
         role: isAdmin ? "admin" : "user",
+        address: registeredData.address,
       };
       login(userData);
       navigate(isAdmin ? "/admin" : "/");

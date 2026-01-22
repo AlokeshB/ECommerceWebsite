@@ -28,32 +28,32 @@ const Cart = () => {
     <>
       <Navbar />
       <div className="d-flex flex-column min-vh-100 bg-light">
-        <div className="container py-4 flex-grow-1">
-          <h4 className="fw-bold mb-4">Shopping Cart ({getCartCount?.() || 0} items)</h4>
+        <div className="container py-2 py-md-4 flex-grow-1">
+          <h4 className="fw-bold mb-3 mb-md-4" style={{ fontSize: "18px" }}>Shopping Cart ({getCartCount?.() || 0} items)</h4>
 
           {cartItems.length === 0 ? (
-            <div className="text-center py-5 bg-white rounded shadow-sm">
+            <div className="text-center py-4 py-md-5 bg-white rounded shadow-sm">
               <img
                 src="https://cdni.iconscout.com/illustration/premium/thumb/empty-cart-2130356-1800917.png"
                 alt="Empty Cart"
-                style={{ width: "200px", opacity: 0.8 }}
+                style={{ width: "150px", width: "clamp(120px, 40vw, 200px)", opacity: 0.8 }}
               />
               <h5 className="mt-3">Your cart is empty!</h5>
-              <p className="text-muted">Add items to it now.</p>
-              <Link to="/" className="btn btn-dark px-4 mt-2">
+              <p className="text-muted small">Add items to it now.</p>
+              <Link to="/" className="btn btn-dark px-3 px-md-4 mt-2">
                 Shop Now
               </Link>
             </div>
           ) : (
-            <div className="row g-4">
+            <div className="row g-2 g-md-4">
               {/* Cart Items */}
               <div className="col-lg-8">
                 <div className="bg-white rounded shadow-sm overflow-hidden">
                   {cartItems.map((item, index) => (
-                    <div key={item.id || index} className="p-3 border-bottom d-flex gap-3 align-items-start">
+                    <div key={item.id || index} className="p-2 p-md-3 border-bottom d-flex gap-2 gap-md-3 align-items-start">
                       <div
                         className="bg-light rounded d-flex align-items-center justify-content-center flex-shrink-0"
-                        style={{ width: "100px", height: "100px", fontSize: "2rem" }}
+                        style={{ width: "80px", width: "clamp(70px, 20vw, 100px)", height: "80px", height: "clamp(70px, 20vw, 100px)", fontSize: "1.5rem" }}
                       >
                         {item.image ? (
                           <img src={item.image} alt={item.name} style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }} />
@@ -63,20 +63,20 @@ const Cart = () => {
                       </div>
 
                       <div className="flex-grow-1">
-                        <h6 className="fw-bold mb-1">{item.name}</h6>
+                        <h6 className="fw-bold mb-1" style={{ fontSize: "14px" }}>{item.name}</h6>
                         <p className="text-muted small mb-1">Seller: RetailNet</p>
 
-                        <div className="d-flex align-items-center gap-2 mb-2">
-                          <span className="fw-bold fs-5">₹{item.price * (item.qty || 1)}</span>
+                        <div className="d-flex align-items-center gap-2 mb-2 flex-wrap">
+                          <span className="fw-bold" style={{ fontSize: "14px" }}>₹{item.price * (item.qty || 1)}</span>
                           <span className="text-muted small text-decoration-line-through">₹{item.price * (item.qty || 1) + 500}</span>
                           <span className="text-success small fw-bold">20% Off</span>
                         </div>
 
-                        <div className="d-flex align-items-center gap-4">
+                        <div className="d-flex align-items-center gap-2 gap-md-4 flex-wrap">
                           <div className="d-flex align-items-center gap-2">
                             <button
                               className="btn btn-sm btn-outline-secondary rounded-circle p-1"
-                              style={{ width: "28px", height: "28px" }}
+                              style={{ width: "24px", height: "24px" }}
                               onClick={() => updateQuantity(item.id, -1)}
                               disabled={(item.qty || 1) <= 1}
                             >
@@ -113,20 +113,20 @@ const Cart = () => {
 
               {/* Price Summary */}
               <div className="col-lg-4">
-                <div className="bg-white rounded shadow-sm p-3 position-sticky" style={{ top: "90px" }}>
+                <div className="bg-white rounded shadow-sm p-2 p-md-3 position-sticky" style={{ top: "70px" }}>
                   <h6 className="text-muted text-uppercase fw-bold small border-bottom pb-2">Price Details</h6>
 
-                  <div className="d-flex justify-content-between mb-2 mt-3">
+                  <div className="d-flex justify-content-between mb-2 mt-3" style={{ fontSize: "13px" }}>
                     <span>Price ({getCartCount?.() || 0} items)</span>
                     <span>₹{totalAmount}</span>
                   </div>
 
-                  <div className="d-flex justify-content-between mb-2 text-success">
+                  <div className="d-flex justify-content-between mb-2 text-success" style={{ fontSize: "13px" }}>
                     <span>Discount</span>
                     <span>- ₹{discount}</span>
                   </div>
 
-                  <div className="d-flex justify-content-between mb-3">
+                  <div className="d-flex justify-content-between mb-3" style={{ fontSize: "13px" }}>
                     <span>Delivery Charges</span>
                     <span className={deliveryCharges === 0 ? "text-success" : ""}>
                       {deliveryCharges === 0 ? "Free" : `₹${deliveryCharges}`}
@@ -135,12 +135,12 @@ const Cart = () => {
 
                   <hr className="border-dashed" />
 
-                  <div className="d-flex justify-content-between mb-4">
-                    <span className="fw-bold fs-5">Total Amount</span>
-                    <span className="fw-bold fs-5">₹{finalAmount}</span>
+                  <div className="d-flex justify-content-between mb-3" style={{ fontSize: "14px" }}>
+                    <span className="fw-bold">Total Amount</span>
+                    <span className="fw-bold">₹{finalAmount}</span>
                   </div>
 
-                  <button className="btn btn-dark w-100 py-3 fw-bold shadow-sm" onClick={handleCheckout}>
+                  <button className="btn btn-dark w-100 py-2 py-md-3 fw-bold shadow-sm" style={{ fontSize: "14px" }} onClick={handleCheckout}>
                     PLACE ORDER
                   </button>
 

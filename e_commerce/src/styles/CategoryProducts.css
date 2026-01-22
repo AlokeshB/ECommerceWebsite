@@ -23,9 +23,23 @@
 }
 
 /* Responsive Design */
+@media (max-width: 768px) {
+  .product-card {
+    margin-bottom: 0.5rem;
+  }
+  
+  .product-image-wrapper {
+    height: 200px !important;
+  }
+}
+
 @media (max-width: 576px) {
   .product-image-wrapper {
-    height: 250px !important;
+    height: 180px !important;
+  }
+  
+  .product-card:hover {
+    transform: none;
   }
 }
 
