@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
+import { useOrder } from "../context/OrderContext";
 import Navbar from "../components/Navbar";
 import Login from "../pages/Login";
 import {
@@ -12,74 +13,71 @@ import {
   Loader2,
   Lock,
 } from "lucide-react";
- 
+
 const Checkout = () => {
   const { cartItems, getCartTotal, clearCart } = useCart();
   const { user } = useAuth();
+  const { createOrder } = useOrder();
   const navigate = useNavigate();
- 
+
   const [isProcessing, setIsProcessing] = useState(false);
   const [orderPlaced, setOrderPlaced] = useState(false);
   const [selectedAddress, setSelectedAddress] = useState("default");
   const [paymentMethod, setPaymentMethod] = useState("upi");
- 
+  const [newOrderId, setNewOrderId] = useState("");
+
   // Redirect if empty cart
   useEffect(() => {
     if (user && cartItems.length === 0 && !orderPlaced) {
       navigate("/cart");
     }
   }, [user, cartItems, navigate, orderPlaced]);
- 
+
   const handlePlaceOrder = () => {
     setIsProcessing(true);
- 
-    // 1. CREATE ORDER OBJECT
-    const orderId = "ORD" + Math.floor(100000 + Math.random() * 900000); // Random 6 digit ID
-    const newOrder = {
-      id: orderId,
-      userId: user.id,
+
+    // Calculate total amount
+    const totalAmount = getCartTotal();
+    const discount = totalAmount > 1000 ? 200 : 0;
+    const deliveryCharges = totalAmount > 500 ? 0 : 40;
+    const finalAmount = totalAmount - discount + deliveryCharges;
+
+    // Create order using OrderContext
+    const newOrder = createOrder({
+      customerName: user?.fullName || user?.name || "Customer",
+      email: user?.email,
       items: cartItems,
-      total: getCartTotal(),
-      date: new Date().toLocaleDateString("en-IN", {
-        day: "numeric",
-        month: "short",
-        year: "numeric",
-      }),
-      status: "Ordered", // Initial Status
-      address: user.address,
-      city: user.city,
-      zip: user.zip,
-      paymentMethod: paymentMethod,
-    };
- 
-    // 2. SIMULATE API CALL
+      subtotal: totalAmount,
+      discount,
+      deliveryCharges,
+      totalAmount: finalAmount,
+      paymentMethod,
+      address: user?.address || "Default Address",
+      city: user?.city || "City",
+      zip: user?.zip || "000000",
+    });
+
+    // Simulate API call
     setTimeout(() => {
       setIsProcessing(false);
-      setOrderPlaced(true); // Show Success Screen
- 
-      // 3. SAVE TO LOCAL STORAGE (Simulating Database)
-      const existingOrders =
-        JSON.parse(localStorage.getItem("eshop_orders")) || [];
-      localStorage.setItem(
-        "eshop_orders",
-        JSON.stringify([newOrder, ...existingOrders])
-      );
- 
-      // 4. CLEAR CART & REDIRECT
+      setOrderPlaced(true);
+      setNewOrderId(newOrder.id);
+
+      // Clear cart & redirect
       setTimeout(() => {
         clearCart();
-        navigate(`/tracking/${orderId}`); // Redirect to unique tracking page
+        navigate(`/tracking/${newOrder.id}`);
       }, 2000);
     }, 2000);
   };
- 
+
   if (orderPlaced) {
     return (
       <div className="min-vh-100 d-flex flex-column align-items-center justify-content-center bg-white">
         <div className="text-center animate__animated animate__zoomIn">
           <CheckCircle size={80} className="text-success mb-3" />
           <h2 className="fw-bold">Order Placed!</h2>
-          <p className="text-muted fs-5">Thank you, {user?.fullName}.</p>
+          <p className="text-muted fs-5">Thank you, {user?.fullName || user?.name}.</p>
           <div className="mt-4 d-flex align-items-center justify-content-center gap-2">
             <Loader2
               className="spinner-border text-dark border-0"
@@ -91,7 +89,7 @@ const Checkout = () => {
       </div>
     );
   }
- 
+
   if (!user) {
     return (
       <div className="bg-light min-vh-100 d-flex flex-column">

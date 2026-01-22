@@ -2,20 +2,21 @@ import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import { Check, Package, Truck, Home, MapPin, Loader2 } from "lucide-react";
- 
+import { useOrder } from "../context/OrderContext";
+
 const OrderTracking = () => {
   const { orderId } = useParams();
+  const { getOrderById } = useOrder();
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
- 
+
   useEffect(() => {
-    // 1. Fetch orders from "Database"
-    const storedOrders = JSON.parse(localStorage.getItem("eshop_orders")) || [];
-    // 2. Find the matching order
-    const foundOrder = storedOrders.find((o) => o.id === orderId);
- 
-    setOrder(foundOrder);
-    setLoading(false);
+    if (orderId && getOrderById) {
+      const foundOrder = getOrderById(orderId);
+      setOrder(foundOrder);
+      setLoading(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [orderId]);
  
   const steps = [
@@ -33,6 +34,12 @@ const OrderTracking = () => {
     if (stepVal < currentStatusVal) return "completed";
     if (stepVal === currentStatusVal) return "active";
     return "pending";
+  };
+
+  // Calculate progress bar width based on order status
+  const getProgressWidth = () => {
+    const statusMap = { Ordered: 0, Packed: 33, Shipped: 66, Delivered: 100 };
+    return statusMap[order?.status] || 0;
   };
  
   if (loading)
@@ -68,7 +75,7 @@ const OrderTracking = () => {
                   <h4 className="fw-bold mb-1">Order #{order.id}</h4>
                   <p className="text-muted small mb-0">
                     Placed on {order.date} | Total: ₹
-                    {order.total.toLocaleString()}
+                    {order.total}
                   </p>
                 </div>
                 <span className="badge bg-success p-2">
@@ -79,8 +86,10 @@ const OrderTracking = () => {
               {/* Progress Bar */}
               <div className="position-relative py-4 mb-4">
                 <div className="progress" style={{ height: "4px" }}>
-                  {/* Mock progress bar width */}
-                  <div className="progress-bar" style={{ width: "15%" }}></div>
+                  <div 
+                    className="progress-bar bg-dark" 
+                    style={{ width: `${getProgressWidth()}%`, transition: "width 0.3s ease" }}
+                  ></div>
                 </div>
                 <div className="d-flex justify-content-between position-absolute top-50 start-0 w-100 translate-middle-y">
                   {steps.map((step, idx) => {

@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, AlertCircle } from "lucide-react";
-import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { useAuth } from "../context/AuthContext";
 
@@ -43,7 +42,6 @@ const Login = () => {
 
   return (
     <>
-      <Navbar />
       <div className="d-flex flex-column min-vh-100 bg-light">
         <div className="container py-5 flex-grow-1">
           <div className="row justify-content-center">

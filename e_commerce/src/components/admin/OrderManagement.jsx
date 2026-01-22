@@ -1,15 +1,10 @@
 import React, { useState } from "react";
 import { Eye, Edit2, Trash2, Search, Filter, ChevronDown } from "lucide-react";
 import "bootstrap/dist/css/bootstrap.min.css";
+import { useOrder } from "../../context/OrderContext";
 
 const OrderManagement = () => {
-  const [orders, setOrders] = useState([
-    { id: "ORD001", customer: "John Doe", email: "john@example.com", date: "2024-01-15", amount: 2500, status: "Pending", items: 3 },
-    { id: "ORD002", customer: "Jane Smith", email: "jane@example.com", date: "2024-01-14", amount: 1800, status: "Processing", items: 2 },
-    { id: "ORD003", customer: "Mike Johnson", email: "mike@example.com", date: "2024-01-13", amount: 3200, status: "Delivered", items: 4 },
-    { id: "ORD004", customer: "Sarah Williams", email: "sarah@example.com", date: "2024-01-12", amount: 4500, status: "Shipped", items: 5 },
-    { id: "ORD005", customer: "Robert Brown", email: "robert@example.com", date: "2024-01-11", amount: 2100, status: "Cancelled", items: 1 },
-  ]);
+  const { orders, updateOrderStatus, deleteOrder } = useOrder();
 
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("All");
@@ -17,12 +12,12 @@ const OrderManagement = () => {
   const [editingOrder, setEditingOrder] = useState(null);
   const [showStatusModal, setShowStatusModal] = useState(false);
 
-  const statuses = ["Pending", "Processing", "Shipped", "Delivered", "Cancelled"];
+  const statuses = ["Processing", "Shipped", "Delivered", "Cancelled"];
   const allStatuses = ["All", ...statuses];
 
   const statusColors = {
-    Pending: "warning",
     Processing: "info",
+    Pending: "warning",
     Shipped: "primary",
     Delivered: "success",
     Cancelled: "danger",
@@ -31,25 +26,21 @@ const OrderManagement = () => {
   const filteredOrders = orders.filter((order) => {
     const matchesSearch =
       order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.customer.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.email.toLowerCase().includes(searchTerm.toLowerCase());
+      (order.customerName || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (order.email || "").toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = selectedStatus === "All" || order.status === selectedStatus;
     return matchesSearch && matchesStatus;
   });
 
   const handleStatusChange = (orderId, newStatus) => {
-    setOrders(
-      orders.map((order) =>
-        order.id === orderId ? { ...order, status: newStatus } : order
-      )
-    );
+    updateOrderStatus(orderId, newStatus);
     setEditingOrder(null);
     setShowStatusModal(false);
   };
 
   const handleDeleteOrder = (id) => {
     if (window.confirm("Are you sure you want to delete this order?")) {
-      setOrders(orders.filter((order) => order.id !== id));
+      deleteOrder(id);
     }
   };
 
@@ -121,10 +112,10 @@ const OrderManagement = () => {
                   <React.Fragment key={order.id}>
                     <tr>
                       <td className="small fw-bold">{order.id}</td>
-                      <td className="small">{order.customer}</td>
+                      <td className="small">{order.customerName || "N/A"}</td>
                       <td className="small">{new Date(order.date).toLocaleDateString()}</td>
-                      <td className="small fw-bold">₹{order.amount}</td>
-                      <td className="small">{order.items}</td>
+                      <td className="small fw-bold">₹{order.totalAmount || order.amount}</td>
+                      <td className="small">{order.items?.length || 0}</td>
                       <td className="small">
                         <span className={`badge bg-${statusColors[order.status]}`}>
                           {order.status}
@@ -164,18 +155,18 @@ const OrderManagement = () => {
                             <div className="row g-3">
                               <div className="col-md-6">
                                 <p>
-                                  <strong>Email:</strong> {order.email}
+                                  <strong>Email:</strong> {order.email || "N/A"}
                                 </p>
                                 <p>
                                   <strong>Order Date:</strong> {new Date(order.date).toLocaleString()}
                                 </p>
                                 <p>
-                                  <strong>Total Items:</strong> {order.items}
+                                  <strong>Total Items:</strong> {order.items?.length || 0}
                                 </p>
                               </div>
                               <div className="col-md-6">
                                 <p>
-                                  <strong>Order Total:</strong> ₹{order.amount}
+                                  <strong>Order Total:</strong> ₹{order.totalAmount || order.amount}
                                 </p>
                                 <p>
                                   <strong>Current Status:</strong>{" "}
@@ -200,16 +191,17 @@ const OrderManagement = () => {
                                   </tr>
                                 </thead>
                                 <tbody>
-                                  <tr>
-                                    <td>Premium Wireless Headphones</td>
-                                    <td>1</td>
-                                    <td>₹2,999</td>
-                                  </tr>
-                                  {order.items > 1 && (
+                                  {order.items && order.items.length > 0 ? (
+                                    order.items.map((item, index) => (
+                                      <tr key={index}>
+                                        <td>{item.name}</td>
+                                        <td>{item.quantity}</td>
+                                        <td>₹{item.price * item.quantity}</td>
+                                      </tr>
+                                    ))
+                                  ) : (
                                     <tr>
-                                      <td>Classic Denim Jacket</td>
-                                      <td>1</td>
-                                      <td>₹1,899</td>
+                                      <td colSpan="3" className="text-center text-muted">No items</td>
                                     </tr>
                                   )}
                                 </tbody>

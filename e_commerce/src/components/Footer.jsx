@@ -25,9 +25,8 @@ const Footer = () => {
           <div className="col-md-2 col-6">
             <h6 className="fw-bold text-dark mb-3">Quick Links</h6>
             <ul className="list-unstyled text-muted small d-flex flex-column gap-2">
-              <li><a href="#" className="text-decoration-none text-muted">Home</a></li>
-              <li><a href="#" className="text-decoration-none text-muted">Shop</a></li>
-              <li><a href="#" className="text-decoration-none text-muted">About Us</a></li>
+              <li><Link to="/" className="text-decoration-none text-muted">Home</Link></li>
+              <li><Link to="/about" className="text-decoration-none text-muted">About Us</Link></li>
               <li><Link to="/profile" className="text-decoration-none text-muted">Order Status</Link></li>
             </ul>
           </div>

@@ -1,51 +1,8 @@
-.filter-sidebar {
-  max-height: calc(100vh - 200px);
-  overflow-y: auto;
-}
-
-.filter-group {
-  position: relative;
-}
-
-.filter-options {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.form-check-input {
-  width: 1.2em;
-  height: 1.2em;
-  border: 2px solid #999;
-  border-radius: 3px;
-  cursor: pointer;
-  accent-color: #000;
-}
-
-.form-check-input:checked {
-  background-color: #000;
-  border-color: #000;
-}
-
-.form-check-label {
-  cursor: pointer;
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  user-select: none;
-  margin-left: 0.5rem;
-}
-
-.cursor-pointer {
-  cursor: pointer;
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  user-select: none;
-}
+/* Category Products - Minimal Custom Styles */
 
 .product-card {
-  transition: all 0.3s ease;
   border: 1px solid #e0e0e0;
-  cursor: pointer;
+  transition: all 0.3s ease;
 }
 
 .product-card:hover {
@@ -55,7 +12,6 @@
 
 .product-image-wrapper {
   background-color: #f5f5f5;
-  position: relative;
 }
 
 .product-image-wrapper img {
@@ -66,59 +22,10 @@
   transform: scale(1.05);
 }
 
-.price-filter {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.form-range {
-  height: 4px;
-  background-color: #e0e0e0;
-  border-radius: 2px;
-}
-
-.form-range::-webkit-slider-thumb {
-  appearance: none;
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background: #000;
-  cursor: pointer;
-  border: 2px solid #fff;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-}
-
-.form-range::-moz-range-thumb {
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background: #000;
-  cursor: pointer;
-  border: 2px solid #fff;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-}
-
 /* Responsive Design */
-@media (max-width: 991px) {
-  .filter-sidebar {
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    max-height: none;
-  }
-
-  .product-card {
-    margin-bottom: 1rem;
-  }
-}
-
 @media (max-width: 576px) {
-  .filter-sidebar {
-    margin-bottom: 2rem;
-  }
-
   .product-image-wrapper {
     height: 250px !important;
   }
 }
+

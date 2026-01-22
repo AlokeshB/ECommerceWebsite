@@ -4,31 +4,27 @@ import {
   Package,
   ShoppingCart,
   BarChart3,
-  Settings,
   LogOut,
-  Menu,
-  X,
-  Home,
 } from "lucide-react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import ProductManagement from "../components/admin/ProductManagement";
 import OrderManagement from "../components/admin/OrderManagement";
 import Analytics from "../components/admin/Analytics";
+import { useAuth } from "../context/AuthContext";
+import { useOrder } from "../context/OrderContext";
+import { useProduct } from "../context/ProductContext";
 import "../styles/AdminDashboard.css";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
+  const { logout } = useAuth();
   const [activeTab, setActiveTab] = useState("dashboard");
-  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   const handleLogout = () => {
     if (window.confirm("Are you sure you want to logout?")) {
-      navigate("/");
+      logout();
+      navigate("/login");
     }
-  };
-
-  const handleGoHome = () => {
-    navigate("/");
   };
 
   const menuItems = [
@@ -36,94 +32,50 @@ const AdminDashboard = () => {
     { id: "products", label: "Products", icon: Package },
     { id: "orders", label: "Orders", icon: ShoppingCart },
     { id: "analytics", label: "Analytics", icon: BarChart3 },
-    { id: "settings", label: "Settings", icon: Settings },
   ];
 
   return (
-    <div className="admin-container d-flex">
-      {/* Sidebar */}
-      <aside className={`admin-sidebar bg-dark text-white ${sidebarOpen ? "open" : "closed"}`}>
-        <div className="sidebar-header d-flex justify-content-between align-items-center p-3 border-bottom">
-          <h5 className="mb-0">Admin Panel</h5>
-          <button
-            className="btn btn-dark btn-sm d-lg-none"
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-          >
-            <X size={20} />
-          </button>
-        </div>
+    <div className="admin-container">
+      {/* Top Bar */}
+      <div className="admin-topbar bg-white shadow-sm p-3 d-flex align-items-center justify-content-between">
+        <h4 className="mb-0">
+          {menuItems.find((item) => item.id === activeTab)?.label || "Dashboard"}
+        </h4>
+        <button
+          className="btn btn-danger d-flex align-items-center gap-2"
+          onClick={handleLogout}
+        >
+          <LogOut size={18} />
+          Logout
+        </button>
+      </div>
 
-        <nav className="sidebar-nav">
-          {menuItems.map((item) => {
-            const Icon = item.icon;
-            return (
-              <button
-                key={item.id}
-                className={`nav-item w-100 text-start px-3 py-3 border-0 bg-transparent text-white ${
-                  activeTab === item.id ? "active" : ""
-                }`}
-                onClick={() => {
-                  setActiveTab(item.id);
-                  // Only close sidebar on mobile (below 992px)
-                  if (window.innerWidth < 992) {
-                    setSidebarOpen(false);
-                  }
-                }}
-              >
-                <Icon size={20} className="me-2" />
-                <span>{item.label}</span>
-              </button>
-            );
-          })}
-        </nav>
-
-        <div className="sidebar-footer border-top mt-auto p-3">
-          <button
-            className="btn btn-outline-light w-100 btn-sm mb-2 d-flex align-items-center justify-content-center gap-2"
-            onClick={handleGoHome}
-          >
-            <Home size={18} />
-            Home
-          </button>
-          <button
-            className="btn btn-danger w-100 btn-sm d-flex align-items-center justify-content-center gap-2"
-            onClick={handleLogout}
-          >
-            <LogOut size={18} />
-            Logout
-          </button>
-        </div>
-      </aside>
+      {/* Navigation */}
+      <div className="admin-nav bg-light p-3 border-bottom d-flex gap-2 flex-wrap">
+        {menuItems.map((item) => {
+          const Icon = item.icon;
+          return (
+            <button
+              key={item.id}
+              className={`btn btn-sm ${
+                activeTab === item.id ? "btn-primary" : "btn-outline-primary"
+              } d-flex align-items-center gap-2`}
+              onClick={() => setActiveTab(item.id)}
+            >
+              <Icon size={16} />
+              {item.label}
+            </button>
+          );
+        })}
+      </div>
 
       {/* Main Content */}
-      <main className="admin-content flex-grow-1">
-        {/* Top Bar */}
-        <div className="admin-topbar bg-white shadow-sm p-3 d-flex align-items-center justify-content-between">
-          <button
-            className="btn btn-light d-lg-none"
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-          >
-            <Menu size={24} />
-          </button>
-          <h4 className="mb-0">
-            {menuItems.find((item) => item.id === activeTab)?.label || "Dashboard"}
-          </h4>
-          <div className="topbar-user d-flex align-items-center gap-3">
-            <div className="user-avatar bg-primary text-white rounded-circle d-flex align-items-center justify-content-center fw-bold"
-              style={{ width: "40px", height: "40px" }}>
-              A
-            </div>
-            <span className="d-none d-md-block text-dark fw-bold">Admin</span>
-          </div>
-        </div>
-
-        {/* Content Area */}
+      <main className="admin-content">
         <div className="admin-main-content p-4">
-          {activeTab === "dashboard" && <DashboardHome />}
+          {activeTab === "dashboard" && <DashboardHome setActiveTab={setActiveTab} />}
           {activeTab === "products" && <ProductManagement />}
           {activeTab === "orders" && <OrderManagement />}
           {activeTab === "analytics" && <Analytics />}
-          {activeTab === "settings" && <SettingsPage />}
         </div>
       </main>
     </div>
@@ -131,13 +83,19 @@ const AdminDashboard = () => {
 };
 
 // Dashboard Home Component
-const DashboardHome = () => {
+const DashboardHome = ({ setActiveTab }) => {
+  const { orders } = useOrder();
+  const { products } = useProduct();
+
+  const totalRevenue = orders.reduce((sum, order) => sum + (order.totalAmount || 0), 0);
   const stats = [
-    { label: "Total Products", value: "234", icon: Package, color: "primary" },
-    { label: "Total Orders", value: "1,245", icon: ShoppingCart, color: "success" },
-    { label: "Total Revenue", value: "₹89,450", icon: BarChart3, color: "info" },
-    { label: "Active Users", value: "567", icon: Package, color: "warning" },
+    { label: "Total Products", value: products.length.toString(), icon: Package, color: "primary" },
+    { label: "Total Orders", value: orders.length.toString(), icon: ShoppingCart, color: "success" },
+    { label: "Total Revenue", value: `₹${totalRevenue.toLocaleString("en-IN")}`, icon: BarChart3, color: "info" },
+    { label: "Pending Orders", value: orders.filter((o) => o.status === "Pending").length.toString(), icon: Package, color: "warning" },
   ];
+
+  const recentOrders = orders.slice(0, 5);
 
   return (
     <div>
@@ -181,30 +139,34 @@ const DashboardHome = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {[
-                      { id: "ORD001", customer: "John Doe", amount: "₹2,500", status: "Delivered" },
-                      { id: "ORD002", customer: "Jane Smith", amount: "₹1,800", status: "Pending" },
-                      { id: "ORD003", customer: "Mike Johnson", amount: "₹3,200", status: "Processing" },
-                    ].map((order) => (
-                      <tr key={order.id}>
-                        <td className="small fw-bold">{order.id}</td>
-                        <td className="small">{order.customer}</td>
-                        <td className="small">{order.amount}</td>
-                        <td className="small">
-                          <span
-                            className={`badge ${
-                              order.status === "Delivered"
-                                ? "bg-success"
-                                : order.status === "Pending"
-                                ? "bg-warning"
-                                : "bg-info"
-                            }`}
-                          >
-                            {order.status}
-                          </span>
+                    {recentOrders.length > 0 ? (
+                      recentOrders.map((order) => (
+                        <tr key={order.id}>
+                          <td className="small fw-bold">{order.id}</td>
+                          <td className="small">{order.customerName || order.email}</td>
+                          <td className="small">₹{order.totalAmount?.toLocaleString("en-IN") || "0"}</td>
+                          <td className="small">
+                            <span
+                              className={`badge ${
+                                order.status === "Delivered"
+                                  ? "bg-success"
+                                  : order.status === "Pending"
+                                  ? "bg-warning"
+                                  : "bg-info"
+                              }`}
+                            >
+                              {order.status}
+                            </span>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan="4" className="text-center text-muted py-3">
+                          No orders yet
                         </td>
                       </tr>
-                    ))}
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -217,74 +179,29 @@ const DashboardHome = () => {
             <div className="card-header bg-light border-bottom py-3">
               <h6 className="mb-0 fw-bold">Quick Actions</h6>
             </div>
-            <div className="card-body">
-              <button className="btn btn-primary w-100 mb-2">
-                <Package size={18} className="me-2" />
-                Add New Product
+            <div className="card-body d-flex flex-column gap-2">
+              <button 
+                className="btn btn-primary w-100 d-flex align-items-center justify-content-center gap-2"
+                onClick={() => setActiveTab("products")}
+              >
+                <Package size={18} />
+                Manage Products
               </button>
-              <button className="btn btn-info w-100 mb-2">
-                <ShoppingCart size={18} className="me-2" />
-                View All Orders
+              <button 
+                className="btn btn-info w-100 d-flex align-items-center justify-content-center gap-2"
+                onClick={() => setActiveTab("orders")}
+              >
+                <ShoppingCart size={18} />
+                Manage Orders
               </button>
-              <button className="btn btn-secondary w-100">
-                <BarChart3 size={18} className="me-2" />
-                View Reports
+              <button 
+                className="btn btn-secondary w-100 d-flex align-items-center justify-content-center gap-2"
+                onClick={() => setActiveTab("analytics")}
+              >
+                <BarChart3 size={18} />
+                View Analytics
               </button>
             </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// Settings Page Component
-const SettingsPage = () => {
-  return (
-    <div className="row">
-      <div className="col-lg-8">
-        <div className="card border-0 shadow-sm">
-          <div className="card-header bg-light border-bottom py-3">
-            <h6 className="mb-0 fw-bold">Admin Settings</h6>
-          </div>
-          <div className="card-body">
-            <form>
-              <div className="mb-3">
-                <label className="form-label fw-bold">Store Name</label>
-                <input
-                  type="text"
-                  className="form-control"
-                  defaultValue="Fashion Hub"
-                />
-              </div>
-              <div className="mb-3">
-                <label className="form-label fw-bold">Store Email</label>
-                <input
-                  type="email"
-                  className="form-control"
-                  defaultValue="admin@fashionhub.com"
-                />
-              </div>
-              <div className="mb-3">
-                <label className="form-label fw-bold">Store Phone</label>
-                <input
-                  type="tel"
-                  className="form-control"
-                  defaultValue="+91 9876543210"
-                />
-              </div>
-              <div className="mb-3">
-                <label className="form-label fw-bold">Currency</label>
-                <select className="form-select">
-                  <option>INR (₹)</option>
-                  <option>USD ($)</option>
-                  <option>EUR (€)</option>
-                </select>
-              </div>
-              <button type="submit" className="btn btn-dark">
-                Save Settings
-              </button>
-            </form>
           </div>
         </div>
       </div>

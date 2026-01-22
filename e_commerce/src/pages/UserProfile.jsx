@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import Navbar from "../components/Navbar";
 import { useAuth } from "../context/AuthContext";
+import { useOrder } from "../context/OrderContext";
 import {
   Package,
   User,
@@ -19,6 +20,7 @@ import { useNavigate } from "react-router-dom";
  
 const UserProfile = () => {
   const { user, logout } = useAuth();
+  const { getUserOrders } = useOrder();
   const navigate = useNavigate();
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
@@ -63,7 +65,7 @@ const UserProfile = () => {
     setProfileData({
       firstName: user.firstName || "",
       email: user.email || "",
-      mobile: savedProfile.mobile || user.mobile || "", // Prioritize saved edit
+      mobile: savedProfile.mobile || user.mobile || "",
       altMobile: savedProfile.altMobile || "",
       dob: savedProfile.dob || "",
       age: savedProfile.age || "",
@@ -74,7 +76,6 @@ const UserProfile = () => {
     const savedAddresses =
       JSON.parse(localStorage.getItem("eshop_addresses")) || [];
     if (savedAddresses.length === 0) {
-      // Default to registration address if none exist
       setAddresses([
         {
           id: 1,
@@ -86,10 +87,10 @@ const UserProfile = () => {
       setAddresses(savedAddresses);
     }
  
-    // 3. Load Orders (Mocking Fetch from Local Storage for "My Orders")
-    const savedOrders = JSON.parse(localStorage.getItem("eshop_orders")) || [];
-    setOrders(savedOrders);
-  }, [user, navigate]);
+    // 3. Load User's Orders from OrderContext
+    const userOrders = getUserOrders(user.email);
+    setOrders(userOrders);
+  }, [user, navigate, getUserOrders]);
  
   // --- CAMERA FUNCTIONS ---
   const startCamera = async () => {
