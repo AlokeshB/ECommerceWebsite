@@ -7,7 +7,7 @@ export const useCart = () => useContext(CartContext);
 export const CartProvider = ({ children }) => {
   const [cartItems, setCartItems] = useState(() => {
     try {
-      const localData = localStorage.getItem("eshop_cart");
+      const localData = localStorage.getItem("fhub_cart");
       return localData ? JSON.parse(localData) : [];
     } catch {
       return [];
@@ -15,7 +15,7 @@ export const CartProvider = ({ children }) => {
   });
 
   useEffect(() => {
-    localStorage.setItem("eshop_cart", JSON.stringify(cartItems));
+    localStorage.setItem("fhub_cart", JSON.stringify(cartItems));
   }, [cartItems]);
 
   const addToCart = (product) => {
@@ -56,7 +56,7 @@ export const CartProvider = ({ children }) => {
 
   const clearCart = () => {
     setCartItems([]);
-    localStorage.removeItem("eshop_cart");
+    localStorage.removeItem("fhub_cart");
   };
 
   return (

@@ -61,7 +61,7 @@ const UserProfile = () => {
  
     // 1. Load User Data (Merge Auth User with LocalStorage Data)
     const savedProfile =
-      JSON.parse(localStorage.getItem("eshop_user_profile")) || {};
+      JSON.parse(localStorage.getItem("fhub_user_profile")) || {};
     setProfileData({
       firstName: user.firstName || "",
       email: user.email || "",
@@ -74,7 +74,7 @@ const UserProfile = () => {
  
     // 2. Load Addresses
     const savedAddresses =
-      JSON.parse(localStorage.getItem("eshop_addresses")) || [];
+      JSON.parse(localStorage.getItem("fhub_address")) || [];
     if (savedAddresses.length === 0) {
       setAddresses([
         {
@@ -87,10 +87,17 @@ const UserProfile = () => {
       setAddresses(savedAddresses);
     }
  
+<<<<<<< Updated upstream
     // 3. Load User's Orders from OrderContext
     const userOrders = getUserOrders(user.email);
     setOrders(userOrders);
   }, [user, navigate, getUserOrders]);
+=======
+    // 3. Load Orders (Mocking Fetch from Local Storage for "My Orders")
+    const savedOrders = JSON.parse(localStorage.getItem("fhub_orders")) || [];
+    setOrders(savedOrders);
+  }, [user, navigate]);
+>>>>>>> Stashed changes
  
   // --- CAMERA FUNCTIONS ---
   const startCamera = async () => {
@@ -129,7 +136,7 @@ const UserProfile = () => {
       const updatedProfile = { ...profileData, profilePic: imageSrc };
       setProfileData(updatedProfile);
       localStorage.setItem(
-        "eshop_user_profile",
+        "fhub_user_profile",
         JSON.stringify(updatedProfile)
       );
       setShowCamera(false);
@@ -165,7 +172,7 @@ const UserProfile = () => {
   };
  
   const saveProfileChanges = () => {
-    localStorage.setItem("eshop_user_profile", JSON.stringify(profileData));
+    localStorage.setItem("fhub_user_profile", JSON.stringify(profileData));
     setIsEditing(false);
     alert("Profile updated successfully!");
   };
@@ -180,7 +187,7 @@ const UserProfile = () => {
  
     const updatedAddresses = [...addresses, newAddrObj];
     setAddresses(updatedAddresses);
-    localStorage.setItem("eshop_addresses", JSON.stringify(updatedAddresses));
+    localStorage.setItem("fhub_address", JSON.stringify(updatedAddresses));
  
     setNewAddress({ street: "", city: "", zip: "", state: "" });
     setShowAddAddress(false);
@@ -189,7 +196,7 @@ const UserProfile = () => {
   const removeAddress = (id) => {
     const updated = addresses.filter((addr) => addr.id !== id);
     setAddresses(updated);
-    localStorage.setItem("eshop_addresses", JSON.stringify(updated));
+    localStorage.setItem("fhub_address", JSON.stringify(updated));
   };
  
   if (!user) return null;
