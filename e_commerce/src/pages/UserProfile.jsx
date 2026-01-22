@@ -87,17 +87,10 @@ const UserProfile = () => {
       setAddresses(savedAddresses);
     }
  
-<<<<<<< Updated upstream
     // 3. Load User's Orders from OrderContext
     const userOrders = getUserOrders(user.email);
     setOrders(userOrders);
   }, [user, navigate, getUserOrders]);
-=======
-    // 3. Load Orders (Mocking Fetch from Local Storage for "My Orders")
-    const savedOrders = JSON.parse(localStorage.getItem("fhub_orders")) || [];
-    setOrders(savedOrders);
-  }, [user, navigate]);
->>>>>>> Stashed changes
  
   // --- CAMERA FUNCTIONS ---
   const startCamera = async () => {

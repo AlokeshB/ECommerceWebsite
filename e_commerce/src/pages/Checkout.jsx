@@ -60,24 +60,18 @@ const Checkout = () => {
     // Simulate API call
     setTimeout(() => {
       setIsProcessing(false);
-<<<<<<< Updated upstream
       setOrderPlaced(true);
       setNewOrderId(newOrder.id);
 
-      // Clear cart & redirect
-=======
-      setOrderPlaced(true); // Show Success Screen
- 
-      // 3. SAVE TO LOCAL STORAGE (Simulating Database)
+      // Save to localStorage
       const existingOrders =
         JSON.parse(localStorage.getItem("fhub_orders")) || [];
       localStorage.setItem(
         "fhub_orders",
         JSON.stringify([newOrder, ...existingOrders])
       );
- 
-      // 4. CLEAR CART & REDIRECT
->>>>>>> Stashed changes
+
+      // Clear cart & redirect
       setTimeout(() => {
         clearCart();
         navigate(`/tracking/${newOrder.id}`);

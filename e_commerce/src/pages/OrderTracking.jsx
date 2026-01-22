@@ -2,31 +2,22 @@ import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import { Check, Package, Truck, Home, MapPin, Loader2 } from "lucide-react";
-import { useOrder } from "../context/OrderContext";
 
 const OrderTracking = () => {
   const { orderId } = useParams();
-  const { getOrderById } = useOrder();
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-<<<<<<< Updated upstream
-    if (orderId && getOrderById) {
-      const foundOrder = getOrderById(orderId);
-      setOrder(foundOrder);
-      setLoading(false);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-=======
     // 1. Fetch orders from "Database"
     const storedOrders = JSON.parse(localStorage.getItem("fhub_orders")) || [];
     // 2. Find the matching order
     const foundOrder = storedOrders.find((o) => o.id === orderId);
  
-    setOrder(foundOrder);
-    setLoading(false);
->>>>>>> Stashed changes
+    setTimeout(() => {
+      setOrder(foundOrder);
+      setLoading(false);
+    }, 0);
   }, [orderId]);
  
   const steps = [
