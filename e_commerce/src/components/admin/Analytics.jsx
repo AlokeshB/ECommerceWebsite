@@ -1,55 +1,86 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { TrendingUp, Users, ShoppingCart, DollarSign, Calendar } from "lucide-react";
 import "bootstrap/dist/css/bootstrap.min.css";
+import { useOrder } from "../../context/OrderContext";
+import { useProduct } from "../../context/ProductContext";
 
 const Analytics = () => {
+  const { orders } = useOrder();
+  const { products } = useProduct();
   const [dateRange, setDateRange] = useState("7days");
 
-  const analyticsData = {
-    "7days": {
-      revenue: 45230,
-      orders: 156,
-      customers: 89,
-      avgOrderValue: 290,
-      conversionRate: 3.2,
-    },
-    "30days": {
-      revenue: 185450,
-      orders: 623,
-      customers: 342,
-      avgOrderValue: 298,
-      conversionRate: 3.5,
-    },
-    "90days": {
-      revenue: 589230,
-      orders: 1956,
-      customers: 1023,
-      avgOrderValue: 301,
-      conversionRate: 3.8,
-    },
+  const getDaysAgo = (days) => {
+    const date = new Date();
+    date.setDate(date.getDate() - days);
+    return date;
   };
 
-  const currentData = analyticsData[dateRange];
+  const getFilteredOrders = (days) => {
+    const since = getDaysAgo(days);
+    return orders.filter((order) => new Date(order.date) >= since);
+  };
 
-  const topProducts = [
-    { name: "Premium Wireless Headphones", sales: 234, revenue: 701766 },
-    { name: "Smart Fitness Watch", sales: 189, revenue: 850500 },
-    { name: "Classic Denim Jacket", sales: 156, revenue: 296244 },
-    { name: "Running Sports Shoes", sales: 142, revenue: 454400 },
-  ];
+  const calculateAnalytics = (ordersData) => {
+    const revenue = ordersData.reduce((sum, order) => sum + (order.totalAmount || 0), 0);
+    const customers = new Set(ordersData.map((order) => order.email)).size;
+    const avgOrderValue = ordersData.length > 0 ? Math.round(revenue / ordersData.length) : 0;
+    return {
+      revenue,
+      orders: ordersData.length,
+      customers,
+      avgOrderValue,
+      conversionRate: ordersData.length > 0 ? ((customers / products.length) * 100).toFixed(1) : 0,
+    };
+  };
 
-  const categoryStats = [
-    { category: "Electronics", sales: 45, percentage: 35 },
-    { category: "Fashion", sales: 52, percentage: 40 },
-    { category: "Wearables", sales: 25, percentage: 19 },
-    { category: "Accessories", sales: 8, percentage: 6 },
-  ];
+  const currentData = useMemo(() => {
+    const days = dateRange === "7days" ? 7 : dateRange === "30days" ? 30 : 90;
+    return calculateAnalytics(getFilteredOrders(days));
+  }, [dateRange, orders, products]);
+
+  const topProducts = useMemo(() => {
+    const productSales = {};
+    orders.forEach((order) => {
+      order.items?.forEach((item) => {
+        productSales[item.id] = {
+          name: item.name,
+          sales: (productSales[item.id]?.sales || 0) + item.quantity,
+          revenue: (productSales[item.id]?.revenue || 0) + item.price * item.quantity,
+        };
+      });
+    });
+    return Object.values(productSales)
+      .sort((a, b) => b.sales - a.sales)
+      .slice(0, 4);
+  }, [orders]);
+
+  const categoryStats = useMemo(() => {
+    const stats = {};
+    products.forEach((product) => {
+      if (!stats[product.category]) {
+        stats[product.category] = { category: product.category, sales: 0 };
+      }
+    });
+    orders.forEach((order) => {
+      order.items?.forEach((item) => {
+        const product = products.find((p) => p.id === item.id);
+        if (product && stats[product.category]) {
+          stats[product.category].sales += item.quantity;
+        }
+      });
+    });
+    const total = Object.values(stats).reduce((sum, cat) => sum + cat.sales, 0);
+    return Object.values(stats).map((cat) => ({
+      ...cat,
+      percentage: total > 0 ? Math.round((cat.sales / total) * 100) : 0,
+    }));
+  }, [orders, products]);
 
   const recentActivity = [
-    { time: "10:30 AM", action: "New order placed", details: "ORD005442", icon: ShoppingCart },
-    { time: "09:45 AM", action: "Product reviewed", details: "Premium Headphones - 5 stars", icon: TrendingUp },
-    { time: "08:20 AM", action: "User registered", details: "new.user@example.com", icon: Users },
-    { time: "07:15 AM", action: "Payment received", details: "₹4,500 from Order ORD005441", icon: DollarSign },
+    { time: "Now", action: "Orders", details: `Total: ${orders.length}`, icon: ShoppingCart },
+    { time: "Now", action: "Products", details: `Active: ${products.length}`, icon: TrendingUp },
+    { time: "Now", action: "Categories", details: `${categoryStats.length} categories`, icon: Users },
+    { time: "Now", action: "Revenue", details: `₹${currentData.revenue.toLocaleString()}`, icon: DollarSign },
   ];
 
   return (
@@ -143,23 +174,29 @@ const Analytics = () => {
               <h6 className="mb-0 fw-bold">Top Selling Products</h6>
             </div>
             <div className="card-body">
-              {topProducts.map((product, index) => (
-                <div key={index} className="mb-3 pb-3 border-bottom">
-                  <div className="d-flex justify-content-between align-items-start mb-2">
-                    <p className="mb-0 small fw-bold">{product.name}</p>
-                    <span className="badge bg-primary">{product.sales} sales</span>
+              {topProducts.length > 0 ? (
+                topProducts.map((product, index) => (
+                  <div key={index} className="mb-3 pb-3 border-bottom">
+                    <div className="d-flex justify-content-between align-items-start mb-2">
+                      <p className="mb-0 small fw-bold">{product.name}</p>
+                      <span className="badge bg-primary">{product.sales} sales</span>
+                    </div>
+                    <div className="progress" style={{ height: "6px" }}>
+                      <div
+                        className="progress-bar bg-success"
+                        style={{
+                          width: `${topProducts.length > 0 ? (product.sales / Math.max(...topProducts.map((p) => p.sales))) * 100 : 0}%`,
+                        }}
+                      ></div>
+                    </div>
+                    <p className="mb-0 text-muted small mt-1">
+                      Revenue: ₹{product.revenue.toLocaleString()}
+                    </p>
                   </div>
-                  <div className="progress" style={{ height: "6px" }}>
-                    <div
-                      className="progress-bar bg-success"
-                      style={{ width: `${(product.sales / 234) * 100}%` }}
-                    ></div>
-                  </div>
-                  <p className="mb-0 text-muted small mt-1">
-                    Revenue: ₹{product.revenue.toLocaleString()}
-                  </p>
-                </div>
-              ))}
+                ))
+              ) : (
+                <p className="text-muted text-center py-3">No sales data yet</p>
+              )}
             </div>
           </div>
         </div>
@@ -171,24 +208,28 @@ const Analytics = () => {
               <h6 className="mb-0 fw-bold">Sales by Category</h6>
             </div>
             <div className="card-body">
-              {categoryStats.map((cat, index) => (
-                <div key={index} className="mb-3">
-                  <div className="d-flex justify-content-between align-items-center mb-2">
-                    <p className="mb-0 small fw-bold">{cat.category}</p>
-                    <span className="badge bg-secondary">{cat.sales} sales</span>
-                  </div>
-                  <div className="progress" style={{ height: "24px" }}>
-                    <div
-                      className={`progress-bar bg-${
-                        index === 0 ? "primary" : index === 1 ? "success" : index === 2 ? "info" : "warning"
-                      }`}
-                      style={{ width: `${cat.percentage}%` }}
-                    >
-                      <small className="fw-bold">{cat.percentage}%</small>
+              {categoryStats.length > 0 ? (
+                categoryStats.map((cat, index) => (
+                  <div key={index} className="mb-3">
+                    <div className="d-flex justify-content-between align-items-center mb-2">
+                      <p className="mb-0 small fw-bold">{cat.category}</p>
+                      <span className="badge bg-secondary">{cat.sales} sales</span>
+                    </div>
+                    <div className="progress" style={{ height: "24px" }}>
+                      <div
+                        className={`progress-bar bg-${
+                          index === 0 ? "primary" : index === 1 ? "success" : index === 2 ? "info" : "warning"
+                        }`}
+                        style={{ width: `${cat.percentage}%` }}
+                      >
+                        <small className="fw-bold">{cat.percentage}%</small>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))
+              ) : (
+                <p className="text-muted text-center py-3">No category data yet</p>
+              )}
             </div>
           </div>
         </div>

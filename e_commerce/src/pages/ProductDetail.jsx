@@ -40,8 +40,9 @@ const ProductDetail = () => {
     );
   }
 
-  // Dummy image array - will use real images when paths are provided
-  const sizes = ["XS", "S", "M", "L", "XL", "XXL"];
+  // Get available sizes from product data
+  const allSizes = ["XS", "S", "M", "L", "XL", "XXL"];
+  const availableSizes = product.sizes && product.sizes.length > 0 ? product.sizes : ["S", "M", "L"];
   const images = product.images && product.images.length > 0 ? product.images : [product.image];
 
   const handlePreviousImage = () => {
@@ -231,20 +232,27 @@ const ProductDetail = () => {
                 <div className="mb-4">
                   <h6 className="fw-bold mb-2">Select Size</h6>
                   <div className="d-flex gap-2 flex-wrap">
-                    {sizes.map((size) => (
-                      <button
-                        key={size}
-                        className={`btn border-2 fw-bold ${
-                          selectedSize === size
-                            ? "btn-dark border-dark"
-                            : "btn-outline-dark"
-                        }`}
-                        onClick={() => setSelectedSize(size)}
-                        style={{ minWidth: "50px" }}
-                      >
-                        {size}
-                      </button>
-                    ))}
+                    {allSizes.map((size) => {
+                      const isAvailable = availableSizes.includes(size);
+                      return (
+                        <button
+                          key={size}
+                          className={`btn border-2 fw-bold ${
+                            !isAvailable
+                              ? "btn-light border-light text-muted"
+                              : selectedSize === size
+                              ? "btn-dark border-dark"
+                              : "btn-outline-dark"
+                          }`}
+                          onClick={() => isAvailable && setSelectedSize(size)}
+                          disabled={!isAvailable}
+                          style={{ minWidth: "50px" }}
+                          title={!isAvailable ? "Out of stock" : ""}
+                        >
+                          {size}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
 

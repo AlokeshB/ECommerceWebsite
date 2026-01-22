@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, AlertCircle, CheckCircle } from "lucide-react";
-import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { useAuth } from "../context/AuthContext";
 import "bootstrap/dist/css/bootstrap.min.css";
@@ -81,19 +80,19 @@ const Register = () => {
     setTimeout(() => {
       login({
         name: formData.name,
+        fullName: formData.name,
         email: formData.email,
         phone: formData.phoneNo,
         role: "user",
       });
-      setSuccess("Registration successful! Redirecting...");
+      setSuccess("Registration successful! Redirecting to login...");
       setLoading(false);
-      setTimeout(() => navigate("/"), 1500);
+      setTimeout(() => navigate("/login"), 1500);
     }, 500);
   };
 
   return (
     <>
-      <Navbar />
       <div className="d-flex flex-column min-vh-100 bg-light">
         <div className="container py-5 flex-grow-1">
           <div className="row justify-content-center">

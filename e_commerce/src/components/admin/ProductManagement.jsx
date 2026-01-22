@@ -1,14 +1,11 @@
 import React, { useState } from "react";
 import { Plus, Edit2, Trash2, Search, Filter } from "lucide-react";
 import "bootstrap/dist/css/bootstrap.min.css";
+import { useProduct } from "../../context/ProductContext";
+import { CATEGORIES, SUB_CATEGORIES } from "../categories";
 
 const ProductManagement = () => {
-  const [products, setProducts] = useState([
-    { id: 1, name: "Premium Wireless Headphones", category: "Electronics", price: 2999, stock: 45, image: "🎧" },
-    { id: 2, name: "Smart Fitness Watch", category: "Wearables", price: 4500, stock: 32, image: "⌚" },
-    { id: 3, name: "Classic Denim Jacket", category: "Fashion", price: 1899, stock: 18, image: "🧥" },
-    { id: 4, name: "Running Sports Shoes", category: "Fashion", price: 3200, stock: 25, image: "👟" },
-  ]);
+  const { products, updateProduct, deleteProduct, addProduct } = useProduct();
 
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
@@ -16,14 +13,15 @@ const ProductManagement = () => {
   const [editingProduct, setEditingProduct] = useState(null);
   const [formData, setFormData] = useState({
     name: "",
-    category: "Electronics",
+    category: "Men",
+    subCategory: "Topwear",
     price: "",
     stock: "",
     image: "",
   });
 
-  const categories = ["Electronics", "Fashion", "Wearables", "Accessories"];
-  const allCategories = ["All", ...categories];
+  const allCategories = ["All", ...CATEGORIES];
+  const subCategories = SUB_CATEGORIES;
 
   const filteredProducts = products.filter((product) => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase());
@@ -33,7 +31,7 @@ const ProductManagement = () => {
 
   const handleAddProduct = () => {
     setEditingProduct(null);
-    setFormData({ name: "", category: "Electronics", price: "", stock: "", image: "" });
+    setFormData({ name: "", category: "Men", subCategory: "Topwear", price: "", stock: "", image: "" });
     setShowModal(true);
   };
 
@@ -45,18 +43,16 @@ const ProductManagement = () => {
 
   const handleDeleteProduct = (id) => {
     if (window.confirm("Are you sure you want to delete this product?")) {
-      setProducts(products.filter((p) => p.id !== id));
+      deleteProduct(id);
     }
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (editingProduct) {
-      setProducts(
-        products.map((p) => (p.id === editingProduct.id ? { ...p, ...formData } : p))
-      );
+      updateProduct(editingProduct.id, formData);
     } else {
-      setProducts([...products, { ...formData, id: Math.max(...products.map((p) => p.id), 0) + 1 }]);
+      addProduct(formData);
     }
     setShowModal(false);
   };
@@ -121,6 +117,7 @@ const ProductManagement = () => {
                 <th className="small">Image</th>
                 <th className="small">Product Name</th>
                 <th className="small">Category</th>
+                <th className="small">Sub Category</th>
                 <th className="small">Price</th>
                 <th className="small">Stock</th>
                 <th className="small">Actions</th>
@@ -136,6 +133,9 @@ const ProductManagement = () => {
                     <td className="small fw-bold">{product.name}</td>
                     <td className="small">
                       <span className="badge bg-secondary">{product.category}</span>
+                    </td>
+                    <td className="small">
+                      <span className="badge bg-info">{product.subCategory || "N/A"}</span>
                     </td>
                     <td className="small fw-bold">₹{product.price}</td>
                     <td className="small">
@@ -165,7 +165,7 @@ const ProductManagement = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="6" className="text-center py-4 text-muted">
+                  <td colSpan="7" className="text-center py-4 text-muted">
                     No products found
                   </td>
                 </tr>
@@ -205,11 +205,32 @@ const ProductManagement = () => {
                     <select
                       className="form-select"
                       value={formData.category}
-                      onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                      onChange={(e) => {
+                        const newCategory = e.target.value;
+                        setFormData({
+                          ...formData,
+                          category: newCategory,
+                          subCategory: subCategories[newCategory][0],
+                        });
+                      }}
                     >
-                      {categories.map((cat) => (
+                      {CATEGORIES.map((cat) => (
                         <option key={cat} value={cat}>
                           {cat}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="mb-3">
+                    <label className="form-label fw-bold">Sub Category</label>
+                    <select
+                      className="form-select"
+                      value={formData.subCategory}
+                      onChange={(e) => setFormData({ ...formData, subCategory: e.target.value })}
+                    >
+                      {subCategories[formData.category].map((sub) => (
+                        <option key={sub} value={sub}>
+                          {sub}
                         </option>
                       ))}
                     </select>
