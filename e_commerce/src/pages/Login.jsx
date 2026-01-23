@@ -29,9 +29,25 @@ const Login = () => {
     setLoading(true);
     setTimeout(() => {
       const isAdmin = email === "admin@fashionhub.com" && password === "admin123";
-      const registeredData = JSON.parse(localStorage.getItem("fhub_registered_user"));
-      if (!isAdmin && (!registeredData || registeredData.email !== email)) {
-        setError("Invalid email or user not found.");
+      const savedData = localStorage.getItem("fhub_registered_user");
+      var allUsers =[];
+      try{
+        const parsed = JSON.parse(savedData);
+        allUsers = Array.isArray(parsed) ? parsed : [];
+      }catch{
+        allUsers = [];
+      }
+      // if (!isAdmin && (!registeredData || registeredData.email !== email)) {
+      //   setError("Invalid email or user not found.");
+      //   setLoading(false);
+      //   return;
+      // }
+      // const registeredUser = allUsers.find(u => u.email === email && u.password === password);
+      console.log(allUsers);
+      const registeredData = allUsers.find(u => u.email === email && u.password === password);
+      console.log(registeredData);
+      if (!isAdmin && !registeredData) {
+        setError("Invalid email or password.");
         setLoading(false);
         return;
       }

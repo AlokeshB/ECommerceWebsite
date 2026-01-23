@@ -10,7 +10,13 @@ const FormField = ({ label, id, disabled, ...props }) => (
     <label htmlFor={id} className="form-label fw-bold small">
       {label}
     </label>
-    <input {...props} id={id} className="form-control" disabled={disabled} required />
+    <input
+      {...props}
+      id={id}
+      className="form-control"
+      disabled={disabled}
+      required
+    />
   </div>
 );
 
@@ -23,7 +29,7 @@ const Register = () => {
     phoneNo: "",
     address: "",
     password: "",
-    confirmPassword: ""
+    confirmPassword: "",
   });
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -38,7 +44,14 @@ const Register = () => {
   const validateForm = (data) => {
     const { name, email, phoneNo, password, confirmPassword, address } = data;
 
-    if (!name  || !email || !password || !confirmPassword || !phoneNo || !address) {
+    if (
+      !name ||
+      !email ||
+      !password ||
+      !confirmPassword ||
+      !phoneNo ||
+      !address
+    ) {
       return "Please fill in all fields.";
     }
     if (!/^[A-Za-z\s]{2,}$/.test(name)) {
@@ -69,7 +82,26 @@ const Register = () => {
       setError(validationError);
       return;
     }
-    localStorage.setItem("fhub_registered_user", JSON.stringify(formData));
+    const savedData = localStorage.getItem("fhub_registered_user");
+    let existingUsers = [];
+    // const existingUsers = JSON.parse(localStorage.getItem("fhub_registered_user") || "[]");
+    console.log(existingUsers);
+
+    // existingUsers.push(formData);
+    // localStorage.setItem("fhub_registered_user", JSON.stringify(existingUsers));
+    try {
+      const parsedData = JSON.parse(savedData);
+      existingUsers = Array.isArray(parsedData) ? parsedData : [];
+    } catch {
+      existingUsers = [];
+    }
+    const userExists = existingUsers.find((u) => u.email === formData.email);
+    if (userExists) {
+      setError("Email already registered. Please login.");
+      return;
+    }
+    existingUsers.push(formData);
+    localStorage.setItem("fhub_registered_user", JSON.stringify(existingUsers));
     setLoading(true);
     setTimeout(() => {
       login({
@@ -93,24 +125,35 @@ const Register = () => {
         <div className="container py-5 flex-grow-1">
           <div className="row justify-content-center">
             <div className="col-12 col-sm-10 col-md-8 col-lg-6 col-xl-5">
-              <button onClick={() => navigate("/")} className="btn btn-link text-dark p-0 d-flex align-items-center gap-2 mb-4">
+              <button
+                onClick={() => navigate("/")}
+                className="btn btn-link text-dark p-0 d-flex align-items-center gap-2 mb-4"
+              >
                 <ArrowLeft size={20} /> Back to Home
               </button>
 
               <div className="card shadow-sm border-0">
                 <div className="card-body p-4 p-md-5">
                   <h2 className="fw-bold mb-1 text-center">Create Account</h2>
-                  <p className="text-muted text-center mb-4 small">Join us and start shopping</p>
+                  <p className="text-muted text-center mb-4 small">
+                    Join us and start shopping
+                  </p>
 
                   {error && (
-                    <div className="alert alert-danger d-flex gap-2 mb-4" role="alert">
+                    <div
+                      className="alert alert-danger d-flex gap-2 mb-4"
+                      role="alert"
+                    >
                       <AlertCircle size={18} className="flex-shrink-0" />
                       <div className="small">{error}</div>
                     </div>
                   )}
 
                   {success && (
-                    <div className="alert alert-success d-flex gap-2 mb-4" role="alert">
+                    <div
+                      className="alert alert-success d-flex gap-2 mb-4"
+                      role="alert"
+                    >
                       <CheckCircle size={18} className="flex-shrink-0" />
                       <div className="small">{success}</div>
                     </div>
@@ -152,7 +195,10 @@ const Register = () => {
                     />
 
                     <div className="mb-3">
-                      <label htmlFor="address" className="form-label fw-bold small">
+                      <label
+                        htmlFor="address"
+                        className="form-label fw-bold small"
+                      >
                         Address
                       </label>
                       <textarea
@@ -190,10 +236,17 @@ const Register = () => {
                       disabled={loading}
                     />
 
-                    <button type="submit" className="btn btn-dark w-100 fw-bold py-2 mb-3" disabled={loading}>
+                    <button
+                      type="submit"
+                      className="btn btn-dark w-100 fw-bold py-2 mb-3"
+                      disabled={loading}
+                    >
                       {loading ? (
                         <>
-                          <span className="spinner-border spinner-border-sm me-2" role="status"></span>
+                          <span
+                            className="spinner-border spinner-border-sm me-2"
+                            role="status"
+                          ></span>
                           Creating Account...
                         </>
                       ) : (
@@ -205,7 +258,10 @@ const Register = () => {
                   <hr className="my-4" />
                   <p className="text-center text-muted small mb-0">
                     Already have an account?{" "}
-                    <a href="/login" className="text-dark fw-bold text-decoration-none">
+                    <a
+                      href="/login"
+                      className="text-dark fw-bold text-decoration-none"
+                    >
                       Sign in
                     </a>
                   </p>
