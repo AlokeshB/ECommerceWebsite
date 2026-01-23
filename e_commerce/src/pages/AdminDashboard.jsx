@@ -1,11 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  Package,
-  ShoppingCart,
-  BarChart3,
-  LogOut,
-} from "lucide-react";
+import { Package, ShoppingCart, BarChart3, LogOut } from "lucide-react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import ProductManagement from "../components/admin/ProductManagement";
 import OrderManagement from "../components/admin/OrderManagement";
@@ -39,7 +34,8 @@ const AdminDashboard = () => {
       {/* Top Bar */}
       <div className="admin-topbar bg-white shadow-sm p-3 d-flex align-items-center justify-content-between">
         <h4 className="mb-0">
-          {menuItems.find((item) => item.id === activeTab)?.label || "Dashboard"}
+          {menuItems.find((item) => item.id === activeTab)?.label ||
+            "Dashboard"}
         </h4>
         <button
           className="btn btn-danger d-flex align-items-center gap-2"
@@ -72,7 +68,9 @@ const AdminDashboard = () => {
       {/* Main Content */}
       <main className="admin-content">
         <div className="admin-main-content p-4">
-          {activeTab === "dashboard" && <DashboardHome setActiveTab={setActiveTab} />}
+          {activeTab === "dashboard" && (
+            <DashboardHome setActiveTab={setActiveTab} />
+          )}
           {activeTab === "products" && <ProductManagement />}
           {activeTab === "orders" && <OrderManagement />}
           {activeTab === "analytics" && <Analytics />}
@@ -87,15 +85,56 @@ const DashboardHome = ({ setActiveTab }) => {
   const { orders } = useOrder();
   const { products } = useProduct();
 
-  const totalRevenue = orders.reduce((sum, order) => sum + (order.totalAmount || 0), 0);
+  // --- FIX START: Deduplicate Orders ---
+  // We use useMemo to filter out duplicates based on 'id' so this calculation
+  // only runs when 'orders' changes, not on every render.
+  const uniqueOrders = useMemo(() => {
+    if (!orders) return [];
+    const seen = new Set();
+    return orders.filter((order) => {
+      const duplicate = seen.has(order.id);
+      seen.add(order.id);
+      return !duplicate;
+    });
+  }, [orders]);
+  // --- FIX END ---
+
+  const totalRevenue = uniqueOrders.reduce(
+    (sum, order) => sum + (order.totalAmount || 0),
+    0,
+  );
+
   const stats = [
-    { label: "Total Products", value: products.length.toString(), icon: Package, color: "primary" },
-    { label: "Total Orders", value: orders.length.toString(), icon: ShoppingCart, color: "success" },
-    { label: "Total Revenue", value: `₹${totalRevenue.toLocaleString("en-IN")}`, icon: BarChart3, color: "info" },
-    { label: "Pending Orders", value: orders.filter((o) => o.status === "Pending").length.toString(), icon: Package, color: "warning" },
+    {
+      label: "Total Products",
+      value: products.length.toString(),
+      icon: Package,
+      color: "primary",
+    },
+    {
+      label: "Total Orders",
+      value: uniqueOrders.length.toString(),
+      icon: ShoppingCart,
+      color: "success",
+    },
+    {
+      label: "Total Revenue",
+      value: `₹${totalRevenue.toLocaleString("en-IN")}`,
+      icon: BarChart3,
+      color: "info",
+    },
+    {
+      label: "Pending Orders",
+      value: uniqueOrders
+        .filter((o) => o.status === "Pending")
+        .length.toString(),
+      icon: Package,
+      color: "warning",
+    },
   ];
 
-  const recentOrders = orders.slice(0, 5);
+  // Use uniqueOrders instead of original orders for the table
+  const recentOrders = uniqueOrders.slice(0, 5);
 
   return (
     <div>
@@ -105,7 +144,9 @@ const DashboardHome = ({ setActiveTab }) => {
           const Icon = stat.icon;
           return (
             <div key={index} className="col-md-6 col-lg-3">
-              <div className={`card border-0 shadow-sm bg-${stat.color} bg-opacity-10`}>
+              <div
+                className={`card border-0 shadow-sm bg-${stat.color} bg-opacity-10`}
+              >
                 <div className="card-body">
                   <div className="d-flex justify-content-between align-items-start">
                     <div>
@@ -143,16 +184,20 @@ const DashboardHome = ({ setActiveTab }) => {
                       recentOrders.map((order) => (
                         <tr key={order.id}>
                           <td className="small fw-bold">{order.id}</td>
-                          <td className="small">{order.customerName || order.email}</td>
-                          <td className="small">₹{order.totalAmount?.toLocaleString("en-IN") || "0"}</td>
+                          <td className="small">
+                            {order.customerName || order.email}
+                          </td>
+                          <td className="small">
+                            ₹{order.totalAmount?.toLocaleString("en-IN") || "0"}
+                          </td>
                           <td className="small">
                             <span
                               className={`badge ${
                                 order.status === "Delivered"
                                   ? "bg-success"
                                   : order.status === "Pending"
-                                  ? "bg-warning"
-                                  : "bg-info"
+                                    ? "bg-warning"
+                                    : "bg-info"
                               }`}
                             >
                               {order.status}
@@ -180,21 +225,21 @@ const DashboardHome = ({ setActiveTab }) => {
               <h6 className="mb-0 fw-bold">Quick Actions</h6>
             </div>
             <div className="card-body d-flex flex-column gap-2">
-              <button 
+              <button
                 className="btn btn-primary w-100 d-flex align-items-center justify-content-center gap-2"
                 onClick={() => setActiveTab("products")}
               >
                 <Package size={18} />
                 Manage Products
               </button>
-              <button 
+              <button
                 className="btn btn-info w-100 d-flex align-items-center justify-content-center gap-2"
                 onClick={() => setActiveTab("orders")}
               >
                 <ShoppingCart size={18} />
                 Manage Orders
               </button>
-              <button 
+              <button
                 className="btn btn-secondary w-100 d-flex align-items-center justify-content-center gap-2"
                 onClick={() => setActiveTab("analytics")}
               >

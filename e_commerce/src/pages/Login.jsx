@@ -55,7 +55,7 @@ const Login = () => {
         email,
         fullName: isAdmin ? "System Administrator" : registeredData.name,
         role: isAdmin ? "admin" : "user",
-        address: registeredData.address,
+        address: isAdmin? "HeadQuarters":registeredData.address,
       };
       login(userData);
       navigate(isAdmin ? "/admin" : "/");
