@@ -3,7 +3,17 @@ import { useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import { useAuth } from "../context/AuthContext";
 import { useOrder } from "../context/OrderContext";
-import { Package, User, MapPin, LogOut, Edit2, Save, Plus, Trash2, ExternalLink } from "lucide-react";
+import {
+  Package,
+  User,
+  MapPin,
+  LogOut,
+  Edit2,
+  Save,
+  Plus,
+  Trash2,
+  ExternalLink,
+} from "lucide-react";
 
 const UserProfile = () => {
   const { user, logout } = useAuth();
@@ -14,48 +24,74 @@ const UserProfile = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [orders, setOrders] = useState([]);
   const [showAddAddress, setShowAddAddress] = useState(false);
-  
-  // Profile Data State (Removed altMobile, dob, and age)
-  const [profileData, setProfileData] = useState({ 
-    firstName: "", 
-    email: "", 
-    mobile: "", 
-    profilePic: null 
+
+  const [profileData, setProfileData] = useState({
+    firstName: "",
+    email: "",
+    mobile: "",
+    profilePic: null,
   });
-  
+
   const [addresses, setAddresses] = useState([]);
-  const [newAddress, setNewAddress] = useState({ street: "", city: "", zip: "", state: "" });
+  const [newAddress, setNewAddress] = useState({
+    street: "",
+    city: "",
+    zip: "",
+    state: "",
+  });
 
   // --- INITIALIZATION ---
   useEffect(() => {
     if (!user) return navigate("/");
 
     // 1. Load Profile Data
-    const savedProfile = JSON.parse(localStorage.getItem("fhub_user_profile")) || {};
+    const savedProfile =
+      JSON.parse(localStorage.getItem("fhub_user_profile")) || {};
     setProfileData({
-      firstName: user.firstName || "",
+      firstName: user.firstName || user.fullName || "", // Added fallback to fullName
       email: user.email || "",
       mobile: savedProfile.mobile || user.mobile || "",
-      profilePic: savedProfile.profilePic || null
+      profilePic: savedProfile.profilePic || null,
     });
 
-    // 2. Load Addresses & Set Default from Registration
-    const savedAddresses = JSON.parse(localStorage.getItem("fhub_address")) || [];
-    
-    // Create Default Address from Registration Info
+    // 2. Load Addresses
+    const savedAddresses =
+      JSON.parse(localStorage.getItem("fhub_address")) || [];
+
     const defaultAddr = {
-        id: 'default-reg',
-        type: "Default",
-        value: user.address || "No address provided during registration"
+      id: "default-reg",
+      type: "Default",
+      value: user.address || "No address provided during registration",
     };
 
-    // Ensure the registration address is always at the top
-    const filteredSaved = savedAddresses.filter(a => a.type !== "Default");
+    const filteredSaved = savedAddresses.filter((a) => a.type !== "Default");
     setAddresses([defaultAddr, ...filteredSaved]);
 
     // 3. Load Orders
     setOrders(getUserOrders(user.email));
   }, [user, navigate, getUserOrders]);
+
+  // --- HELPER: SAFE DATE FORMATTING ---
+  const formatDate = (dateString) => {
+    if (!dateString) return "Date not available";
+
+    // Try to create a date object
+    const date = new Date(dateString);
+
+    // Check if the date is valid
+    if (isNaN(date.getTime())) {
+      // If invalid, it might already be a formatted string like "12/05/2024"
+      // So we just return the string as is.
+      return dateString;
+    }
+
+    // If valid, format it nicely
+    return date.toLocaleDateString("en-IN", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  };
 
   // --- HANDLERS ---
   const handleSave = () => {
@@ -65,20 +101,30 @@ const UserProfile = () => {
   };
 
   const handleAddAddress = () => {
-    if (!newAddress.street || !newAddress.city) return alert("Please fill details");
+    if (!newAddress.street || !newAddress.city)
+      return alert("Please fill details");
     const addressStr = `${newAddress.street}, ${newAddress.city}, ${newAddress.state} - ${newAddress.zip}`;
-    const updated = [...addresses, { id: Date.now(), type: "Custom", value: addressStr }];
-    
+    const updated = [
+      ...addresses,
+      { id: Date.now(), type: "Custom", value: addressStr },
+    ];
+
     setAddresses(updated);
-    localStorage.setItem("fhub_address", JSON.stringify(updated.filter(a => a.id !== 'default-reg')));
+    localStorage.setItem(
+      "fhub_address",
+      JSON.stringify(updated.filter((a) => a.id !== "default-reg")),
+    );
     setNewAddress({ street: "", city: "", zip: "", state: "" });
     setShowAddAddress(false);
   };
 
   const removeAddress = (id) => {
-    const updated = addresses.filter(a => a.id !== id);
+    const updated = addresses.filter((a) => a.id !== id);
     setAddresses(updated);
-    localStorage.setItem("fhub_address", JSON.stringify(updated.filter(a => a.id !== 'default-reg')));
+    localStorage.setItem(
+      "fhub_address",
+      JSON.stringify(updated.filter((a) => a.id !== "default-reg")),
+    );
   };
 
   const tabs = [
@@ -94,24 +140,46 @@ const UserProfile = () => {
       <Navbar />
       <div className="container py-5">
         <div className="row g-4">
-          
           {/* SIDEBAR */}
           <div className="col-lg-3">
             <div className="bg-white rounded shadow-sm overflow-hidden">
               <div className="p-4 border-bottom text-center">
-                <div className="mx-auto mb-3 rounded-circle bg-light d-flex align-items-center justify-content-center fw-bold fs-1 border" style={{ width: 100, height: 100 }}>
-                  {profileData.profilePic ? <img src={profileData.profilePic} alt="Profile" className="w-100 h-100 object-fit-cover rounded-circle" /> : (user.firstName?.[0] || "U")}
+                <div
+                  className="mx-auto mb-3 rounded-circle bg-light d-flex align-items-center justify-content-center fw-bold fs-1 border"
+                  style={{ width: 100, height: 100 }}
+                >
+                  {profileData.profilePic ? (
+                    <img
+                      src={profileData.profilePic}
+                      alt="Profile"
+                      className="w-100 h-100 object-fit-cover rounded-circle"
+                    />
+                  ) : (
+                    (profileData.firstName && profileData.firstName[0]) || "U"
+                  )}
                 </div>
-                <h5 className="fw-bold m-0">{user.firstName}</h5>
+                <h5 className="fw-bold m-0">{profileData.firstName}</h5>
                 <small className="text-muted">{user.email}</small>
               </div>
               <div className="list-group list-group-flush">
-                {tabs.map(t => (
-                  <button key={t.id} onClick={() => setActiveTab(t.id)} className={`list-group-item list-group-item-action border-0 py-3 ${activeTab === t.id ? "bg-light fw-bold" : ""}`}>
+                {tabs.map((t) => (
+                  <button
+                    key={t.id}
+                    onClick={() => setActiveTab(t.id)}
+                    className={`list-group-item list-group-item-action border-0 py-3 ${
+                      activeTab === t.id ? "bg-light fw-bold" : ""
+                    }`}
+                  >
                     <t.icon size={18} className="me-2" /> {t.label}
                   </button>
                 ))}
-                <button onClick={() => { logout(); navigate("/"); }} className="list-group-item list-group-item-action border-0 py-3 text-danger">
+                <button
+                  onClick={() => {
+                    logout();
+                    navigate("/");
+                  }}
+                  className="list-group-item list-group-item-action border-0 py-3 text-danger"
+                >
                   <LogOut size={18} className="me-2" /> Logout
                 </button>
               </div>
@@ -121,27 +189,48 @@ const UserProfile = () => {
           {/* CONTENT AREA */}
           <div className="col-lg-9">
             <div className="bg-white rounded shadow-sm p-4 h-100">
-              
               {/* ORDERS TAB */}
               {activeTab === "orders" && (
                 <div className="animate__animated animate__fadeIn">
-                  <h5 className="fw-bold mb-4 border-bottom pb-2">Order History</h5>
+                  <h5 className="fw-bold mb-4 border-bottom pb-2">
+                    Order History
+                  </h5>
                   {orders.length === 0 ? (
                     <div className="text-center py-5 text-muted">
                       <Package size={40} className="mb-3 opacity-25" />
                       <h5>No orders yet.</h5>
-                      <button className="btn btn-outline-dark btn-sm mt-2" onClick={() => navigate("/")}>Start Shopping</button>
+                      <button
+                        className="btn btn-outline-dark btn-sm mt-2"
+                        onClick={() => navigate("/")}
+                      >
+                        Start Shopping
+                      </button>
                     </div>
                   ) : (
                     orders.map((o, i) => (
-                      <div key={i} className="border rounded p-3 mb-3 d-flex justify-content-between align-items-center">
+                      <div
+                        key={i}
+                        className="border rounded p-3 mb-3 d-flex justify-content-between align-items-center"
+                      >
                         <div>
-                          <span className="badge bg-success">Order #{o.id || "N/A"}</span>
-                          <p className="mb-0 small text-muted">Placed on {new Date(o.date || Date.now()).toLocaleDateString()}</p>
+                          <span className="badge bg-success">
+                            Order #{o.id || "N/A"}
+                          </span>
+                          <p className="mb-0 small text-muted">
+                            {/* --- FIX APPLIED HERE --- */}
+                            Placed on {formatDate(o.date || o.createdAt)}
+                          </p>
                         </div>
                         <div className="text-end">
-                          <div className="fw-bold mb-2">₹{o.total}</div>
-                          <button className="btn btn-sm btn-outline-dark" onClick={() => navigate(`/tracking/${o.id || "new"}`)}>
+                          <div className="fw-bold mb-2">
+                            ₹{o.totalAmount || o.total || 0}
+                          </div>
+                          <button
+                            className="btn btn-sm btn-outline-dark"
+                            onClick={() =>
+                              navigate(`/tracking/${o.id || "new"}`)
+                            }
+                          >
                             Track <ExternalLink size={14} />
                           </button>
                         </div>
@@ -151,27 +240,76 @@ const UserProfile = () => {
                 </div>
               )}
 
-              {/* PROFILE TAB (Simplified) */}
+              {/* PROFILE TAB */}
               {activeTab === "profile" && (
                 <div className="animate__animated animate__fadeIn">
                   <div className="d-flex justify-content-between mb-4 border-bottom pb-2">
                     <h5 className="fw-bold">Personal Information</h5>
-                    <button className={`btn btn-sm ${isEditing ? "btn-success" : "btn-outline-dark"}`} onClick={() => isEditing ? handleSave() : setIsEditing(true)}>
-                      {isEditing ? <><Save size={14} className="me-1" /> Save</> : <><Edit2 size={14} className="me-1" /> Edit</>}
+                    <button
+                      className={`btn btn-sm ${
+                        isEditing ? "btn-success" : "btn-outline-dark"
+                      }`}
+                      onClick={() =>
+                        isEditing ? handleSave() : setIsEditing(true)
+                      }
+                    >
+                      {isEditing ? (
+                        <>
+                          <Save size={14} className="me-1" /> Save
+                        </>
+                      ) : (
+                        <>
+                          <Edit2 size={14} className="me-1" /> Edit
+                        </>
+                      )}
                     </button>
                   </div>
                   <div className="row g-3">
                     <div className="col-md-6">
-                        <label className="small text-muted fw-bold">Full Name</label>
-                        <input className="form-control bg-light" value={profileData.firstName} disabled />
+                      <label className="small text-muted fw-bold">
+                        Full Name
+                      </label>
+                      <input
+                        className="form-control bg-light"
+                        value={profileData.firstName}
+                        disabled
+                      />
                     </div>
                     <div className="col-md-6">
-                        <label className="small text-muted fw-bold">Email Address</label>
-                        <input className={`form-control ${isEditing ? "border-primary" : ""}`} value={profileData.email} disabled={!isEditing} onChange={(e) => setProfileData({...profileData, email: e.target.value})} />
+                      <label className="small text-muted fw-bold">
+                        Email Address
+                      </label>
+                      <input
+                        className={`form-control ${
+                          isEditing ? "border-primary" : ""
+                        }`}
+                        value={profileData.email}
+                        disabled={!isEditing}
+                        onChange={(e) =>
+                          setProfileData({
+                            ...profileData,
+                            email: e.target.value,
+                          })
+                        }
+                      />
                     </div>
                     <div className="col-md-6">
-                        <label className="small text-muted fw-bold">Mobile Number</label>
-                        <input className={`form-control ${isEditing ? "border-primary" : ""}`} value={profileData.mobile} disabled={!isEditing} onChange={(e) => setProfileData({...profileData, mobile: e.target.value})} />
+                      <label className="small text-muted fw-bold">
+                        Mobile Number
+                      </label>
+                      <input
+                        className={`form-control ${
+                          isEditing ? "border-primary" : ""
+                        }`}
+                        value={profileData.mobile}
+                        disabled={!isEditing}
+                        onChange={(e) =>
+                          setProfileData({
+                            ...profileData,
+                            mobile: e.target.value,
+                          })
+                        }
+                      />
                     </div>
                   </div>
                 </div>
@@ -182,47 +320,115 @@ const UserProfile = () => {
                 <div className="animate__animated animate__fadeIn">
                   <div className="d-flex justify-content-between mb-4 border-bottom pb-2">
                     <h5 className="fw-bold">Saved Addresses</h5>
-                    <button className="btn btn-sm btn-dark" onClick={() => setShowAddAddress(!showAddAddress)}><Plus size={16} /> Add New</button>
+                    <button
+                      className="btn btn-sm btn-dark"
+                      onClick={() => setShowAddAddress(!showAddAddress)}
+                    >
+                      <Plus size={16} /> Add New
+                    </button>
                   </div>
 
                   {showAddAddress && (
                     <div className="card p-3 mb-4 bg-light border-0">
                       <div className="row g-2">
                         <div className="col-12">
-                            <input className="form-control form-control-sm" placeholder="Street / Flat" value={newAddress.street} onChange={(e) => setNewAddress({...newAddress, street: e.target.value})} />
+                          <input
+                            className="form-control form-control-sm"
+                            placeholder="Street / Flat"
+                            value={newAddress.street}
+                            onChange={(e) =>
+                              setNewAddress({
+                                ...newAddress,
+                                street: e.target.value,
+                              })
+                            }
+                          />
                         </div>
                         <div className="col-4">
-                            <input className="form-control form-control-sm" placeholder="City" value={newAddress.city} onChange={(e) => setNewAddress({...newAddress, city: e.target.value})} />
+                          <input
+                            className="form-control form-control-sm"
+                            placeholder="City"
+                            value={newAddress.city}
+                            onChange={(e) =>
+                              setNewAddress({
+                                ...newAddress,
+                                city: e.target.value,
+                              })
+                            }
+                          />
                         </div>
                         <div className="col-4">
-                            <input className="form-control form-control-sm" placeholder="State" value={newAddress.state} onChange={(e) => setNewAddress({...newAddress, state: e.target.value})} />
+                          <input
+                            className="form-control form-control-sm"
+                            placeholder="State"
+                            value={newAddress.state}
+                            onChange={(e) =>
+                              setNewAddress({
+                                ...newAddress,
+                                state: e.target.value,
+                              })
+                            }
+                          />
                         </div>
                         <div className="col-4">
-                            <input className="form-control form-control-sm" placeholder="Zip" value={newAddress.zip} onChange={(e) => setNewAddress({...newAddress, zip: e.target.value})} />
+                          <input
+                            className="form-control form-control-sm"
+                            placeholder="Zip"
+                            value={newAddress.zip}
+                            onChange={(e) =>
+                              setNewAddress({
+                                ...newAddress,
+                                zip: e.target.value,
+                              })
+                            }
+                          />
                         </div>
                         <div className="col-12 text-end mt-2">
-                          <button className="btn btn-sm btn-success me-2" onClick={handleAddAddress}>Save Address</button>
-                          <button className="btn btn-sm btn-secondary" onClick={() => setShowAddAddress(false)}>Cancel</button>
+                          <button
+                            className="btn btn-sm btn-success me-2"
+                            onClick={handleAddAddress}
+                          >
+                            Save Address
+                          </button>
+                          <button
+                            className="btn btn-sm btn-secondary"
+                            onClick={() => setShowAddAddress(false)}
+                          >
+                            Cancel
+                          </button>
                         </div>
                       </div>
                     </div>
                   )}
 
                   {addresses.map((a) => (
-                    <div key={a.id} className="border rounded p-3 mb-3 position-relative d-flex gap-3 bg-white">
+                    <div
+                      key={a.id}
+                      className="border rounded p-3 mb-3 position-relative d-flex gap-3 bg-white"
+                    >
                       <MapPin size={20} className="text-primary mt-1" />
                       <div>
-                        <span className={`badge ${a.type === 'Default' ? 'bg-dark' : 'bg-secondary'} mb-1`}>{a.type}</span>
+                        <span
+                          className={`badge ${
+                            a.type === "Default" ? "bg-dark" : "bg-secondary"
+                          } mb-1`}
+                        >
+                          {a.type}
+                        </span>
                         <p className="mb-0 fw-medium">{a.value}</p>
                       </div>
                       {a.type !== "Default" && (
-                        <button className="btn btn-link text-danger position-absolute top-0 end-0" onClick={() => removeAddress(a.id)}><Trash2 size={16} /></button>
+                        <button
+                          className="btn btn-link text-danger position-absolute top-0 end-0"
+                          onClick={() => removeAddress(a.id)}
+                        >
+                          <Trash2 size={16} />
+                        </button>
                       )}
                     </div>
                   ))}
                 </div>
               )}
-
             </div>
           </div>
         </div>
