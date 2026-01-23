@@ -67,21 +67,15 @@ const UserProfile = () => {
     const filteredSaved = savedAddresses.filter((a) => a.type !== "Default");
     setAddresses([defaultAddr, ...filteredSaved]);
 
-    // 3. Load Orders
     setOrders(getUserOrders(user.email));
   }, [user, navigate, getUserOrders]);
 
-  // --- HELPER: SAFE DATE FORMATTING ---
   const formatDate = (dateString) => {
     if (!dateString) return "Date not available";
 
-    // Try to create a date object
     const date = new Date(dateString);
 
-    // Check if the date is valid
     if (isNaN(date.getTime())) {
-      // If invalid, it might already be a formatted string like "12/05/2024"
-      // So we just return the string as is.
       return dateString;
     }
 
@@ -217,7 +211,6 @@ const UserProfile = () => {
                             Order #{o.id || "N/A"}
                           </span>
                           <p className="mb-0 small text-muted">
-                            {/* --- FIX APPLIED HERE --- */}
                             Placed on {formatDate(o.date || o.createdAt)}
                           </p>
                         </div>

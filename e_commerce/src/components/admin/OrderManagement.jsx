@@ -1,7 +1,8 @@
 import React, { useState } from "react";
-import { Eye, Edit2, Trash2, Search, Filter, ChevronDown } from "lucide-react";
+import { Eye, Edit2, Trash2, Search, Filter } from "lucide-react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { useOrder } from "../../context/OrderContext";
+import { getProductById } from "../../data/products";
 
 const OrderManagement = () => {
   const { orders, updateOrderStatus, deleteOrder } = useOrder();
@@ -23,12 +24,27 @@ const OrderManagement = () => {
     Cancelled: "danger",
   };
 
+  const getItemDetails = (item) => {
+    const quantity = item.quantity || item.qty || 1;
+
+    let price = item.price;
+    if (!price && item.id) {
+      const product = getProductById(item.id);
+      price = product ? product.price : 0;
+    }
+
+    return { quantity, price };
+  };
+
   const filteredOrders = orders.filter((order) => {
     const matchesSearch =
       order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (order.customerName || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (order.customerName || "")
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase()) ||
       (order.email || "").toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = selectedStatus === "All" || order.status === selectedStatus;
+    const matchesStatus =
+      selectedStatus === "All" || order.status === selectedStatus;
     return matchesSearch && matchesStatus;
   });
 
@@ -44,6 +60,17 @@ const OrderManagement = () => {
     }
   };
 
+  const formatDate = (dateString) => {
+    if (!dateString) return "Date not available";
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return dateString;
+    return date.toLocaleDateString("en-IN", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  };
+
   return (
     <div>
       <div className="d-flex justify-content-between align-items-center mb-4">
@@ -53,7 +80,7 @@ const OrderManagement = () => {
         </div>
       </div>
 
-      {/* Filters */}
+      {/* Filters (Search & Status) */}
       <div className="card border-0 shadow-sm mb-4">
         <div className="card-body">
           <div className="row g-3">
@@ -113,18 +140,28 @@ const OrderManagement = () => {
                     <tr>
                       <td className="small fw-bold">{order.id}</td>
                       <td className="small">{order.customerName || "N/A"}</td>
-                      <td className="small">{new Date(order.date).toLocaleDateString()}</td>
-                      <td className="small fw-bold">₹{order.totalAmount || order.amount}</td>
+                      <td className="small">
+                        {formatDate(order.date || order.createdAt)}
+                      </td>
+                      <td className="small fw-bold">
+                        ₹{order.totalAmount || order.amount}
+                      </td>
                       <td className="small">{order.items?.length || 0}</td>
                       <td className="small">
-                        <span className={`badge bg-${statusColors[order.status]}`}>
+                        <span
+                          className={`badge bg-${statusColors[order.status] || "secondary"}`}
+                        >
                           {order.status}
                         </span>
                       </td>
                       <td className="small">
                         <button
                           className="btn btn-sm btn-outline-secondary me-2"
-                          onClick={() => setExpandedOrder(expandedOrder === order.id ? null : order.id)}
+                          onClick={() =>
+                            setExpandedOrder(
+                              expandedOrder === order.id ? null : order.id,
+                            )
+                          }
                         >
                           <Eye size={16} />
                         </button>
@@ -146,64 +183,62 @@ const OrderManagement = () => {
                       </td>
                     </tr>
 
-                    {/* Expanded Order Details */}
+                    {/* EXPANDED SECTION */}
                     {expandedOrder === order.id && (
                       <tr className="bg-light">
                         <td colSpan="7">
                           <div className="p-3">
                             <h6 className="fw-bold mb-3">Order Details</h6>
-                            <div className="row g-3">
+                            <div className="row mb-4">
                               <div className="col-md-6">
-                                <p>
-                                  <strong>Email:</strong> {order.email || "N/A"}
+                                <p className="mb-1">
+                                  <strong>Email:</strong> {order.email}
                                 </p>
-                                <p>
-                                  <strong>Order Date:</strong> {new Date(order.date).toLocaleString()}
-                                </p>
-                                <p>
-                                  <strong>Total Items:</strong> {order.items?.length || 0}
+                                <p className="mb-1">
+                                  <strong>Date:</strong>{" "}
+                                  {new Date(order.date).toLocaleString()}
                                 </p>
                               </div>
-                              <div className="col-md-6">
-                                <p>
-                                  <strong>Order Total:</strong> ₹{order.totalAmount || order.amount}
+                              <div className="col-md-6 text-md-end">
+                                <p className="mb-1">
+                                  <strong>Total:</strong> ₹
+                                  {order.totalAmount || order.amount}
                                 </p>
-                                <p>
-                                  <strong>Current Status:</strong>{" "}
-                                  <span className={`badge bg-${statusColors[order.status]}`}>
-                                    {order.status}
-                                  </span>
-                                </p>
-                                <p>
-                                  <strong>Tracking ID:</strong> TRK{order.id}001
+                                <p className="mb-1">
+                                  <strong>Status:</strong> {order.status}
                                 </p>
                               </div>
                             </div>
 
-                            <div className="mt-3">
-                              <h6 className="fw-bold mb-2">Ordered Items</h6>
-                              <table className="table table-sm table-bordered">
-                                <thead className="table-light">
+                            <div className="table-responsive bg-white rounded shadow-sm">
+                              <table className="table table-sm mb-0">
+                                <thead className="table-dark">
                                   <tr>
                                     <th>Product</th>
-                                    <th>Qty</th>
-                                    <th>Price</th>
+                                    <th className="text-center">Qty</th>
+                                    <th className="text-end">Unit Price</th>
+                                    <th className="text-end">Subtotal</th>
                                   </tr>
                                 </thead>
                                 <tbody>
-                                  {order.items && order.items.length > 0 ? (
-                                    order.items.map((item, index) => (
+                                  {order.items?.map((item, index) => {
+                                    const { quantity, price } =
+                                      getItemDetails(item);
+                                    return (
                                       <tr key={index}>
-                                        <td>{item.name}</td>
-                                        <td>{item.quantity}</td>
-                                        <td>₹{item.price * item.quantity}</td>
+                                        <td>
+                                          {item.name || "Unknown Product"}
+                                        </td>
+                                        <td className="text-center">
+                                          {quantity}
+                                        </td>
+                                        <td className="text-end">₹{price}</td>
+                                        <td className="text-end fw-bold">
+                                          ₹{price * quantity}
+                                        </td>
                                       </tr>
-                                    ))
-                                  ) : (
-                                    <tr>
-                                      <td colSpan="3" className="text-center text-muted">No items</td>
-                                    </tr>
-                                  )}
+                                    );
+                                  })}
                                 </tbody>
                               </table>
                             </div>
@@ -225,13 +260,17 @@ const OrderManagement = () => {
         </div>
       </div>
 
-      {/* Status Update Modal */}
+      {/* Status Modal - (Remains mostly same but ensured visibility) */}
       {showStatusModal && editingOrder && (
-        <div className="modal d-block show" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
-          <div className="modal-dialog">
-            <div className="modal-content">
+        <div
+          className="modal d-block show"
+          tabIndex="-1"
+          style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+        >
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content border-0 shadow">
               <div className="modal-header">
-                <h5 className="modal-title">Update Order Status</h5>
+                <h5 className="modal-title fw-bold">Update Order Status</h5>
                 <button
                   type="button"
                   className="btn-close"
@@ -239,40 +278,23 @@ const OrderManagement = () => {
                 ></button>
               </div>
               <div className="modal-body">
-                <p className="mb-3">
-                  <strong>Order ID:</strong> {editingOrder.id}
-                </p>
-                <p className="mb-3">
-                  <strong>Current Status:</strong>{" "}
-                  <span className={`badge bg-${statusColors[editingOrder.status]}`}>
-                    {editingOrder.status}
-                  </span>
-                </p>
-                <label className="form-label fw-bold">Change Status To:</label>
                 <div className="d-grid gap-2">
                   {statuses.map((status) => (
                     <button
                       key={status}
-                      className={`btn btn-outline-${statusColors[status]} text-start`}
-                      onClick={() => handleStatusChange(editingOrder.id, status)}
+                      className={`btn btn-outline-${statusColors[status]} text-start d-flex justify-content-between align-items-center`}
+                      onClick={() =>
+                        handleStatusChange(editingOrder.id, status)
+                      }
                       disabled={status === editingOrder.status}
                     >
-                      <span className={`badge bg-${statusColors[status]} me-2`}>
-                        {status}
-                      </span>
                       {status}
+                      {status === editingOrder.status && (
+                        <span className="small">(Current)</span>
+                      )}
                     </button>
                   ))}
                 </div>
-              </div>
-              <div className="modal-footer">
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  onClick={() => setShowStatusModal(false)}
-                >
-                  Cancel
-                </button>
               </div>
             </div>
           </div>
