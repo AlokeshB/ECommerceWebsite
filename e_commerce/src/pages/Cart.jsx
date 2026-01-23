@@ -36,7 +36,7 @@ const Cart = () => {
               <img
                 src="https://cdni.iconscout.com/illustration/premium/thumb/empty-cart-2130356-1800917.png"
                 alt="Empty Cart"
-                style={{ width: "150px", width: "clamp(120px, 40vw, 200px)", opacity: 0.8 }}
+                style={{ width: "150px, clamp(120px, 40vw, 200px)", opacity: 0.8 }}
               />
               <h5 className="mt-3">Your cart is empty!</h5>
               <p className="text-muted small">Add items to it now.</p>
@@ -53,7 +53,7 @@ const Cart = () => {
                     <div key={item.id || index} className="p-2 p-md-3 border-bottom d-flex gap-2 gap-md-3 align-items-start">
                       <div
                         className="bg-light rounded d-flex align-items-center justify-content-center flex-shrink-0"
-                        style={{ width: "80px", width: "clamp(70px, 20vw, 100px)", height: "80px", height: "clamp(70px, 20vw, 100px)", fontSize: "1.5rem" }}
+                        style={{ width: "80px, clamp(70px, 20vw, 100px)", height: "80px, clamp(70px, 20vw, 100px)", fontSize: "1.5rem" }}
                       >
                         {item.image ? (
                           <img src={item.image} alt={item.name} style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }} />

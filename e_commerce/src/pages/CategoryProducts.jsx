@@ -79,17 +79,17 @@ const CategoryProducts = () => {
           <div className="mb-4 d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
             <div>
               <h3 className="fw-bold mb-1">{categoryData.title}</h3>
-              <p className="text-muted small mb-0">
+              <p className="text-muted small mb-0 text-nowrap">
                 Showing {sortedProducts.length} products
               </p>
             </div>
-            <div className="w-100 w-md-auto">
+            <div className="w-100 w-md-auto d-flex align-items-center justify-content-end">
               <label className="form-label small fw-bold me-2 d-block d-md-inline">Sort by:</label>
               <select
                 className="form-select form-select-sm"
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                style={{ maxWidth: "100%", maxWidth: "200px" }}
+                style={{ maxWidth: "200px" }}
               >
                 <option value="relevance">Relevance</option>
                 <option value="price-low-to-high">Price: Low to High</option>
