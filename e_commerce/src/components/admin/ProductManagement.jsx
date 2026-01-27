@@ -24,8 +24,15 @@ const ProductManagement = () => {
   const subCategories = SUB_CATEGORIES;
 
   const filteredProducts = products.filter((product) => {
-    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === "All" || product.category === selectedCategory;
+    const productName = product.name ? product.name.toLowerCase() : "";
+    const productCategory = product.category ? product.category.toLowerCase() : "";
+    const productSubCategory = product.subCategory ? product.subCategory.toLowerCase() : "";
+    const search = searchTerm.toLowerCase();
+    const filterCat = selectedCategory.toLowerCase();
+    const matchesSearch = productName.includes(search) || productSubCategory.includes(search);
+    const matchesCategory = 
+      selectedCategory === "All" || 
+      productCategory === filterCat;
     return matchesSearch && matchesCategory;
   });
 
@@ -98,6 +105,7 @@ const ProductManagement = () => {
                 >
                   {allCategories.map((cat) => (
                     <option key={cat} value={cat}>
+                      {/* {cat === "All" ? "All" : cat} */}
                       {cat}
                     </option>
                   ))}

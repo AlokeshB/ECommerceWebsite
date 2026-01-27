@@ -196,7 +196,7 @@ const OrderManagement = () => {
                                 </p>
                                 <p className="mb-1">
                                   <strong>Date:</strong>{" "}
-                                  {new Date(order.date).toLocaleString()}
+                                  {formatDate(order.date || order.createdAt)}
                                 </p>
                               </div>
                               <div className="col-md-6 text-md-end">
