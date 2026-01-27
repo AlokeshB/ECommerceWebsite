@@ -3,7 +3,7 @@ import { Plus, Edit2, Trash2, Search, Filter } from "lucide-react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { useProduct } from "../../context/ProductContext";
 import { CATEGORIES, SUB_CATEGORIES } from "../categories";
-
+import { useNotifications } from "../../context/NotificationContext";
 const ProductManagement = () => {
   const { products, updateProduct, deleteProduct, addProduct } = useProduct();
 
@@ -11,6 +11,7 @@ const ProductManagement = () => {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [showModal, setShowModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
+  const { addNotification } = useNotifications();
   const [formData, setFormData] = useState({
     name: "",
     category: "Men",
@@ -58,8 +59,10 @@ const ProductManagement = () => {
     e.preventDefault();
     if (editingProduct) {
       updateProduct(editingProduct.id, formData);
+      addNotification(`Updated product: ${formData.name}`, "user");
     } else {
       addProduct(formData);
+      addNotification(`New Arrival! Check out our new ${formData.name}`, "user");
     }
     setShowModal(false);
   };

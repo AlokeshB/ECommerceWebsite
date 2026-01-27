@@ -3,10 +3,10 @@ import { Eye, Edit2, Trash2, Search, Filter } from "lucide-react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { useOrder } from "../../context/OrderContext";
 import { getProductById } from "../../data/products";
-
+import { useNotifications } from "../../context/NotificationContext";
 const OrderManagement = () => {
   const { orders, updateOrderStatus, deleteOrder } = useOrder();
-
+  const { addNotification } = useNotifications();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("All");
   const [expandedOrder, setExpandedOrder] = useState(null);
@@ -50,6 +50,7 @@ const OrderManagement = () => {
 
   const handleStatusChange = (orderId, newStatus) => {
     updateOrderStatus(orderId, newStatus);
+    addNotification(`Order #${orderId} has been ${newStatus}`, "user");
     setEditingOrder(null);
     setShowStatusModal(false);
   };

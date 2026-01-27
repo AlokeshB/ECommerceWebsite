@@ -9,7 +9,7 @@ import { useAuth } from "../context/AuthContext";
 import { useOrder } from "../context/OrderContext";
 import { useProduct } from "../context/ProductContext";
 import "../styles/AdminDashboard.css";
-
+import { NotificationBell } from "../components/NotificationBell";
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const { logout } = useAuth();
@@ -37,13 +37,16 @@ const AdminDashboard = () => {
           {menuItems.find((item) => item.id === activeTab)?.label ||
             "Dashboard"}
         </h4>
-        <button
-          className="btn btn-danger d-flex align-items-center gap-2"
-          onClick={handleLogout}
-        >
-          <LogOut size={18} />
-          Logout
-        </button>
+        <div className="d-flex align-items-center gap-4">
+          <NotificationBell role="admin" />
+          <button
+            className="btn btn-danger d-flex align-items-center gap-2"
+            onClick={handleLogout}
+          >
+            <LogOut size={18} />
+            Logout
+          </button>
+        </div>
       </div>
 
       {/* Navigation */}
