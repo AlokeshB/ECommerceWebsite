@@ -55,8 +55,8 @@ const Checkout = () => {
       totalAmount: finalAmount,
       paymentMethod,
       address: user?.address || "No address provided",
-      city: user?.city || "N/A",
-      zip: user?.zip || "N/A",
+      city: user?.city || "",
+      zip: user?.zip || "",
       date: new Date().toLocaleDateString("en-IN"),
       total: finalAmount,
     });
