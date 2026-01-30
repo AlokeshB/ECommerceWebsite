@@ -156,7 +156,7 @@ const OrderTracking = () => {
                     Delivery Address
                   </h6>
                   <p className="small text-dark mb-0">
-                    {order.address}, {order.city} - {order.zip}
+                    {order.address}
                   </p>
                 </div>
               </div>
