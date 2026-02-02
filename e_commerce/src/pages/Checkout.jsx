@@ -151,7 +151,8 @@ const Checkout = () => {
                   <p className="small text-muted mb-0 mt-1 d-flex gap-2">
                     <MapPin size={16} className="text-dark flex-shrink-0" />
                     {user.address
-                      ? `${user.address}, ${user.city} - ${user.zip}`
+                      ? `${user.address}`
+                      // , ${user.city} - ${user.zip}`
                       : "Address not provided"}
                   </p>
                 </div>

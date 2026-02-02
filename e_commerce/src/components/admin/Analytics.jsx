@@ -1,5 +1,11 @@
-import React, { useState, useMemo } from "react";
-import { TrendingUp, Users, ShoppingCart, DollarSign, Calendar } from "lucide-react";
+import React, { useState, useMemo, useCallback } from "react";
+import {
+  TrendingUp,
+  Users,
+  ShoppingCart,
+  DollarSign,
+  Calendar,
+} from "lucide-react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { useOrder } from "../../context/OrderContext";
 import { useProduct } from "../../context/ProductContext";
@@ -9,58 +15,83 @@ const Analytics = () => {
   const { products } = useProduct();
   const [dateRange, setDateRange] = useState("7days");
 
+  // Helper to get the start date for filtering
   const getDaysAgo = (days) => {
     const date = new Date();
     date.setDate(date.getDate() - days);
     return date;
   };
 
-  const getFilteredOrders = (days) => {
-    const since = getDaysAgo(days);
-    return orders.filter((order) => new Date(order.date) >= since);
-  };
+  // Filter orders by date range
+  // Wrapped in useCallback to ensure stability for the useMemo below
+  const getFilteredOrders = useCallback(
+    (days) => {
+      const since = getDaysAgo(days);
+      return orders.filter((order) => new Date(order.date) >= since);
+    },
+    [orders],
+  );
 
+  // Core math for the KPI cards
   const calculateAnalytics = (ordersData) => {
-    const revenue = ordersData.reduce((sum, order) => sum + (order.totalAmount || 0), 0);
+    const revenue = ordersData.reduce(
+      (sum, order) => sum + (order.totalAmount || 0),
+      0,
+    );
     const customers = new Set(ordersData.map((order) => order.email)).size;
-    const avgOrderValue = ordersData.length > 0 ? Math.round(revenue / ordersData.length) : 0;
+    const avgOrderValue =
+      ordersData.length > 0 ? Math.round(revenue / ordersData.length) : 0;
+
     return {
       revenue,
       orders: ordersData.length,
       customers,
       avgOrderValue,
-      conversionRate: ordersData.length > 0 ? ((customers / products.length) * 100).toFixed(1) : 0,
+      conversionRate:
+        ordersData.length > 0
+          ? ((customers / products.length) * 100).toFixed(1)
+          : 0,
     };
   };
 
+  // Main stats object - recalculates only when date range or data changes
   const currentData = useMemo(() => {
     const days = dateRange === "7days" ? 7 : dateRange === "30days" ? 30 : 90;
     return calculateAnalytics(getFilteredOrders(days));
-  }, [dateRange, orders, products]);
+  }, [dateRange, getFilteredOrders]);
 
+  // Top 4 products by sales volume
   const topProducts = useMemo(() => {
     const productSales = {};
+
     orders.forEach((order) => {
       order.items?.forEach((item) => {
         productSales[item.id] = {
           name: item.name,
           sales: (productSales[item.id]?.sales || 0) + item.quantity,
-          revenue: (productSales[item.id]?.revenue || 0) + item.price * item.quantity,
+          revenue:
+            (productSales[item.id]?.revenue || 0) + item.price * item.quantity,
         };
       });
     });
+
     return Object.values(productSales)
       .sort((a, b) => b.sales - a.sales)
       .slice(0, 4);
   }, [orders]);
 
+  // Breakdown of sales by category
   const categoryStats = useMemo(() => {
     const stats = {};
+
+    // Initialize all categories with 0
     products.forEach((product) => {
       if (!stats[product.category]) {
         stats[product.category] = { category: product.category, sales: 0 };
       }
     });
+
+    // Sum up sales per category
     orders.forEach((order) => {
       order.items?.forEach((item) => {
         const product = products.find((p) => p.id === item.id);
@@ -69,7 +100,9 @@ const Analytics = () => {
         }
       });
     });
+
     const total = Object.values(stats).reduce((sum, cat) => sum + cat.sales, 0);
+
     return Object.values(stats).map((cat) => ({
       ...cat,
       percentage: total > 0 ? Math.round((cat.sales / total) * 100) : 0,
@@ -77,10 +110,30 @@ const Analytics = () => {
   }, [orders, products]);
 
   const recentActivity = [
-    { time: "Now", action: "Orders", details: `Total: ${orders.length}`, icon: ShoppingCart },
-    { time: "Now", action: "Products", details: `Active: ${products.length}`, icon: TrendingUp },
-    { time: "Now", action: "Categories", details: `${categoryStats.length} categories`, icon: Users },
-    { time: "Now", action: "Revenue", details: `₹${currentData.revenue.toLocaleString()}`, icon: DollarSign },
+    {
+      time: "Now",
+      action: "Orders",
+      details: `Total: ${orders.length}`,
+      icon: ShoppingCart,
+    },
+    {
+      time: "Now",
+      action: "Products",
+      details: `Active: ${products.length}`,
+      icon: TrendingUp,
+    },
+    {
+      time: "Now",
+      action: "Categories",
+      details: `${categoryStats.length} categories`,
+      icon: Users,
+    },
+    {
+      time: "Now",
+      action: "Revenue",
+      details: `₹${currentData.revenue.toLocaleString()}`,
+      icon: DollarSign,
+    },
   ];
 
   return (
@@ -111,8 +164,12 @@ const Analytics = () => {
               <div className="d-flex justify-content-between align-items-start">
                 <div>
                   <p className="text-muted small mb-1">Total Revenue</p>
-                  <h4 className="mb-0 fw-bold">₹{currentData.revenue.toLocaleString()}</h4>
-                  <small className="text-success">↑ 12.5% from last period</small>
+                  <h4 className="mb-0 fw-bold">
+                    ₹{currentData.revenue.toLocaleString()}
+                  </h4>
+                  <small className="text-success">
+                    ↑ 12.5% from last period
+                  </small>
                 </div>
                 <DollarSign className="text-primary" size={32} />
               </div>
@@ -127,7 +184,9 @@ const Analytics = () => {
                 <div>
                   <p className="text-muted small mb-1">Total Orders</p>
                   <h4 className="mb-0 fw-bold">{currentData.orders}</h4>
-                  <small className="text-success">↑ 8.3% from last period</small>
+                  <small className="text-success">
+                    ↑ 8.3% from last period
+                  </small>
                 </div>
                 <ShoppingCart className="text-success" size={32} />
               </div>
@@ -142,7 +201,9 @@ const Analytics = () => {
                 <div>
                   <p className="text-muted small mb-1">Total Customers</p>
                   <h4 className="mb-0 fw-bold">{currentData.customers}</h4>
-                  <small className="text-success">↑ 5.2% from last period</small>
+                  <small className="text-success">
+                    ↑ 5.2% from last period
+                  </small>
                 </div>
                 <Users className="text-info" size={32} />
               </div>
@@ -157,7 +218,9 @@ const Analytics = () => {
                 <div>
                   <p className="text-muted small mb-1">Avg Order Value</p>
                   <h4 className="mb-0 fw-bold">₹{currentData.avgOrderValue}</h4>
-                  <small className="text-success">↑ 2.1% from last period</small>
+                  <small className="text-success">
+                    ↑ 2.1% from last period
+                  </small>
                 </div>
                 <TrendingUp className="text-warning" size={32} />
               </div>
@@ -179,7 +242,9 @@ const Analytics = () => {
                   <div key={index} className="mb-3 pb-3 border-bottom">
                     <div className="d-flex justify-content-between align-items-start mb-2">
                       <p className="mb-0 small fw-bold">{product.name}</p>
-                      <span className="badge bg-primary">{product.sales} sales</span>
+                      <span className="badge bg-primary">
+                        {product.sales} sales
+                      </span>
                     </div>
                     <div className="progress" style={{ height: "6px" }}>
                       <div
@@ -213,12 +278,20 @@ const Analytics = () => {
                   <div key={index} className="mb-3">
                     <div className="d-flex justify-content-between align-items-center mb-2">
                       <p className="mb-0 small fw-bold">{cat.category}</p>
-                      <span className="badge bg-secondary">{cat.sales} sales</span>
+                      <span className="badge bg-secondary">
+                        {cat.sales} sales
+                      </span>
                     </div>
                     <div className="progress" style={{ height: "24px" }}>
                       <div
                         className={`progress-bar bg-${
-                          index === 0 ? "primary" : index === 1 ? "success" : index === 2 ? "info" : "warning"
+                          index === 0
+                            ? "primary"
+                            : index === 1
+                              ? "success"
+                              : index === 2
+                                ? "info"
+                                : "warning"
                         }`}
                         style={{ width: `${cat.percentage}%` }}
                       >
@@ -228,7 +301,9 @@ const Analytics = () => {
                   </div>
                 ))
               ) : (
-                <p className="text-muted text-center py-3">No category data yet</p>
+                <p className="text-muted text-center py-3">
+                  No category data yet
+                </p>
               )}
             </div>
           </div>
@@ -246,16 +321,26 @@ const Analytics = () => {
               {recentActivity.map((activity, index) => {
                 const Icon = activity.icon;
                 return (
-                  <div key={index} className="d-flex gap-3 mb-3 pb-3 border-bottom">
-                    <div className="bg-light rounded-circle d-flex align-items-center justify-content-center"
-                      style={{ width: "40px", height: "40px", flexShrink: 0 }}>
+                  <div
+                    key={index}
+                    className="d-flex gap-3 mb-3 pb-3 border-bottom"
+                  >
+                    <div
+                      className="bg-light rounded-circle d-flex align-items-center justify-content-center"
+                      style={{ width: "40px", height: "40px", flexShrink: 0 }}
+                    >
                       <Icon size={20} className="text-primary" />
                     </div>
                     <div className="flex-grow-1">
                       <p className="mb-1 small fw-bold">{activity.action}</p>
-                      <p className="mb-0 text-muted small">{activity.details}</p>
+                      <p className="mb-0 text-muted small">
+                        {activity.details}
+                      </p>
                     </div>
-                    <p className="mb-0 text-muted small" style={{ minWidth: "60px", textAlign: "right" }}>
+                    <p
+                      className="mb-0 text-muted small"
+                      style={{ minWidth: "60px", textAlign: "right" }}
+                    >
                       {activity.time}
                     </p>
                   </div>
@@ -276,8 +361,10 @@ const Analytics = () => {
                 <p className="text-muted small mb-1">Conversion Rate</p>
                 <h5 className="mb-2 fw-bold">{currentData.conversionRate}%</h5>
                 <div className="progress" style={{ height: "6px" }}>
-                  <div className="progress-bar bg-success"
-                    style={{ width: `${currentData.conversionRate * 10}%` }}></div>
+                  <div
+                    className="progress-bar bg-success"
+                    style={{ width: `${currentData.conversionRate * 10}%` }}
+                  ></div>
                 </div>
               </div>
 
@@ -285,8 +372,10 @@ const Analytics = () => {
                 <p className="text-muted small mb-1">Customer Satisfaction</p>
                 <h5 className="mb-2 fw-bold">4.6/5.0</h5>
                 <div className="progress" style={{ height: "6px" }}>
-                  <div className="progress-bar bg-warning"
-                    style={{ width: "92%" }}></div>
+                  <div
+                    className="progress-bar bg-warning"
+                    style={{ width: "92%" }}
+                  ></div>
                 </div>
               </div>
 
@@ -294,8 +383,10 @@ const Analytics = () => {
                 <p className="text-muted small mb-1">Inventory Health</p>
                 <h5 className="mb-2 fw-bold">87%</h5>
                 <div className="progress" style={{ height: "6px" }}>
-                  <div className="progress-bar bg-info"
-                    style={{ width: "87%" }}></div>
+                  <div
+                    className="progress-bar bg-info"
+                    style={{ width: "87%" }}
+                  ></div>
                 </div>
               </div>
 
@@ -303,8 +394,10 @@ const Analytics = () => {
                 <p className="text-muted small mb-1">Return Rate</p>
                 <h5 className="mb-2 fw-bold">2.3%</h5>
                 <div className="progress" style={{ height: "6px" }}>
-                  <div className="progress-bar bg-danger"
-                    style={{ width: "23%" }}></div>
+                  <div
+                    className="progress-bar bg-danger"
+                    style={{ width: "23%" }}
+                  ></div>
                 </div>
               </div>
             </div>
