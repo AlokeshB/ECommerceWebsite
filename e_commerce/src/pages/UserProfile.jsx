@@ -45,13 +45,34 @@ const UserProfile = () => {
     if (!user) return navigate("/");
 
     // 1. Load Profile Data
-    const savedProfile =
+
+    const allRegisteredUsers =
+      JSON.parse(localStorage.getItem("fhub_registered_user")) || [];
+
+    // Find the specific user object that matches the currently logged-in user's email
+    // Note: We assume emails are unique identifiers
+    const registeredDetails = Array.isArray(allRegisteredUsers)
+      ? allRegisteredUsers.find((u) => u.email === user.email)
+      : null;
+
+    // Check if there are any locally saved profile edits (which might override registration data)
+    const savedLocalProfile =
       JSON.parse(localStorage.getItem("fhub_user_profile")) || {};
+
     setProfileData({
-      firstName: user.firstName || user.fullName || "", // Added fallback to fullName
+      firstName: user.firstName || user.fullName || "",
       email: user.email || "",
-      mobile: savedProfile.mobile || user.mobile || "",
-      profilePic: savedProfile.profilePic || null,
+      // LOGIC FIXED:
+      // 1. Check savedLocalProfile (if user edited it recently)
+      // 2. Check registeredDetails.phoneNo (from the screenshot, key is 'phoneNo')
+      // 3. Fallback to user.mobile or empty string
+      mobile:
+        savedLocalProfile.mobile ||
+        registeredDetails?.phoneNo ||
+        user.mobile ||
+        "",
+      profilePic:
+        savedLocalProfile.profilePic || registeredDetails?.profilePic || null,
     });
 
     // 2. Load Addresses
@@ -79,7 +100,6 @@ const UserProfile = () => {
       return dateString;
     }
 
-    // If valid, format it nicely
     return date.toLocaleDateString("en-IN", {
       year: "numeric",
       month: "long",
