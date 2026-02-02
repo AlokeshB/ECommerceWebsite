@@ -54,16 +54,16 @@ const Footer = () => {
           <div className="col-6 col-md-2 col-lg-3">
             <h6 className="fw-bold text-dark mb-3" style={{ fontSize: "14px" }}>Contributors</h6>
             <ul className="list-unstyled text-muted small d-flex flex-column gap-2">
-              <li>AHAN SARKAR</li>
-              <li>AMINUR RAHMAN</li>
-              <li>PURBADRI GHOSH</li>
-              <li>ALOKESH BHATTACHARYA</li>
+              <li>Ahan Sarkar</li>
+              <li>Aminur Rahman</li>
+              <li>Purbadri Ghosh</li>
+              <li>Alokesh Bhattacharya</li>
             </ul>
           </div>
         </div>
         <hr className="border-secondary my-3 my-md-4" />
         <div className="text-center text-muted small">
-          &copy; {new Date().getFullYear()} E-Commerce Platform. All rights reserved.
+          &copy; 2026 Fashion-Hub. All rights reserved.
         </div>
       </div>
     </footer>

@@ -16,7 +16,7 @@ export const PRODUCTS = assetsProducts.map((product, index) => {
     old_price: Math.round(finalPrice * 1.3),
     description: product.description,
     rating: 4.5,
-    reviews: Math.floor(Math.random() * 200) + 50,
+    //reviews: Math.floor(Math.random() * 200) + 50,
     inStock: true,
     sizes: product.sizes,
     subCategory: product.subCategory,
