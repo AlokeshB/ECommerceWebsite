@@ -28,8 +28,7 @@ const UserProfile = () => {
   const [profileData, setProfileData] = useState({
     firstName: "",
     email: "",
-    mobile: "",
-    profilePic: null,
+    mobile: ""
   });
 
   const [addresses, setAddresses] = useState([]);
