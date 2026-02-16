@@ -88,9 +88,7 @@ const DashboardHome = ({ setActiveTab }) => {
   const { orders } = useOrder();
   const { products } = useProduct();
 
-  // --- FIX START: Deduplicate Orders ---
-  // We use useMemo to filter out duplicates based on 'id' so this calculation
-  // only runs when 'orders' changes, not on every render.
+  // We use useMemo to filter out duplicates based on 'id' so this calculation only runs when 'orders' changes, not on every render.
   const uniqueOrders = useMemo(() => {
     if (!orders) return [];
     const seen = new Set();
@@ -100,7 +98,6 @@ const DashboardHome = ({ setActiveTab }) => {
       return !duplicate;
     });
   }, [orders]);
-  // --- FIX END ---
 
   const totalRevenue = uniqueOrders.reduce(
     (sum, order) => sum + (order.totalAmount || 0),

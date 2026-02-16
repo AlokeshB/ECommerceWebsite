@@ -44,7 +44,6 @@ export const NotificationBell = ({ role }) => {
           </span>
         )}
       </button>
-
       {/* Notification Dropdown Popup */}
       {isOpen && (
         <div
