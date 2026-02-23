@@ -37,54 +37,89 @@ const Checkout = () => {
     }
   }, [user, cartItems, navigate, showSuccessModal, isFinalizing]);
 
-  const handlePlaceOrder = () => {
+  const handlePlaceOrder = async () => {
+    if (!user) {
+      addNotification("Please login to place an order", "error");
+      return;
+    }
+
+    if (!cartItems || cartItems.length === 0) {
+      addNotification("Your cart is empty", "error");
+      return;
+    }
+
     setIsProcessing(true);
 
-    const totalAmount = getCartTotal();
-    const discount = totalAmount > 1000 ? 200 : 0;
-    const deliveryCharges = totalAmount > 500 ? 0 : 40;
-    const finalAmount = totalAmount - discount + deliveryCharges;
+    try {
+      // Prepare order data
+      const orderData = {
+        items: cartItems.map((item) => ({
+          product: item._id || item.id,
+          quantity: item.quantity,
+          price: item.price,
+        })),
+        shippingAddress: {
+          fullName: user?.name || user?.fullName || "Customer",
+          address: user?.address || "",
+          city: user?.city || "",
+          state: user?.state || "",
+          zipCode: user?.zipCode || "",
+          country: user?.country || "India",
+          phone: user?.phone || "",
+        },
+        paymentMethod: paymentMethod,
+      };
 
-    const newOrder = createOrder({
-      customerName: user?.fullName || user?.name || "Customer",
-      email: user?.email,
-      items: cartItems,
-      subtotal: totalAmount,
-      discount,
-      deliveryCharges,
-      totalAmount: finalAmount,
-      paymentMethod,
-      address: user?.address || "No address provided",
-      city: user?.city || "",
-      zip: user?.zip || "",
-      date: new Date().toLocaleDateString("en-IN"),
-      total: finalAmount,
-    });
+      // Call backend API
+      const authToken = sessionStorage.getItem("authToken");
+      const response = await fetch("http://localhost:5000/api/orders/create", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${authToken}`,
+        },
+        body: JSON.stringify(orderData),
+      });
 
-    addNotification("Alert: A new order has been placed!", "admin");
+      const data = await response.json();
 
-    setTimeout(() => {
+      if (!data.success) {
+        setIsProcessing(false);
+        addNotification(data.message || "Failed to place order", "error");
+        return;
+      }
+
+      // Order placed successfully
+      setNewOrderId(data.order._id);
+      addNotification("Order placed successfully!", "success");
+
+      setTimeout(() => {
+        setIsProcessing(false);
+        setShowSuccessModal(true);
+        setShowSidePopup(true);
+        setTimeout(() => setShowSidePopup(false), 4000);
+      }, 1000);
+    } catch (error) {
       setIsProcessing(false);
-      setNewOrderId(newOrder.id);
-
-      const existingOrders =
-        JSON.parse(localStorage.getItem("fhub_orders")) || [];
-      localStorage.setItem(
-        "fhub_orders",
-        JSON.stringify([newOrder, ...existingOrders]),
-      );
-
-      setShowSuccessModal(true);
-      setShowSidePopup(true);
-      setTimeout(() => setShowSidePopup(false), 4000);
-    }, 2000);
+      console.error("Error placing order:", error);
+      addNotification("Error placing order. Please try again.", "error");
+    }
   };
 
   const handleFinalRedirect = () => {
     setShowSuccessModal(false);
     setIsFinalizing(true);
 
-    // Increased timing slightly to let the animation play out comfortably
+    // Clear cart via API
+    const authToken = sessionStorage.getItem("authToken");
+    fetch("http://localhost:5000/api/cart/clear", {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${authToken}`,
+      },
+    }).catch((error) => console.error("Error clearing cart:", error));
+
+    // Redirect to tracking page with order ID
     setTimeout(() => {
       clearCart();
       navigate(`/tracking/${newOrderId}`);

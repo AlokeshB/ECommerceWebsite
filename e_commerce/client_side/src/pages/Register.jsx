@@ -22,12 +22,16 @@ const FormField = ({ label, id, disabled, ...props }) => (
 
 const Register = () => {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { register: authRegister } = useAuth();
   const [formData, setFormData] = useState({
     name: "",
     email: "",
-    phoneNo: "",
+    phone: "",
     address: "",
+    city: "",
+    state: "",
+    zipCode: "",
+    country: "India",
     password: "",
     confirmPassword: "",
   });
@@ -42,17 +46,10 @@ const Register = () => {
   };
 
   const validateForm = (data) => {
-    const { name, email, phoneNo, password, confirmPassword, address } = data;
+    const { name, email, phone, password, confirmPassword, address, city, state, zipCode } = data;
 
-    if (
-      !name ||
-      !email ||
-      !password ||
-      !confirmPassword ||
-      !phoneNo ||
-      !address
-    ) {
-      return "Please fill in all fields.";
+    if (!name || !email || !password || !confirmPassword || !phone || !address || !city || !state || !zipCode) {
+      return "Please fill in all required fields.";
     }
     if (!/^[A-Za-z\s]{2,}$/.test(name)) {
       return "Name must contain letters only (minimum 2 characters).";
@@ -60,11 +57,11 @@ const Register = () => {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return "Please enter a valid email address.";
     }
-    if (!/^[0-9]{10}$/.test(phoneNo)) {
+    if (!/^[0-9]{10}$/.test(phone)) {
       return "Phone number must be 10 digits.";
     }
-    if (password.length < 8) {
-      return "Password must be at least 8 characters long.";
+    if (password.length < 6) {
+      return "Password must be at least 6 characters long.";
     }
     if (password !== confirmPassword) {
       return "Passwords do not match.";
@@ -72,7 +69,7 @@ const Register = () => {
     return null;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setSuccess("");
@@ -82,41 +79,17 @@ const Register = () => {
       setError(validationError);
       return;
     }
-    const savedData = localStorage.getItem("fhub_registered_user");
-    let existingUsers = [];
-    // const existingUsers = JSON.parse(localStorage.getItem("fhub_registered_user") || "[]");
-    console.log(existingUsers);
 
-    // existingUsers.push(formData);
-    // localStorage.setItem("fhub_registered_user", JSON.stringify(existingUsers));
-    try {
-      const parsedData = JSON.parse(savedData);
-      existingUsers = Array.isArray(parsedData) ? parsedData : [];
-    } catch {
-      existingUsers = [];
-    }
-    const userExists = existingUsers.find((u) => u.email === formData.email);
-    if (userExists) {
-      setError("Email already registered. Please login.");
-      return;
-    }
-    existingUsers.push(formData);
-    localStorage.setItem("fhub_registered_user", JSON.stringify(existingUsers));
     setLoading(true);
-    setTimeout(() => {
-      login({
-        name: formData.name,
-        fullName: formData.name,
-        email: formData.email,
-        phone: formData.phoneNo,
-        address: formData.address,
-        role: "user",
-      });
-      console.log(formData);
-      setSuccess("Registration successful! Redirecting to login...");
+    const result = await authRegister(formData);
+
+    if (result.success) {
+      setSuccess("Registration successful! Redirecting to home...");
+      setTimeout(() => navigate("/"), 1500);
+    } else {
+      setError(result.error || "Registration failed. Please try again.");
       setLoading(false);
-      setTimeout(() => navigate("/login"), 1500);
-    }, 500);
+    }
   };
 
   return (
@@ -160,81 +133,154 @@ const Register = () => {
                   )}
 
                   <form onSubmit={handleSubmit}>
-                    <FormField
-                      label="Full Name"
-                      id="name"
-                      type="text"
-                      name="name"
-                      placeholder="Enter your full name"
-                      value={formData.name}
-                      onChange={handleChange}
-                      disabled={loading}
-                    />
-
-                    <FormField
-                      label="Email Address"
-                      id="email"
-                      type="email"
-                      name="email"
-                      placeholder="you@example.com"
-                      value={formData.email}
-                      onChange={handleChange}
-                      disabled={loading}
-                    />
-
-                    <FormField
-                      label="Phone Number"
-                      id="phoneNo"
-                      type="tel"
-                      name="phoneNo"
-                      placeholder="Enter 10-digit number"
-                      value={formData.phoneNo}
-                      onChange={handleChange}
-                      maxLength="10"
-                      disabled={loading}
-                    />
-
-                    <div className="mb-3">
-                      <label
-                        htmlFor="address"
-                        className="form-label fw-bold small"
-                      >
-                        Address
-                      </label>
-                      <textarea
-                        id="address"
-                        name="address"
-                        className="form-control"
-                        placeholder="Enter your full address"
-                        value={formData.address}
-                        onChange={handleChange}
-                        disabled={loading}
-                        rows="3"
-                        required
-                      />
+                    <div className="row g-3">
+                      <div className="col-md-6">
+                        <FormField
+                          label="Full Name"
+                          id="name"
+                          type="text"
+                          name="name"
+                          placeholder="Enter your full name"
+                          value={formData.name}
+                          onChange={handleChange}
+                          disabled={loading}
+                        />
+                      </div>
+                      <div className="col-md-6">
+                        <FormField
+                          label="Email Address"
+                          id="email"
+                          type="email"
+                          name="email"
+                          placeholder="you@example.com"
+                          value={formData.email}
+                          onChange={handleChange}
+                          disabled={loading}
+                        />
+                      </div>
                     </div>
 
-                    <FormField
-                      label="Password"
-                      id="password"
-                      type="password"
-                      name="password"
-                      placeholder="Min 8 characters"
-                      value={formData.password}
-                      onChange={handleChange}
-                      disabled={loading}
-                    />
+                    <div className="row g-3">
+                      <div className="col-md-6">
+                        <FormField
+                          label="Phone Number"
+                          id="phone"
+                          type="tel"
+                          name="phone"
+                          placeholder="Enter 10-digit number"
+                          value={formData.phone}
+                          onChange={handleChange}
+                          maxLength="10"
+                          disabled={loading}
+                        />
+                      </div>
+                      <div className="col-md-6">
+                        <FormField
+                          label="City"
+                          id="city"
+                          type="text"
+                          name="city"
+                          placeholder="Enter city"
+                          value={formData.city}
+                          onChange={handleChange}
+                          disabled={loading}
+                        />
+                      </div>
+                    </div>
 
-                    <FormField
-                      label="Confirm Password"
-                      id="confirmPassword"
-                      type="password"
-                      name="confirmPassword"
-                      placeholder="Re-enter password"
-                      value={formData.confirmPassword}
-                      onChange={handleChange}
-                      disabled={loading}
-                    />
+                    <div className="row g-3">
+                      <div className="col-md-6">
+                        <FormField
+                          label="State"
+                          id="state"
+                          type="text"
+                          name="state"
+                          placeholder="Enter state"
+                          value={formData.state}
+                          onChange={handleChange}
+                          disabled={loading}
+                        />
+                      </div>
+                      <div className="col-md-6">
+                        <FormField
+                          label="Zip Code"
+                          id="zipCode"
+                          type="text"
+                          name="zipCode"
+                          placeholder="Enter zip code"
+                          value={formData.zipCode}
+                          onChange={handleChange}
+                          disabled={loading}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="row g-3">
+                      <div className="col-md-6">
+                        <div className="mb-3">
+                          <label
+                            htmlFor="country"
+                            className="form-label fw-bold small"
+                          >
+                            Country
+                          </label>
+                          <select
+                            id="country"
+                            name="country"
+                            className="form-control"
+                            value={formData.country}
+                            onChange={handleChange}
+                            disabled={loading}
+                          >
+                            <option value="India">India</option>
+                            <option value="USA">USA</option>
+                            <option value="UK">UK</option>
+                            <option value="Canada">Canada</option>
+                            <option value="Australia">Australia</option>
+                            <option value="Other">Other</option>
+                          </select>
+                        </div>
+                      </div>
+                      <div className="col-md-6">
+                        <FormField
+                          label="Address Line"
+                          id="address"
+                          type="text"
+                          name="address"
+                          placeholder="Enter your address"
+                          value={formData.address}
+                          onChange={handleChange}
+                          disabled={loading}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="row g-3">
+                      <div className="col-md-6">
+                        <FormField
+                          label="Password"
+                          id="password"
+                          type="password"
+                          name="password"
+                          placeholder="Min 6 characters"
+                          value={formData.password}
+                          onChange={handleChange}
+                          disabled={loading}
+                        />
+                      </div>
+                      <div className="col-md-6">
+                        <FormField
+                          label="Confirm Password"
+                          id="confirmPassword"
+                          type="password"
+                          name="confirmPassword"
+                          placeholder="Re-enter password"
+                          value={formData.confirmPassword}
+                          onChange={handleChange}
+                          disabled={loading}
+                        />
+                      </div>
+                    </div>
 
                     <button
                       type="submit"

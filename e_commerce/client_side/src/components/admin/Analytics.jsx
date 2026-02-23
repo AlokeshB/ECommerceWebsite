@@ -1,140 +1,47 @@
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import {
   TrendingUp,
   Users,
   ShoppingCart,
   DollarSign,
   Calendar,
+  Loader2,
 } from "lucide-react";
 import "bootstrap/dist/css/bootstrap.min.css";
-import { useOrder } from "../../context/OrderContext";
-import { useProduct } from "../../context/ProductContext";
 
 const Analytics = () => {
-  const { orders } = useOrder();
-  const { products } = useProduct();
+  const [analytics, setAnalytics] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [dateRange, setDateRange] = useState("7days");
 
-  // Helper to get the start date for filtering
-  const getDaysAgo = (days) => {
-    const date = new Date();
-    date.setDate(date.getDate() - days);
-    return date;
-  };
+  // Fetch analytics from backend API
+  useEffect(() => {
+    const fetchAnalytics = async () => {
+      try {
+        setLoading(true);
+        const authToken = sessionStorage.getItem("authToken");
+        const response = await fetch("http://localhost:5000/api/admin/analytics", {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${authToken}`,
+          },
+        });
 
-  // Filter orders by date range
-  // Wrapped in useCallback to ensure stability for the useMemo below
-  const getFilteredOrders = useCallback(
-    (days) => {
-      const since = getDaysAgo(days);
-      return orders.filter((order) => new Date(order.date) >= since);
-    },
-    [orders],
-  );
-
-  // Core math for the KPI cards
-  const calculateAnalytics = (ordersData) => {
-    const revenue = ordersData.reduce(
-      (sum, order) => sum + (order.totalAmount || 0),
-      0,
-    );
-    const customers = new Set(ordersData.map((order) => order.email)).size;
-    const avgOrderValue =
-      ordersData.length > 0 ? Math.round(revenue / ordersData.length) : 0;
-
-    return {
-      revenue,
-      orders: ordersData.length,
-      customers,
-      avgOrderValue,
-      conversionRate:
-        ordersData.length > 0
-          ? ((customers / products.length) * 100).toFixed(1)
-          : 0,
-    };
-  };
-
-  // Main stats object - recalculates only when date range or data changes
-  const currentData = useMemo(() => {
-    const days = dateRange === "7days" ? 7 : dateRange === "30days" ? 30 : 90;
-    return calculateAnalytics(getFilteredOrders(days));
-  }, [dateRange, getFilteredOrders]);
-
-  // Top 4 products by sales volume
-  const topProducts = useMemo(() => {
-    const productSales = {};
-
-    orders.forEach((order) => {
-      order.items?.forEach((item) => {
-        productSales[item.id] = {
-          name: item.name,
-          sales: (productSales[item.id]?.sales || 0) + item.quantity,
-          revenue:
-            (productSales[item.id]?.revenue || 0) + item.price * item.quantity,
-        };
-      });
-    });
-
-    return Object.values(productSales)
-      .sort((a, b) => b.sales - a.sales)
-      .slice(0, 4);
-  }, [orders]);
-
-  // Breakdown of sales by category
-  const categoryStats = useMemo(() => {
-    const stats = {};
-
-    // Initialize all categories with 0
-    products.forEach((product) => {
-      if (!stats[product.category]) {
-        stats[product.category] = { category: product.category, sales: 0 };
-      }
-    });
-
-    // Sum up sales per category
-    orders.forEach((order) => {
-      order.items?.forEach((item) => {
-        const product = products.find((p) => p.id === item.id);
-        if (product && stats[product.category]) {
-          stats[product.category].sales += item.quantity;
+        const data = await response.json();
+        
+        if (data.success) {
+          setAnalytics(data.analytics);
         }
-      });
-    });
+      } catch (error) {
+        console.error("Error fetching analytics:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-    const total = Object.values(stats).reduce((sum, cat) => sum + cat.sales, 0);
-
-    return Object.values(stats).map((cat) => ({
-      ...cat,
-      percentage: total > 0 ? Math.round((cat.sales / total) * 100) : 0,
-    }));
-  }, [orders, products]);
-
-  const recentActivity = [
-    {
-      time: "Now",
-      action: "Orders",
-      details: `Total: ${orders.length}`,
-      icon: ShoppingCart,
-    },
-    {
-      time: "Now",
-      action: "Products",
-      details: `Active: ${products.length}`,
-      icon: TrendingUp,
-    },
-    {
-      time: "Now",
-      action: "Categories",
-      details: `${categoryStats.length} categories`,
-      icon: Users,
-    },
-    {
-      time: "Now",
-      action: "Revenue",
-      details: `₹${currentData.revenue.toLocaleString()}`,
-      icon: DollarSign,
-    },
-  ];
+    fetchAnalytics();
+  }, [dateRange]);
 
   return (
     <div>
@@ -148,6 +55,7 @@ const Analytics = () => {
             value={dateRange}
             onChange={(e) => setDateRange(e.target.value)}
             style={{ width: "150px" }}
+            disabled={loading}
           >
             <option value="7days">Last 7 Days</option>
             <option value="30days">Last 30 Days</option>
@@ -156,78 +64,84 @@ const Analytics = () => {
         </div>
       </div>
 
-      {/* KPI Cards */}
-      <div className="row g-3 mb-4">
-        <div className="col-md-6 col-lg-3">
-          <div className="card border-0 shadow-sm bg-primary bg-opacity-10">
-            <div className="card-body">
-              <div className="d-flex justify-content-between align-items-start">
-                <div>
-                  <p className="text-muted small mb-1">Total Revenue</p>
-                  <h4 className="mb-0 fw-bold">
-                    ₹{currentData.revenue.toLocaleString()}
-                  </h4>
-                  <small className="text-success">
-                    ↑ 12.5% from last period
-                  </small>
+      {loading ? (
+        <div className="d-flex justify-content-center align-items-center" style={{ minHeight: "500px" }}>
+          <Loader2 className="spinner-border text-dark" />
+        </div>
+      ) : analytics ? (
+        <>
+          {/* KPI Cards */}
+          <div className="row g-3 mb-4">
+            <div className="col-md-6 col-lg-3">
+              <div className="card border-0 shadow-sm bg-primary bg-opacity-10">
+                <div className="card-body">
+                  <div className="d-flex justify-content-between align-items-start">
+                    <div>
+                      <p className="text-muted small mb-1">Total Revenue</p>
+                      <h4 className="mb-0 fw-bold">
+                        ₹{analytics.totalRevenue?.toLocaleString() || 0}
+                      </h4>
+                      <small className="text-success">
+                        ↑ 12.5% from last period
+                      </small>
+                    </div>
+                    <DollarSign className="text-primary" size={32} />
+                  </div>
                 </div>
-                <DollarSign className="text-primary" size={32} />
               </div>
             </div>
-          </div>
-        </div>
 
-        <div className="col-md-6 col-lg-3">
-          <div className="card border-0 shadow-sm bg-success bg-opacity-10">
-            <div className="card-body">
-              <div className="d-flex justify-content-between align-items-start">
-                <div>
-                  <p className="text-muted small mb-1">Total Orders</p>
-                  <h4 className="mb-0 fw-bold">{currentData.orders}</h4>
-                  <small className="text-success">
-                    ↑ 8.3% from last period
-                  </small>
+            <div className="col-md-6 col-lg-3">
+              <div className="card border-0 shadow-sm bg-success bg-opacity-10">
+                <div className="card-body">
+                  <div className="d-flex justify-content-between align-items-start">
+                    <div>
+                      <p className="text-muted small mb-1">Total Orders</p>
+                      <h4 className="mb-0 fw-bold">{analytics.totalOrders || 0}</h4>
+                      <small className="text-success">
+                        ↑ 8.3% from last period
+                      </small>
+                    </div>
+                    <ShoppingCart className="text-success" size={32} />
+                  </div>
                 </div>
-                <ShoppingCart className="text-success" size={32} />
               </div>
             </div>
-          </div>
-        </div>
 
-        <div className="col-md-6 col-lg-3">
-          <div className="card border-0 shadow-sm bg-info bg-opacity-10">
-            <div className="card-body">
-              <div className="d-flex justify-content-between align-items-start">
-                <div>
-                  <p className="text-muted small mb-1">Total Customers</p>
-                  <h4 className="mb-0 fw-bold">{currentData.customers}</h4>
-                  <small className="text-success">
-                    ↑ 5.2% from last period
-                  </small>
+            <div className="col-md-6 col-lg-3">
+              <div className="card border-0 shadow-sm bg-info bg-opacity-10">
+                <div className="card-body">
+                  <div className="d-flex justify-content-between align-items-start">
+                    <div>
+                      <p className="text-muted small mb-1">Total Users</p>
+                      <h4 className="mb-0 fw-bold">{analytics.totalUsers || 0}</h4>
+                      <small className="text-success">
+                        ↑ 5.2% from last period
+                      </small>
+                    </div>
+                    <Users className="text-info" size={32} />
+                  </div>
                 </div>
-                <Users className="text-info" size={32} />
               </div>
             </div>
-          </div>
-        </div>
 
-        <div className="col-md-6 col-lg-3">
-          <div className="card border-0 shadow-sm bg-warning bg-opacity-10">
-            <div className="card-body">
-              <div className="d-flex justify-content-between align-items-start">
-                <div>
-                  <p className="text-muted small mb-1">Avg Order Value</p>
-                  <h4 className="mb-0 fw-bold">₹{currentData.avgOrderValue}</h4>
-                  <small className="text-success">
-                    ↑ 2.1% from last period
-                  </small>
+            <div className="col-md-6 col-lg-3">
+              <div className="card border-0 shadow-sm bg-warning bg-opacity-10">
+                <div className="card-body">
+                  <div className="d-flex justify-content-between align-items-start">
+                    <div>
+                      <p className="text-muted small mb-1">Total Products</p>
+                      <h4 className="mb-0 fw-bold">{analytics.totalProducts || 0}</h4>
+                      <small className="text-success">
+                        ↑ 2.1% from last period
+                      </small>
+                    </div>
+                    <TrendingUp className="text-warning" size={32} />
+                  </div>
                 </div>
-                <TrendingUp className="text-warning" size={32} />
               </div>
             </div>
           </div>
-        </div>
-      </div>
 
       <div className="row g-3 mb-4">
         {/* Top Products */}
@@ -404,6 +318,12 @@ const Analytics = () => {
           </div>
         </div>
       </div>
+        </>
+      ) : (
+        <div className="alert alert-warning" role="alert">
+          <p>No analytics data available at this moment.</p>
+        </div>
+      )}
     </div>
   );
 };
