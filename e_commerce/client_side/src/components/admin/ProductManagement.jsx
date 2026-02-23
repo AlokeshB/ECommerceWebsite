@@ -1,12 +1,13 @@
-import React, { useState } from "react";
-import { Plus, Edit2, Trash2, Search, Filter } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Plus, Edit2, Trash2, Search, Filter, Loader2 } from "lucide-react";
 import "bootstrap/dist/css/bootstrap.min.css";
-import { useProduct } from "../../context/ProductContext";
 import { CATEGORIES, SUB_CATEGORIES } from "../categories";
 import { useNotifications } from "../../context/NotificationContext";
-const ProductManagement = () => {
-  const { products, updateProduct, deleteProduct, addProduct } = useProduct();
 
+const ProductManagement = () => {
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [showModal, setShowModal] = useState(false);
@@ -20,6 +21,34 @@ const ProductManagement = () => {
     stock: "",
     image: "",
   });
+
+  // Fetch products from backend on component mount
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  const fetchProducts = async () => {
+    try {
+      setLoading(true);
+      const authToken = sessionStorage.getItem("authToken");
+      const response = await fetch("http://localhost:5000/api/products", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${authToken}`,
+        },
+      });
+      const data = await response.json();
+      if (data.success) {
+        setProducts(data.products || []);
+      }
+    } catch (error) {
+      console.error("Error fetching products:", error);
+      addNotification("Error fetching products", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const allCategories = ["All", ...CATEGORIES];
   const subCategories = SUB_CATEGORIES;
@@ -49,22 +78,109 @@ const ProductManagement = () => {
     setShowModal(true);
   };
 
-  const handleDeleteProduct = (id) => {
+  const handleDeleteProduct = async (id) => {
     if (window.confirm("Are you sure you want to delete this product?")) {
-      deleteProduct(id);
+      try {
+        setSubmitting(true);
+        const authToken = sessionStorage.getItem("authToken");
+        const response = await fetch(`http://localhost:5000/api/admin/products/${id}`, {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${authToken}`,
+          },
+        });
+        const data = await response.json();
+        if (data.success) {
+          setProducts(products.filter((product) => product._id !== id));
+          addNotification("Product deleted successfully", "success");
+        } else {
+          addNotification(data.message || "Error deleting product", "error");
+        }
+      } catch (error) {
+        console.error("Error deleting product:", error);
+        addNotification("Error deleting product", "error");
+      } finally {
+        setSubmitting(false);
+      }
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (editingProduct) {
-      updateProduct(editingProduct.id, formData);
-      addNotification(`Updated product: ${formData.name}`, "user");
-    } else {
-      addProduct(formData);
-      addNotification(`New Arrival! Check out our new ${formData.name}`, "user");
+    
+    // Validation
+    if (!formData.name || !formData.price || !formData.stock || !formData.image) {
+      addNotification("Please fill all required fields", "error");
+      return;
     }
-    setShowModal(false);
+
+    try {
+      setSubmitting(true);
+      const authToken = sessionStorage.getItem("authToken");
+      
+      const payload = {
+        name: formData.name,
+        category: formData.category,
+        subCategory: formData.subCategory,
+        price: parseFloat(formData.price),
+        stock: parseInt(formData.stock),
+        image: formData.image,
+      };
+
+      if (editingProduct) {
+        // Update product
+        const response = await fetch(`http://localhost:5000/api/admin/products/${editingProduct._id}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${authToken}`,
+          },
+          body: JSON.stringify(payload),
+        });
+        const data = await response.json();
+        if (data.success) {
+          setProducts(
+            products.map((product) =>
+              product._id === editingProduct._id ? data.product : product
+            )
+          );
+          addNotification(`Updated product: ${formData.name}`, "success");
+          setShowModal(false);
+        } else {
+          addNotification(data.message || "Error updating product", "error");
+        }
+      } else {
+        // Create product
+        const response = await fetch("http://localhost:5000/api/admin/products", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${authToken}`,
+          },
+          body: JSON.stringify(payload),
+        });
+        const data = await response.json();
+        if (data.success) {
+          setProducts([...products, data.product]);
+          addNotification(`New Arrival! Check out our new ${formData.name}`, "success");
+          setShowModal(false);
+        } else {
+          addNotification(data.message || "Error adding product", "error");
+        }
+      }
+    } catch (error) {
+      console.error("Error submitting product:", error);
+      addNotification("Error submitting product", "error");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const getStockBadgeClass = (stock) => {
+    if (stock > 20) return "bg-success";
+    if (stock > 10) return "bg-warning";
+    return "bg-danger";
   };
 
   return (
@@ -74,117 +190,134 @@ const ProductManagement = () => {
         <button
           className="btn btn-primary d-flex align-items-center gap-2"
           onClick={handleAddProduct}
+          disabled={loading}
         >
           <Plus size={18} />
           Add Product
         </button>
       </div>
 
+      {/* Loading Spinner */}
+      {loading && (
+        <div className="d-flex justify-content-center align-items-center mb-4">
+          <Loader2 className="spinner-border text-primary me-2" size={32} />
+          <span>Loading products...</span>
+        </div>
+      )}
+
       {/* Filters */}
-      <div className="card border-0 shadow-sm mb-4">
-        <div className="card-body">
-          <div className="row g-3">
-            <div className="col-md-6">
-              <div className="input-group">
-                <span className="input-group-text bg-white border-end-0">
-                  <Search size={18} />
-                </span>
-                <input
-                  type="text"
-                  className="form-control border-start-0"
-                  placeholder="Search products..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
+      {!loading && (
+        <div className="card border-0 shadow-sm mb-4">
+          <div className="card-body">
+            <div className="row g-3">
+              <div className="col-md-6">
+                <div className="input-group">
+                  <span className="input-group-text bg-white border-end-0">
+                    <Search size={18} />
+                  </span>
+                  <input
+                    type="text"
+                    className="form-control border-start-0"
+                    placeholder="Search products..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
               </div>
-            </div>
-            <div className="col-md-6">
-              <div className="d-flex align-items-center gap-2">
-                <Filter size={18} className="text-muted" />
-                <select
-                  className="form-select"
-                  value={selectedCategory}
-                  onChange={(e) => setSelectedCategory(e.target.value)}
-                >
-                  {allCategories.map((cat) => (
-                    <option key={cat} value={cat}>
-                      {/* {cat === "All" ? "All" : cat} */}
-                      {cat}
-                    </option>
-                  ))}
-                </select>
+              <div className="col-md-6">
+                <div className="d-flex align-items-center gap-2">
+                  <Filter size={18} className="text-muted" />
+                  <select
+                    className="form-select"
+                    value={selectedCategory}
+                    onChange={(e) => setSelectedCategory(e.target.value)}
+                  >
+                    {allCategories.map((cat) => (
+                      <option key={cat} value={cat}>
+                        {cat}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Products Table */}
-      <div className="card border-0 shadow-sm">
-        <div className="table-responsive">
-          <table className="table table-hover mb-0">
-            <thead className="table-light">
-              <tr>
-                <th className="small">Image</th>
-                <th className="small">Product Name</th>
-                <th className="small">Category</th>
-                <th className="small">Sub Category</th>
-                <th className="small">Price</th>
-                <th className="small">Stock</th>
-                <th className="small">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredProducts.length > 0 ? (
-                filteredProducts.map((product) => (
-                  <tr key={product.id}>
-                    <td>
-                      <span style={{ fontSize: "24px" }}>{product.image}</span>
-                    </td>
-                    <td className="small fw-bold">{product.name}</td>
-                    <td className="small">
-                      <span className="badge bg-secondary">{product.category}</span>
-                    </td>
-                    <td className="small">
-                      <span className="badge bg-info">{product.subCategory || "N/A"}</span>
-                    </td>
-                    <td className="small fw-bold">₹{product.price}</td>
-                    <td className="small">
-                      <span
-                        className={`badge ${
-                          product.stock > 20 ? "bg-success" : product.stock > 10 ? "bg-warning" : "bg-danger"
-                        }`}
-                      >
-                        {product.stock} units
-                      </span>
-                    </td>
-                    <td className="small">
-                      <button
-                        className="btn btn-sm btn-outline-primary me-2"
-                        onClick={() => handleEditProduct(product)}
-                      >
-                        <Edit2 size={16} />
-                      </button>
-                      <button
-                        className="btn btn-sm btn-outline-danger"
-                        onClick={() => handleDeleteProduct(product.id)}
-                      >
-                        <Trash2 size={16} />
-                      </button>
+      {!loading && (
+        <div className="card border-0 shadow-sm">
+          <div className="table-responsive">
+            <table className="table table-hover mb-0">
+              <thead className="table-light">
+                <tr>
+                  <th className="small">Image</th>
+                  <th className="small">Product Name</th>
+                  <th className="small">Category</th>
+                  <th className="small">Sub Category</th>
+                  <th className="small">Price</th>
+                  <th className="small">Stock</th>
+                  <th className="small">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredProducts.length > 0 ? (
+                  filteredProducts.map((product) => (
+                    <tr key={product._id}>
+                      <td>
+                        <img
+                          src={product.image}
+                          alt={product.name}
+                          style={{ width: "40px", height: "40px", objectFit: "cover", borderRadius: "4px" }}
+                          onError={(e) => {
+                            e.target.src = "https://via.placeholder.com/40?text=No+Image";
+                          }}
+                        />
+                      </td>
+                      <td className="small fw-bold">{product.name}</td>
+                      <td className="small">
+                        <span className="badge bg-secondary">{product.category}</span>
+                      </td>
+                      <td className="small">
+                        <span className="badge bg-info">{product.subCategory || "N/A"}</span>
+                      </td>
+                      <td className="small fw-bold">₹{product.price}</td>
+                      <td className="small">
+                        <span className={`badge ${getStockBadgeClass(product.stock)}`}>
+                          {product.stock} units
+                        </span>
+                      </td>
+                      <td className="small">
+                        <button
+                          className="btn btn-sm btn-outline-primary me-2"
+                          onClick={() => handleEditProduct(product)}
+                          disabled={submitting}
+                        >
+                          <Edit2 size={16} />
+                        </button>
+                        <button
+                          className="btn btn-sm btn-outline-danger"
+                          onClick={() => handleDeleteProduct(product._id)}
+                          disabled={submitting}
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="7" className="text-center py-4 text-muted">
+                      No products found
                     </td>
                   </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan="7" className="text-center py-4 text-muted">
-                    No products found
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Modal */}
       {showModal && (
@@ -197,6 +330,7 @@ const ProductManagement = () => {
                   type="button"
                   className="btn-close"
                   onClick={() => setShowModal(false)}
+                  disabled={submitting}
                 ></button>
               </div>
               <form onSubmit={handleSubmit}>
@@ -267,15 +401,34 @@ const ProductManagement = () => {
                     />
                   </div>
                   <div className="mb-3">
-                    <label className="form-label fw-bold">Image (Emoji)</label>
+                    <label className="form-label fw-bold">Product Image URL</label>
                     <input
                       type="text"
                       className="form-control"
-                      placeholder="e.g., 🎧"
+                      placeholder="https://example.com/image.jpg"
                       value={formData.image}
                       onChange={(e) => setFormData({ ...formData, image: e.target.value })}
                       required
                     />
+                    {formData.image && (
+                      <div className="mt-3">
+                        <p className="small text-muted mb-2">Image Preview:</p>
+                        <img
+                          src={formData.image}
+                          alt="Product Preview"
+                          style={{
+                            maxWidth: "100px",
+                            maxHeight: "100px",
+                            objectFit: "cover",
+                            borderRadius: "4px",
+                            border: "1px solid #ddd",
+                          }}
+                          onError={(e) => {
+                            e.target.style.display = "none";
+                          }}
+                        />
+                      </div>
+                    )}
                   </div>
                 </div>
                 <div className="modal-footer">
@@ -283,11 +436,23 @@ const ProductManagement = () => {
                     type="button"
                     className="btn btn-secondary"
                     onClick={() => setShowModal(false)}
+                    disabled={submitting}
                   >
                     Cancel
                   </button>
-                  <button type="submit" className="btn btn-primary">
-                    {editingProduct ? "Update" : "Add"} Product
+                  <button 
+                    type="submit" 
+                    className="btn btn-primary"
+                    disabled={submitting}
+                  >
+                    {submitting ? (
+                      <>
+                        <Loader2 size={16} className="spinner-border spinner-border-sm me-2" />
+                        {editingProduct ? "Updating..." : "Adding..."}
+                      </>
+                    ) : (
+                      <>{editingProduct ? "Update" : "Add"} Product</>
+                    )}
                   </button>
                 </div>
               </form>

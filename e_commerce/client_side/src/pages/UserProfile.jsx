@@ -13,17 +13,25 @@ import {
   Plus,
   Trash2,
   ExternalLink,
+  CreditCard,
+  Loader2,
 } from "lucide-react";
+import { useNotifications } from "../context/NotificationContext";
 
 const UserProfile = () => {
   const { user, logout } = useAuth();
   const { getUserOrders } = useOrder();
   const navigate = useNavigate();
+  const { addNotification } = useNotifications();
 
   const [activeTab, setActiveTab] = useState("orders");
   const [isEditing, setIsEditing] = useState(false);
   const [orders, setOrders] = useState([]);
   const [showAddAddress, setShowAddAddress] = useState(false);
+  const [cards, setCards] = useState([]);
+  const [showAddCard, setShowAddCard] = useState(false);
+  const [loadingCards, setLoadingCards] = useState(false);
+  const [submittingCard, setSubmittingCard] = useState(false);
 
   const [profileData, setProfileData] = useState({
     firstName: "",
@@ -40,56 +48,200 @@ const UserProfile = () => {
     state: "",
   });
 
-  // --- INITIALIZATION ---
+  const [newCard, setNewCard] = useState({
+    cardNumber: "",
+    cardHolder: "",
+    expiryMonth: "",
+    expiryYear: "",
+    cvv: "",
+  });
+
+    // --- INITIALIZATION ---
   useEffect(() => {
     if (!user) return navigate("/");
 
-    // 1. Load Profile Data
-
-    const allRegisteredUsers =
-      JSON.parse(localStorage.getItem("fhub_registered_user")) || [];
-
-    // Find the specific user object that matches the currently logged-in user's email
-    // Note: We assume emails are unique identifiers
-    const registeredDetails = Array.isArray(allRegisteredUsers)
-      ? allRegisteredUsers.find((u) => u.email === user.email)
-      : null;
-
-    // Check if there are any locally saved profile edits (which might override registration data)
-    const savedLocalProfile =
-      JSON.parse(localStorage.getItem("fhub_user_profile")) || {};
-
+    // Load profile data from logged-in user
     setProfileData({
-      firstName: user.firstName || user.fullName || "",
+      firstName: user.name || "",
       email: user.email || "",
-      // LOGIC FIXED:
-      // 1. Check savedLocalProfile (if user edited it recently)
-      // 2. Check registeredDetails.phoneNo (from the screenshot, key is 'phoneNo')
-      // 3. Fallback to user.mobile or empty string
-      mobile:
-        savedLocalProfile.mobile ||
-        registeredDetails?.phoneNo ||
-        user.mobile ||
-        "",
-      profilePic:
-        savedLocalProfile.profilePic || registeredDetails?.profilePic || null,
+      mobile: user.phone || "",
+      profilePic: user.avatar || null,
     });
 
-    // 2. Load Addresses
-    const savedAddresses =
-      JSON.parse(localStorage.getItem("fhub_address")) || [];
+    // Load addresses from backend
+    fetchAddresses();
 
-    const defaultAddr = {
-      id: "default-reg",
-      type: "Default",
-      value: user.address || "No address provided during registration",
-    };
+    // Load orders from backend
+    fetchOrders();
 
-    const filteredSaved = savedAddresses.filter((a) => a.type !== "Default");
-    setAddresses([defaultAddr, ...filteredSaved]);
+    // Load payment cards from backend
+    fetchPaymentCards();
+  }, [user, navigate]);
 
-    setOrders(getUserOrders(user.email));
-  }, [user, navigate, getUserOrders]);
+  // Fetch addresses from backend
+  const fetchAddresses = async () => {
+    try {
+      const authToken = sessionStorage.getItem("authToken");
+      if (!authToken) return;
+
+      const response = await fetch("http://localhost:5000/api/auth/addresses", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${authToken}`,
+        },
+      });
+
+      const data = await response.json();
+      if (data.success && Array.isArray(data.addresses)) {
+        setAddresses(data.addresses);
+      }
+    } catch (error) {
+      console.error("Error fetching addresses:", error);
+    }
+  };
+
+  // Fetch orders from backend
+  const fetchOrders = async () => {
+    try {
+      const authToken = sessionStorage.getItem("authToken");
+      if (!authToken) return;
+
+      const response = await fetch("http://localhost:5000/api/orders/my-orders", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${authToken}`,
+        },
+      });
+
+      const data = await response.json();
+      if (data.success && Array.isArray(data.orders)) {
+        setOrders(data.orders);
+      }
+    } catch (error) {
+      console.error("Error fetching orders:", error);
+    }
+  };
+  const fetchPaymentCards = async () => {
+    try {
+      setLoadingCards(true);
+      const authToken = sessionStorage.getItem("authToken");
+      const response = await fetch("http://localhost:5000/api/payment-cards", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${authToken}`,
+        },
+      });
+      const data = await response.json();
+      if (data.success) {
+        setCards(data.cards || []);
+      } else {
+        // If backend doesn't have cards yet, keep empty array
+        setCards([]);
+      }
+    } catch (error) {
+      console.error("Error fetching payment cards:", error);
+      setCards([]);
+    } finally {
+      setLoadingCards(false);
+    }
+  };
+
+  // Add new payment card
+  const handleAddCard = async () => {
+    if (
+      !newCard.cardNumber ||
+      !newCard.cardHolder ||
+      !newCard.expiryMonth ||
+      !newCard.expiryYear ||
+      !newCard.cvv
+    ) {
+      return addNotification("Please fill all card details", "error");
+    }
+
+    // Validate card number (basic check - 13-19 digits)
+    if (!/^\d{13,19}$/.test(newCard.cardNumber.replace(/\s/g, ""))) {
+      return addNotification("Please enter a valid card number", "error");
+    }
+
+    // Validate CVV (3-4 digits)
+    if (!/^\d{3,4}$/.test(newCard.cvv)) {
+      return addNotification("Please enter a valid CVV", "error");
+    }
+
+    try {
+      setSubmittingCard(true);
+      const authToken = sessionStorage.getItem("authToken");
+      const response = await fetch("http://localhost:5000/api/payment-cards", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${authToken}`,
+        },
+        body: JSON.stringify({
+          cardNumber: newCard.cardNumber.replace(/\s/g, ""),
+          cardHolder: newCard.cardHolder,
+          expiryMonth: newCard.expiryMonth,
+          expiryYear: newCard.expiryYear,
+          cvv: newCard.cvv,
+        }),
+      });
+      const data = await response.json();
+      if (data.success) {
+        setCards([...cards, data.card]);
+        setNewCard({
+          cardNumber: "",
+          cardHolder: "",
+          expiryMonth: "",
+          expiryYear: "",
+          cvv: "",
+        });
+        setShowAddCard(false);
+        addNotification("Card added successfully", "success");
+      } else {
+        addNotification(data.message || "Error adding card", "error");
+      }
+    } catch (error) {
+      console.error("Error adding card:", error);
+      addNotification("Error adding card", "error");
+    } finally {
+      setSubmittingCard(false);
+    }
+  };
+
+  // Delete payment card
+  const handleDeleteCard = async (cardId) => {
+    if (window.confirm("Are you sure you want to delete this card?")) {
+      try {
+        setSubmittingCard(true);
+        const authToken = sessionStorage.getItem("authToken");
+        const response = await fetch(
+          `http://localhost:5000/api/payment-cards/${cardId}`,
+          {
+            method: "DELETE",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${authToken}`,
+            },
+          }
+        );
+        const data = await response.json();
+        if (data.success) {
+          setCards(cards.filter((c) => c._id !== cardId));
+          addNotification("Card deleted successfully", "success");
+        } else {
+          addNotification(data.message || "Error deleting card", "error");
+        }
+      } catch (error) {
+        console.error("Error deleting card:", error);
+        addNotification("Error deleting card", "error");
+      } finally {
+        setSubmittingCard(false);
+      }
+    }
+  };
 
   const formatDate = (dateString) => {
     if (!dateString) return "Date not available";
@@ -108,43 +260,106 @@ const UserProfile = () => {
   };
 
   // --- HANDLERS ---
-  const handleSave = () => {
-    localStorage.setItem("fhub_user_profile", JSON.stringify(profileData));
-    setIsEditing(false);
-    alert("Profile updated!");
+  const handleSave = async () => {
+    try {
+      const authToken = sessionStorage.getItem("authToken");
+      const response = await fetch("http://localhost:5000/api/auth/update-profile", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${authToken}`,
+        },
+        body: JSON.stringify({
+          name: profileData.firstName,
+          email: profileData.email,
+          phone: profileData.mobile,
+        }),
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setIsEditing(false);
+        addNotification("Profile updated successfully", "success");
+      } else {
+        addNotification(data.message || "Error updating profile", "error");
+      }
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      addNotification("Error updating profile", "error");
+    }
   };
 
-  const handleAddAddress = () => {
-    if (!newAddress.street || !newAddress.city)
-      return alert("Please fill details");
-    const addressStr = `${newAddress.street}, ${newAddress.city}, ${newAddress.state} - ${newAddress.zip}`;
-    const updated = [
-      ...addresses,
-      { id: Date.now(), type: "Custom", value: addressStr },
-    ];
+  const handleAddAddress = async () => {
+    if (!newAddress.street || !newAddress.city) {
+      addNotification("Please fill all required fields", "error");
+      return;
+    }
 
-    setAddresses(updated);
-    localStorage.setItem(
-      "fhub_address",
-      JSON.stringify(updated.filter((a) => a.id !== "default-reg")),
-    );
-    setNewAddress({ street: "", city: "", zip: "", state: "" });
-    setShowAddAddress(false);
+    try {
+      const authToken = sessionStorage.getItem("authToken");
+      const response = await fetch("http://localhost:5000/api/auth/addresses", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${authToken}`,
+        },
+        body: JSON.stringify({
+          street: newAddress.street,
+          city: newAddress.city,
+          state: newAddress.state,
+          zipCode: newAddress.zip,
+          country: "India",
+          isDefault: addresses.length === 0,
+        }),
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setAddresses(data.addresses);
+        setNewAddress({ street: "", city: "", zip: "", state: "" });
+        setShowAddAddress(false);
+        addNotification("Address added successfully", "success");
+      } else {
+        addNotification(data.message || "Error adding address", "error");
+      }
+    } catch (error) {
+      console.error("Error adding address:", error);
+      addNotification("Error adding address", "error");
+    }
   };
 
-  const removeAddress = (id) => {
-    const updated = addresses.filter((a) => a.id !== id);
-    setAddresses(updated);
-    localStorage.setItem(
-      "fhub_address",
-      JSON.stringify(updated.filter((a) => a.id !== "default-reg")),
-    );
+  const removeAddress = async (id) => {
+    try {
+      const authToken = sessionStorage.getItem("authToken");
+      const response = await fetch(
+        `http://localhost:5000/api/auth/addresses/${id}`,
+        {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${authToken}`,
+          },
+        }
+      );
+
+      const data = await response.json();
+      if (data.success) {
+        setAddresses(data.addresses);
+        addNotification("Address deleted successfully", "success");
+      } else {
+        addNotification(data.message || "Error deleting address", "error");
+      }
+    } catch (error) {
+      console.error("Error deleting address:", error);
+      addNotification("Error deleting address", "error");
+    }
   };
 
   const tabs = [
     { id: "orders", icon: Package, label: "My Orders" },
     { id: "profile", icon: User, label: "Profile Info" },
     { id: "address", icon: MapPin, label: "Addresses" },
+    { id: "cards", icon: CreditCard, label: "Payment Cards" },
   ];
 
   if (!user) return null;
@@ -228,20 +443,20 @@ const UserProfile = () => {
                       >
                         <div>
                           <span className="badge bg-success">
-                            Order #{o.id || "N/A"}
+                            Order #{o._id || "N/A"}
                           </span>
                           <p className="mb-0 small text-muted">
-                            Placed on {formatDate(o.date || o.createdAt)}
+                            Placed on {formatDate(o.createdAt)}
                           </p>
                         </div>
                         <div className="text-end">
                           <div className="fw-bold mb-2">
-                            ₹{o.totalAmount || o.total || 0}
+                            ₹{o.totalAmount || 0}
                           </div>
                           <button
                             className="btn btn-sm btn-outline-dark"
                             onClick={() =>
-                              navigate(`/tracking/${o.id || "new"}`)
+                              navigate(`/tracking/${o._id}`)
                             }
                           >
                             Track <ExternalLink size={14} />
@@ -416,33 +631,252 @@ const UserProfile = () => {
 
                   {addresses.map((a) => (
                     <div
-                      key={a.id}
+                      key={a._id}
                       className="border rounded p-3 mb-3 position-relative d-flex gap-3 bg-white"
                     >
                       <MapPin size={20} className="text-primary mt-1" />
                       <div>
                         <span
                           className={`badge ${
-                            a.type === "Default" ? "bg-dark" : "bg-secondary"
+                            a.isDefault ? "bg-dark" : "bg-secondary"
                           } mb-1`}
                         >
-                          {a.type}
+                          {a.isDefault ? "Default" : "Custom"}
                         </span>
-                        <p className="mb-0 fw-medium">{a.value}</p>
+                        <p className="mb-0 fw-medium">
+                          {a.street}, {a.city}, {a.state} - {a.zipCode}
+                        </p>
                       </div>
-                      {a.type !== "Default" && (
-                        <button
-                          className="btn btn-link text-danger position-absolute top-0 end-0"
-                          onClick={() => removeAddress(a.id)}
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      )}
+                      <button
+                        className="btn btn-link text-danger position-absolute top-0 end-0"
+                        onClick={() => removeAddress(a._id)}
+                      >
+                        <Trash2 size={16} />
+                      </button>
                     </div>
                   ))}
                 </div>
               )}
-            </div>
+
+              {/* PAYMENT CARDS TAB */}
+              {activeTab === "cards" && (
+                <div className="animate__animated animate__fadeIn">
+                  <div className="d-flex justify-content-between mb-4 border-bottom pb-2">
+                    <h5 className="fw-bold">Saved Payment Cards</h5>
+                    <button
+                      className="btn btn-sm btn-dark"
+                      onClick={() => setShowAddCard(!showAddCard)}
+                      disabled={submittingCard}
+                    >
+                      <Plus size={16} /> Add Card
+                    </button>
+                  </div>
+
+                  {/* Loading Spinner */}
+                  {loadingCards && (
+                    <div className="d-flex justify-content-center align-items-center py-5">
+                      <Loader2 className="spinner-border text-primary me-2" />
+                      <span>Loading cards...</span>
+                    </div>
+                  )}
+
+                  {/* Add Card Form */}
+                  {showAddCard && !loadingCards && (
+                    <div className="card p-4 mb-4 bg-light border-0">
+                      <h6 className="fw-bold mb-3">Add New Card</h6>
+                      <div className="row g-3">
+                        <div className="col-12">
+                          <label className="form-label small fw-bold">
+                            Card Number
+                          </label>
+                          <input
+                            type="text"
+                            className="form-control"
+                            placeholder="1234 5678 9012 3456"
+                            maxLength="19"
+                            value={newCard.cardNumber}
+                            onChange={(e) => {
+                              let val = e.target.value.replace(/\s/g, "");
+                              val = val.replace(/(\d{4})(?=\d)/g, "$1 ");
+                              setNewCard({
+                                ...newCard,
+                                cardNumber: val,
+                              });
+                            }}
+                          />
+                        </div>
+                        <div className="col-12">
+                          <label className="form-label small fw-bold">
+                            Cardholder Name
+                          </label>
+                          <input
+                            type="text"
+                            className="form-control"
+                            placeholder="John Doe"
+                            value={newCard.cardHolder}
+                            onChange={(e) =>
+                              setNewCard({
+                                ...newCard,
+                                cardHolder: e.target.value,
+                              })
+                            }
+                          />
+                        </div>
+                        <div className="col-md-4">
+                          <label className="form-label small fw-bold">
+                            Expiry Month
+                          </label>
+                          <select
+                            className="form-select"
+                            value={newCard.expiryMonth}
+                            onChange={(e) =>
+                              setNewCard({
+                                ...newCard,
+                                expiryMonth: e.target.value,
+                              })
+                            }
+                          >
+                            <option value="">MM</option>
+                            {Array.from({ length: 12 }, (_, i) =>
+                              String(i + 1).padStart(2, "0")
+                            ).map((month) => (
+                              <option key={month} value={month}>
+                                {month}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="col-md-4">
+                          <label className="form-label small fw-bold">
+                            Expiry Year
+                          </label>
+                          <select
+                            className="form-select"
+                            value={newCard.expiryYear}
+                            onChange={(e) =>
+                              setNewCard({
+                                ...newCard,
+                                expiryYear: e.target.value,
+                              })
+                            }
+                          >
+                            <option value="">YY</option>
+                            {Array.from(
+                              { length: 10 },
+                              (_, i) => new Date().getFullYear() + i
+                            ).map((year) => (
+                              <option key={year} value={String(year).slice(-2)}>
+                                {String(year).slice(-2)}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="col-md-4">
+                          <label className="form-label small fw-bold">
+                            CVV
+                          </label>
+                          <input
+                            type="password"
+                            className="form-control"
+                            placeholder="123"
+                            maxLength="4"
+                            value={newCard.cvv}
+                            onChange={(e) =>
+                              setNewCard({
+                                ...newCard,
+                                cvv: e.target.value,
+                              })
+                            }
+                          />
+                        </div>
+                        <div className="col-12 text-end mt-3">
+                          <button
+                            className="btn btn-sm btn-success me-2"
+                            onClick={handleAddCard}
+                            disabled={submittingCard}
+                          >
+                            {submittingCard ? (
+                              <>
+                                <Loader2 size={14} className="spinner-border me-1" /> Adding...
+                              </>
+                            ) : (
+                              <>
+                                <Plus size={14} className="me-1" /> Add Card
+                              </>
+                            )}
+                          </button>
+                          <button
+                            className="btn btn-sm btn-secondary"
+                            onClick={() => {
+                              setShowAddCard(false);
+                              setNewCard({
+                                cardNumber: "",
+                                cardHolder: "",
+                                expiryMonth: "",
+                                expiryYear: "",
+                                cvv: "",
+                              });
+                            }}
+                            disabled={submittingCard}
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Display Saved Cards */}
+                  {!loadingCards && (
+                    <>
+                      {cards.length === 0 ? (
+                        <div className="text-center py-5 text-muted">
+                          <CreditCard size={40} className="mb-3 opacity-25" />
+                          <h5>No payment cards saved yet.</h5>
+                          <p className="small">Add a card to make quick purchases</p>
+                        </div>
+                      ) : (
+                        cards.map((card) => (
+                          <div
+                            key={card._id}
+                            className="border rounded p-4 mb-3 bg-white d-flex justify-content-between align-items-center"
+                            style={{
+                              background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                              color: "white",
+                            }}
+                          >
+                            <div>
+                              <div className="d-flex align-items-center gap-2 mb-2">
+                                <CreditCard size={20} />
+                                <span className="fw-bold">Credit/Debit Card</span>
+                              </div>
+                              <div className="fs-5 fw-bold letter-spacing-2 mb-2">
+                                •••• •••• •••• {card.cardNumber.slice(-4)}
+                              </div>
+                              <div className="d-flex justify-content-between">
+                                <span className="small">
+                                  {card.cardHolder}
+                                </span>
+                                <span className="small">
+                                  {card.expiryMonth}/{card.expiryYear}
+                                </span>
+                              </div>
+                            </div>
+                            <button
+                              className="btn btn-sm btn-danger"
+                              onClick={() => handleDeleteCard(card._id)}
+                              disabled={submittingCard}
+                              title="Delete card"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        ))
+                      )}
+                    </>
+                  )}
+                </div>
+              )}            </div>
           </div>
         </div>
       </div>

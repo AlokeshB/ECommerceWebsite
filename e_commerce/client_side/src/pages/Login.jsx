@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, AlertCircle } from "lucide-react";
+import { ArrowLeft, AlertCircle, Lock, Shield } from "lucide-react";
 import Footer from "../components/Footer";
 import { useAuth } from "../context/AuthContext";
 
@@ -9,10 +9,11 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const navigate = useNavigate();
   const { login } = useAuth();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
 
@@ -27,40 +28,15 @@ const Login = () => {
     }
 
     setLoading(true);
-    setTimeout(() => {
-      const isAdmin = email === "admin@fashionhub.com" && password === "admin123";
-      const savedData = localStorage.getItem("fhub_registered_user");
-      var allUsers =[];
-      try{
-        const parsed = JSON.parse(savedData);
-        allUsers = Array.isArray(parsed) ? parsed : [];
-      }catch{
-        allUsers = [];
-      }
-      // if (!isAdmin && (!registeredData || registeredData.email !== email)) {
-      //   setError("Invalid email or user not found.");
-      //   setLoading(false);
-      //   return;
-      // }
-      // const registeredUser = allUsers.find(u => u.email === email && u.password === password);
-      console.log(allUsers);
-      const registeredData = allUsers.find(u => u.email === email && u.password === password);
-      console.log(registeredData);
-      if (!isAdmin && !registeredData) {
-        setError("Invalid email or password.");
-        setLoading(false);
-        return;
-      }
-      const userData = {
-        email,
-        fullName: isAdmin ? "System Administrator" : registeredData.name,
-        role: isAdmin ? "admin" : "user",
-        address: isAdmin? "HeadQuarters":registeredData.address,
-      };
-      login(userData);
-      navigate(isAdmin ? "/admin" : "/");
+    const result = await login(email, password);
+
+    if (result.success) {
+      const redirectPath = result.user?.role === "admin" ? "/admin" : "/";
+      navigate(redirectPath);
+    } else {
+      setError(result.error || "Login failed. Please try again.");
       setLoading(false);
-    }, 500);
+    }
   };
 
   return (
@@ -73,10 +49,46 @@ const Login = () => {
                 <ArrowLeft size={20} /> Back to Home
               </button>
 
-              <div className="card shadow-sm border-0">
+              <div className={`card shadow-sm border-0 ${isAdmin ? "border-top border-warning border-3" : ""}`}>
                 <div className="card-body p-4 p-md-5">
-                  <h2 className="fw-bold text-center mb-1">Welcome Back</h2>
-                  <p className="text-muted text-center mb-4 small">Sign in to your account</p>
+                  {/* Admin Toggle */}
+                  <div className="form-check form-switch d-flex justify-content-center mb-3">
+                    <input
+                      className="form-check-input"
+                      type="checkbox"
+                      id="adminToggle"
+                      checked={isAdmin}
+                      onChange={(e) => {
+                        setIsAdmin(e.target.checked);
+                        setError("");
+                      }}
+                      disabled={loading}
+                      style={{ width: "2rem", height: "1.25rem", cursor: "pointer" }}
+                    />
+                    <label className="form-check-label ms-2 fw-bold small" htmlFor="adminToggle">
+                      {isAdmin ? "🔐 Admin Login" : "👤 User Login"}
+                    </label>
+                  </div>
+
+                  <div className="text-center mb-4">
+                    {isAdmin ? (
+                      <>
+                        <div className="d-flex justify-content-center mb-2">
+                          <Shield size={40} className="text-warning" />
+                        </div>
+                        <h2 className="fw-bold mb-1">Admin Dashboard</h2>
+                        <p className="text-muted small">Sign in with your admin credentials</p>
+                      </>
+                    ) : (
+                      <>
+                        <div className="d-flex justify-content-center mb-2">
+                          <Lock size={40} className="text-dark" />
+                        </div>
+                        <h2 className="fw-bold mb-1">Welcome Back</h2>
+                        <p className="text-muted small">Sign in to your account</p>
+                      </>
+                    )}
+                  </div>
 
                   {error && (
                     <div className="alert alert-danger d-flex gap-2 mb-4">
@@ -117,13 +129,17 @@ const Login = () => {
                     </button>
                   </form>
 
-                  <hr className="my-4" />
-                  <p className="text-center text-muted small mb-0">
-                    Don't have an account?{" "}
-                    <a href="/register" className="text-dark fw-bold text-decoration-none">
-                      Create one
-                    </a>
-                  </p>
+                  {!isAdmin && (
+                    <>
+                      <hr className="my-4" />
+                      <p className="text-center text-muted small mb-0">
+                        Don't have an account?{" "}
+                        <a href="/register" className="text-dark fw-bold text-decoration-none">
+                          Create one
+                        </a>
+                      </p>
+                    </>
+                  )}
                 </div>
               </div>
             </div>

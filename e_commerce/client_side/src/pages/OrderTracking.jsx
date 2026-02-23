@@ -2,45 +2,69 @@ import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import { Check, Package, Truck, Home, MapPin, Loader2 } from "lucide-react";
-import { useOrder } from "../context/OrderContext";
 
 const OrderTracking = () => {
   const { orderId } = useParams();
-  const { getOrderById } = useOrder();
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Fetch order from OrderContext
-    const foundOrder = getOrderById(orderId);
-    
-    setTimeout(() => {
-      setOrder(foundOrder);
-      setLoading(false);
-    }, 0);
-  }, [orderId, getOrderById]);
+    // Fetch order from backend API
+    const fetchOrder = async () => {
+      try {
+        const authToken = sessionStorage.getItem("authToken");
+        const response = await fetch(`http://localhost:5000/api/orders/track/${orderId}`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${authToken}`,
+          },
+        });
+
+        const data = await response.json();
+        
+        if (data.success) {
+          setOrder(data.order);
+        }
+      } catch (error) {
+        console.error("Error fetching order:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchOrder();
+  }, [orderId]);
  
   const steps = [
-    { status: "Ordered", icon: Check, label: "Order Placed" },
-    { status: "Packed", icon: Package, label: "Packed" },
-    { status: "Shipped", icon: Truck, label: "Shipped" },
-    { status: "Delivered", icon: Home, label: "Delivered" },
+    { status: "pending", icon: Check, label: "Order Placed" },
+    { status: "confirmed", icon: Package, label: "Confirmed" },
+    { status: "shipped", icon: Truck, label: "Shipped" },
+    { status: "delivered", icon: Home, label: "Delivered" },
   ];
  
   // Logic to determine active steps
-  const getStepStatus = (stepLabel) => {
-    const statusMap = { Ordered: 1, Packed: 2, Shipped: 3, Delivered: 4 };
-    const currentStatusVal = statusMap[order?.status] || 1;
-    const stepVal = statusMap[stepLabel];
-    if (stepVal < currentStatusVal) return "completed";
-    if (stepVal === currentStatusVal) return "active";
+  const getStepStatus = (stepStatus) => {
+    const statusOrder = ["pending", "confirmed", "shipped", "delivered"];
+    const currentStatusIdx = statusOrder.indexOf(order?.orderStatus) || 0;
+    const stepIdx = statusOrder.indexOf(stepStatus);
+    
+    if (stepIdx < currentStatusIdx) return "completed";
+    if (stepIdx === currentStatusIdx) return "active";
     return "pending";
   };
 
   // Calculate progress bar width based on order status
   const getProgressWidth = () => {
-    const statusMap = { Ordered: 0, Packed: 33, Shipped: 66, Delivered: 100 };
-    return statusMap[order?.status] || 0;
+    const statusMap = { 
+      pending: 0, 
+      confirmed: 33, 
+      shipped: 66, 
+      delivered: 100,
+      cancelled: 0,
+      returned: 0
+    };
+    return statusMap[order?.orderStatus] || 0;
   };
  
   if (loading)
@@ -73,14 +97,14 @@ const OrderTracking = () => {
             <div className="card border-0 shadow-sm p-4 mb-4">
               <div className="d-flex justify-content-between align-items-start border-bottom pb-3 mb-4">
                 <div>
-                  <h4 className="fw-bold mb-1">Order #{order.id}</h4>
+                  <h4 className="fw-bold mb-1">Order #{order.orderNumber}</h4>
                   <p className="text-muted small mb-0">
-                    Placed on {order.date} | Total: ₹
-                    {order.total}
+                    Placed on {new Date(order.createdAt).toLocaleDateString()} | Total: ₹
+                    {order.totalAmount?.toLocaleString()}
                   </p>
                 </div>
-                <span className="badge bg-success p-2">
-                  Payment: {order.paymentMethod.toUpperCase()}
+                <span className={`badge p-2 ${order.paymentStatus === 'completed' ? 'bg-success' : order.paymentStatus === 'pending' ? 'bg-warning' : 'bg-danger'}`}>
+                  Payment: {order.paymentStatus?.toUpperCase()}
                 </span>
               </div>
  
@@ -124,7 +148,7 @@ const OrderTracking = () => {
               {/* Order Items */}
               <div className="bg-light p-3 rounded mb-3">
                 <h6 className="fw-bold mb-3">Items in this order</h6>
-                {order.items.map((item, idx) => (
+                {order.items?.map((item, idx) => (
                   <div
                     key={idx}
                     className="d-flex gap-3 mb-2 align-items-center bg-white p-2 rounded border"
@@ -133,16 +157,16 @@ const OrderTracking = () => {
                       className="bg-light rounded p-2"
                       style={{ fontSize: "1.2rem" }}
                     >
-                      {item.img}
+                      📦
                     </div>
                     <div className="flex-grow-1">
-                      <span className="small fw-bold d-block">{item.name}</span>
+                      <span className="small fw-bold d-block">{item.product?.name || 'Product'}</span>
                       <span className="x-small text-muted">
-                        Qty: {item.quantity || 1}
+                        Qty: {item.quantity}
                       </span>
                     </div>
                     <span className="small fw-bold">
-                      ₹{(item.price * (item.quantity || 1)).toLocaleString()}
+                      ₹{(item.price * item.quantity).toLocaleString()}
                     </span>
                   </div>
                 ))}
@@ -156,7 +180,10 @@ const OrderTracking = () => {
                     Delivery Address
                   </h6>
                   <p className="small text-dark mb-0">
-                    {order.address}
+                    {order.shippingAddress ? 
+                      `${order.shippingAddress.address}, ${order.shippingAddress.city}, ${order.shippingAddress.state} ${order.shippingAddress.zipCode}` 
+                      : 'Address not available'
+                    }
                   </p>
                 </div>
               </div>

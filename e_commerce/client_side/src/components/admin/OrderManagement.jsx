@@ -1,63 +1,114 @@
-import React, { useState } from "react";
-import { Eye, Edit2, Trash2, Search, Filter } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Eye, Edit2, X, Search, Filter, Loader2, AlertCircle } from "lucide-react";
 import "bootstrap/dist/css/bootstrap.min.css";
-import { useOrder } from "../../context/OrderContext";
-import { getProductById } from "../../data/products";
 import { useNotifications } from "../../context/NotificationContext";
+
 const OrderManagement = () => {
-  const { orders, updateOrderStatus, deleteOrder } = useOrder();
   const { addNotification } = useNotifications();
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("All");
   const [expandedOrder, setExpandedOrder] = useState(null);
-  const [editingOrder, setEditingOrder] = useState(null);
-  const [showStatusModal, setShowStatusModal] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [selectedOrderForCancel, setSelectedOrderForCancel] = useState(null);
+  const [cancelling, setCancelling] = useState(false);
 
-  const statuses = ["Processing", "Shipped", "Delivered", "Cancelled"];
+  const statuses = ["pending", "confirmed", "shipped", "delivered", "cancelled", "returned"];
   const allStatuses = ["All", ...statuses];
 
   const statusColors = {
-    Processing: "info",
-    Pending: "warning",
-    Shipped: "primary",
-    Delivered: "success",
-    Cancelled: "danger",
+    pending: "warning",
+    confirmed: "info",
+    shipped: "primary",
+    delivered: "success",
+    cancelled: "danger",
+    returned: "secondary",
   };
 
-  const getItemDetails = (item) => {
-    const quantity = item.quantity || item.qty || 1;
+  // Fetch orders from backend API
+  useEffect(() => {
+    const fetchOrders = async () => {
+      try {
+        const authToken = sessionStorage.getItem("authToken");
+        const response = await fetch("http://localhost:5000/api/orders/my-orders", {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${authToken}`,
+          },
+        });
 
-    let price = item.price;
-    if (!price && item.id) {
-      const product = getProductById(item.id);
-      price = product ? product.price : 0;
-    }
+        const data = await response.json();
+        
+        if (data.success) {
+          setOrders(data.orders || []);
+        }
+      } catch (error) {
+        console.error("Error fetching orders:", error);
+        addNotification("Failed to load orders", "error");
+      } finally {
+        setLoading(false);
+      }
+    };
 
-    return { quantity, price };
-  };
+    fetchOrders();
+  }, [addNotification]);
 
   const filteredOrders = orders.filter((order) => {
     const matchesSearch =
-      order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (order.customerName || "")
+      order.orderNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (order.shippingAddress?.fullName || "")
         .toLowerCase()
         .includes(searchTerm.toLowerCase()) ||
-      (order.email || "").toLowerCase().includes(searchTerm.toLowerCase());
+      (order.userId?.email || "").toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus =
-      selectedStatus === "All" || order.status === selectedStatus;
+      selectedStatus === "All" || order.orderStatus === selectedStatus;
     return matchesSearch && matchesStatus;
   });
 
-  const handleStatusChange = (orderId, newStatus) => {
-    updateOrderStatus(orderId, newStatus);
-    addNotification(`Order #${orderId} has been ${newStatus}`, "user");
-    setEditingOrder(null);
-    setShowStatusModal(false);
-  };
+  const handleCancelOrder = async () => {
+    if (!selectedOrderForCancel) return;
 
-  const handleDeleteOrder = (id) => {
-    if (window.confirm("Are you sure you want to delete this order?")) {
-      deleteOrder(id);
+    setCancelling(true);
+    try {
+      const authToken = sessionStorage.getItem("authToken");
+      const response = await fetch(
+        `http://localhost:5000/api/orders/${selectedOrderForCancel._id}/cancel`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${authToken}`,
+          },
+        }
+      );
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Update the order in local state
+        setOrders(
+          orders.map((order) =>
+            order._id === selectedOrderForCancel._id
+              ? { ...order, orderStatus: "cancelled" }
+              : order
+          )
+        );
+        addNotification(
+          `Order #${selectedOrderForCancel.orderNumber} has been cancelled`,
+          "success"
+        );
+        setShowCancelModal(false);
+        setSelectedOrderForCancel(null);
+      } else {
+        addNotification(data.message || "Failed to cancel order", "error");
+      }
+    } catch (error) {
+      console.error("Error cancelling order:", error);
+      addNotification("Error cancelling order", "error");
+    } finally {
+      setCancelling(false);
     }
   };
 
@@ -81,188 +132,222 @@ const OrderManagement = () => {
         </div>
       </div>
 
-      {/* Filters (Search & Status) */}
-      <div className="card border-0 shadow-sm mb-4">
-        <div className="card-body">
-          <div className="row g-3">
-            <div className="col-md-6">
-              <div className="input-group">
-                <span className="input-group-text bg-white border-end-0">
-                  <Search size={18} />
-                </span>
-                <input
-                  type="text"
-                  className="form-control border-start-0"
-                  placeholder="Search by Order ID, Customer, or Email..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
-            </div>
-            <div className="col-md-6">
-              <div className="d-flex align-items-center gap-2">
-                <Filter size={18} className="text-muted" />
-                <select
-                  className="form-select"
-                  value={selectedStatus}
-                  onChange={(e) => setSelectedStatus(e.target.value)}
-                >
-                  {allStatuses.map((status) => (
-                    <option key={status} value={status}>
-                      {status === "All" ? "All Statuses" : status}
-                    </option>
-                  ))}
-                </select>
+      {loading && (
+        <div className="d-flex justify-content-center align-items-center" style={{ minHeight: "400px" }}>
+          <Loader2 className="spinner-border text-dark" />
+        </div>
+      )}
+
+      {!loading && (
+        <>
+          {/* Filters (Search & Status) */}
+          <div className="card border-0 shadow-sm mb-4">
+            <div className="card-body">
+              <div className="row g-3">
+                <div className="col-md-6">
+                  <div className="input-group">
+                    <span className="input-group-text bg-white border-end-0">
+                      <Search size={18} />
+                    </span>
+                    <input
+                      type="text"
+                      className="form-control border-start-0"
+                      placeholder="Search by Order ID, Customer, or Email..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                  </div>
+                </div>
+                <div className="col-md-6">
+                  <div className="d-flex align-items-center gap-2">
+                    <Filter size={18} className="text-muted" />
+                    <select
+                      className="form-select"
+                      value={selectedStatus}
+                      onChange={(e) => setSelectedStatus(e.target.value)}
+                    >
+                      {allStatuses.map((status) => (
+                        <option key={status} value={status}>
+                          {status === "All" ? "All Statuses" : status.charAt(0).toUpperCase() + status.slice(1)}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      </div>
 
-      {/* Orders Table */}
-      <div className="card border-0 shadow-sm">
-        <div className="table-responsive">
-          <table className="table table-hover mb-0">
-            <thead className="table-light">
-              <tr>
-                <th className="small">Order ID</th>
-                <th className="small">Customer</th>
-                <th className="small">Date</th>
-                <th className="small">Amount</th>
-                <th className="small">Items</th>
-                <th className="small">Status</th>
-                <th className="small">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredOrders.length > 0 ? (
-                filteredOrders.map((order) => (
-                  <React.Fragment key={order.id}>
+          {/* Orders Table */}
+          <div className="card border-0 shadow-sm">
+            <div className="table-responsive">
+              <table className="table table-hover mb-0">
+                <thead className="table-light">
+                  <tr>
+                    <th className="small">Order ID</th>
+                    <th className="small">Customer</th>
+                    <th className="small">Date</th>
+                    <th className="small">Amount</th>
+                    <th className="small">Items</th>
+                    <th className="small">Status</th>
+                    <th className="small">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredOrders.length > 0 ? (
+                    filteredOrders.map((order) => (
+                      <React.Fragment key={order._id}>
+                        <tr>
+                          <td className="small fw-bold">{order.orderNumber}</td>
+                          <td className="small">{order.shippingAddress?.fullName || "N/A"}</td>
+                          <td className="small">
+                            {new Date(order.createdAt).toLocaleDateString("en-IN")}
+                          </td>
+                          <td className="small fw-bold">
+                            ₹{order.totalAmount?.toLocaleString()}
+                          </td>
+                          <td className="small">{order.items?.length || 0}</td>
+                          <td className="small">
+                            <span
+                              className={`badge bg-${
+                                statusColors[order.orderStatus] || "secondary"
+                              }`}
+                            >
+                              {order.orderStatus}
+                            </span>
+                          </td>
+                          <td className="small">
+                            <button
+                              className="btn btn-sm btn-outline-secondary me-2"
+                              onClick={() =>
+                                setExpandedOrder(
+                                  expandedOrder === order._id ? null : order._id
+                                )
+                              }
+                            >
+                              <Eye size={16} />
+                            </button>
+                            {order.orderStatus !== "delivered" &&
+                              order.orderStatus !== "cancelled" && (
+                                <button
+                                  className="btn btn-sm btn-outline-danger"
+                                  onClick={() => {
+                                    setSelectedOrderForCancel(order);
+                                    setShowCancelModal(true);
+                                  }}
+                                >
+                                  <X size={16} />
+                                </button>
+                              )}
+                          </td>
+                        </tr>
+
+                        {/* EXPANDED SECTION */}
+                        {expandedOrder === order._id && (
+                          <tr className="bg-light">
+                            <td colSpan="7">
+                              <div className="p-3">
+                                <h6 className="fw-bold mb-3">Order Details</h6>
+                                <div className="row mb-4">
+                                  <div className="col-md-6">
+                                    <p className="mb-1">
+                                      <strong>Order #:</strong> {order.orderNumber}
+                                    </p>
+                                    <p className="mb-1">
+                                      <strong>Date:</strong>{" "}
+                                      {new Date(order.createdAt).toLocaleDateString(
+                                        "en-IN"
+                                      )}
+                                    </p>
+                                  </div>
+                                  <div className="col-md-6 text-md-end">
+                                    <p className="mb-1">
+                                      <strong>Total:</strong> ₹
+                                      {order.totalAmount?.toLocaleString()}
+                                    </p>
+                                    <p className="mb-1">
+                                      <strong>Status:</strong>{" "}
+                                      <span
+                                        className={`badge bg-${
+                                          statusColors[order.orderStatus] ||
+                                          "secondary"
+                                        }`}
+                                      >
+                                        {order.orderStatus}
+                                      </span>
+                                    </p>
+                                  </div>
+                                </div>
+
+                                <h6 className="fw-bold mb-2">Items</h6>
+                                <div className="table-responsive bg-white rounded shadow-sm mb-3">
+                                  <table className="table table-sm mb-0">
+                                    <thead className="table-dark">
+                                      <tr>
+                                        <th>Product</th>
+                                        <th className="text-center">Qty</th>
+                                        <th className="text-end">Unit Price</th>
+                                        <th className="text-end">Subtotal</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {order.items?.map((item, index) => (
+                                        <tr key={index}>
+                                          <td>
+                                            {item.product?.name || "Unknown Product"}
+                                          </td>
+                                          <td className="text-center">
+                                            {item.quantity}
+                                          </td>
+                                          <td className="text-end">₹{item.price}</td>
+                                          <td className="text-end fw-bold">
+                                            ₹{(item.price * item.quantity).toLocaleString()}
+                                          </td>
+                                        </tr>
+                                      ))}
+                                    </tbody>
+                                  </table>
+                                </div>
+
+                                <h6 className="fw-bold mb-2">Shipping Address</h6>
+                                <div className="p-3 border rounded bg-white">
+                                  <p className="mb-1 small">
+                                    <strong>{order.shippingAddress?.fullName}</strong>
+                                  </p>
+                                  <p className="mb-1 small text-muted">
+                                    {order.shippingAddress?.address}
+                                  </p>
+                                  <p className="mb-1 small text-muted">
+                                    {order.shippingAddress?.city},{" "}
+                                    {order.shippingAddress?.state}{" "}
+                                    {order.shippingAddress?.zipCode}
+                                  </p>
+                                  <p className="small text-muted">
+                                    Phone: {order.shippingAddress?.phone}
+                                  </p>
+                                </div>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </React.Fragment>
+                    ))
+                  ) : (
                     <tr>
-                      <td className="small fw-bold">{order.id}</td>
-                      <td className="small">{order.customerName || "N/A"}</td>
-                      <td className="small">
-                        {formatDate(order.date || order.createdAt)}
-                      </td>
-                      <td className="small fw-bold">
-                        ₹{order.totalAmount || order.amount}
-                      </td>
-                      <td className="small">{order.items?.length || 0}</td>
-                      <td className="small">
-                        <span
-                          className={`badge bg-${statusColors[order.status] || "secondary"}`}
-                        >
-                          {order.status}
-                        </span>
-                      </td>
-                      <td className="small">
-                        <button
-                          className="btn btn-sm btn-outline-secondary me-2"
-                          onClick={() =>
-                            setExpandedOrder(
-                              expandedOrder === order.id ? null : order.id,
-                            )
-                          }
-                        >
-                          <Eye size={16} />
-                        </button>
-                        <button
-                          className="btn btn-sm btn-outline-primary me-2"
-                          onClick={() => {
-                            setEditingOrder(order);
-                            setShowStatusModal(true);
-                          }}
-                        >
-                          <Edit2 size={16} />
-                        </button>
-                        <button
-                          className="btn btn-sm btn-outline-danger"
-                          onClick={() => handleDeleteOrder(order.id)}
-                        >
-                          <Trash2 size={16} />
-                        </button>
+                      <td colSpan="7" className="text-center py-4 text-muted">
+                        No orders found
                       </td>
                     </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
+      )}
 
-                    {/* EXPANDED SECTION */}
-                    {expandedOrder === order.id && (
-                      <tr className="bg-light">
-                        <td colSpan="7">
-                          <div className="p-3">
-                            <h6 className="fw-bold mb-3">Order Details</h6>
-                            <div className="row mb-4">
-                              <div className="col-md-6">
-                                <p className="mb-1">
-                                  <strong>Email:</strong> {order.email}
-                                </p>
-                                <p className="mb-1">
-                                  <strong>Date:</strong>{" "}
-                                  {formatDate(order.date || order.createdAt)}
-                                </p>
-                              </div>
-                              <div className="col-md-6 text-md-end">
-                                <p className="mb-1">
-                                  <strong>Total:</strong> ₹
-                                  {order.totalAmount || order.amount}
-                                </p>
-                                <p className="mb-1">
-                                  <strong>Status:</strong> {order.status}
-                                </p>
-                              </div>
-                            </div>
-
-                            <div className="table-responsive bg-white rounded shadow-sm">
-                              <table className="table table-sm mb-0">
-                                <thead className="table-dark">
-                                  <tr>
-                                    <th>Product</th>
-                                    <th className="text-center">Qty</th>
-                                    <th className="text-end">Unit Price</th>
-                                    <th className="text-end">Subtotal</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {order.items?.map((item, index) => {
-                                    const { quantity, price } =
-                                      getItemDetails(item);
-                                    return (
-                                      <tr key={index}>
-                                        <td>
-                                          {item.name || "Unknown Product"}
-                                        </td>
-                                        <td className="text-center">
-                                          {quantity}
-                                        </td>
-                                        <td className="text-end">₹{price}</td>
-                                        <td className="text-end fw-bold">
-                                          ₹{price * quantity}
-                                        </td>
-                                      </tr>
-                                    );
-                                  })}
-                                </tbody>
-                              </table>
-                            </div>
-                          </div>
-                        </td>
-                      </tr>
-                    )}
-                  </React.Fragment>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan="7" className="text-center py-4 text-muted">
-                    No orders found
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* Status Modal - (Remains mostly same but ensured visibility) */}
-      {showStatusModal && editingOrder && (
+      {/* Cancel Order Modal */}
+      {showCancelModal && selectedOrderForCancel && (
         <div
           className="modal d-block show"
           tabIndex="-1"
@@ -270,32 +355,54 @@ const OrderManagement = () => {
         >
           <div className="modal-dialog modal-dialog-centered">
             <div className="modal-content border-0 shadow">
-              <div className="modal-header">
-                <h5 className="modal-title fw-bold">Update Order Status</h5>
+              <div className="modal-header bg-danger text-white">
+                <h5 className="modal-title fw-bold">Cancel Order</h5>
                 <button
                   type="button"
-                  className="btn-close"
-                  onClick={() => setShowStatusModal(false)}
+                  className="btn-close btn-close-white"
+                  onClick={() => setShowCancelModal(false)}
+                  disabled={cancelling}
                 ></button>
               </div>
               <div className="modal-body">
-                <div className="d-grid gap-2">
-                  {statuses.map((status) => (
-                    <button
-                      key={status}
-                      className={`btn btn-outline-${statusColors[status]} text-start d-flex justify-content-between align-items-center`}
-                      onClick={() =>
-                        handleStatusChange(editingOrder.id, status)
-                      }
-                      disabled={status === editingOrder.status}
-                    >
-                      {status}
-                      {status === editingOrder.status && (
-                        <span className="small">(Current)</span>
-                      )}
-                    </button>
-                  ))}
+                <div className="d-flex align-items-center gap-3 mb-3">
+                  <AlertCircle size={24} className="text-danger" />
+                  <div>
+                    <h6 className="fw-bold mb-1">Cancel Order?</h6>
+                    <p className="text-muted small mb-0">
+                      Order #{selectedOrderForCancel.orderNumber}
+                    </p>
+                  </div>
                 </div>
+                <p className="text-muted small">
+                  This action will cancel the order and refund the payment.
+                  Product stock will be restored automatically.
+                </p>
+              </div>
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="btn btn-light"
+                  onClick={() => setShowCancelModal(false)}
+                  disabled={cancelling}
+                >
+                  Keep Order
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-danger"
+                  onClick={handleCancelOrder}
+                  disabled={cancelling}
+                >
+                  {cancelling ? (
+                    <>
+                      <Loader2 size={16} className="spinner-border me-2" />
+                      Cancelling...
+                    </>
+                  ) : (
+                    "Cancel Order"
+                  )}
+                </button>
               </div>
             </div>
           </div>

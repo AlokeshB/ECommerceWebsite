@@ -1,9 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ShoppingCart, Zap, ChevronLeft, ChevronRight } from "lucide-react";
+import { ShoppingCart, Zap, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
-import { PRODUCTS, getProductById } from "../data/products";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
 import "bootstrap/dist/css/bootstrap.min.css";
@@ -15,10 +14,47 @@ const ProductDetail = () => {
   const { addToCart } = useCart();
   const { user } = useAuth();
 
-  const product = getProductById(id);
+  const [product, setProduct] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [selectedSize, setSelectedSize] = useState("");
   const [quantity, setQuantity] = useState(1);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+  useEffect(() => {
+    // Fetch product from backend API
+    const fetchProduct = async () => {
+      try {
+        const response = await fetch(`http://localhost:5000/api/products/${id}`, {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+        });
+
+        const data = await response.json();
+        
+        if (data.success) {
+          setProduct(data.product);
+        }
+      } catch (error) {
+        console.error("Error fetching product:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProduct();
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="d-flex flex-column min-vh-100">
+        <Navbar />
+        <div className="flex-grow-1 d-flex align-items-center justify-content-center">
+          <Loader2 className="spinner-border text-dark" />
+        </div>
+        <Footer />
+      </div>
+    );
+  }
 
   if (!product) {
     return (
@@ -41,8 +77,7 @@ const ProductDetail = () => {
   }
 
   // Get available sizes from product data
-  const allSizes = ["XS", "S", "M", "L", "XL", "XXL"];
-  const availableSizes = product.sizes && product.sizes.length > 0 ? product.sizes : ["S", "M", "L"];
+  const availableSizes = product.stock ? ["S", "M", "L", "XL"] : [];
   const images = product.images && product.images.length > 0 ? product.images : [product.image];
 
   const handlePreviousImage = () => {
@@ -57,32 +92,48 @@ const ProductDetail = () => {
     );
   };
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
     if (!selectedSize) {
       alert("Please select a size");
       return;
     }
 
     if (!user) {
-      alert("Please login to purchase items!");
+      alert("Please login to add items!");
       navigate("/login");
       return;
     }
 
-    const cartItem = {
-      ...product,
-      selectedSize,
-      quantity,
-    };
+    try {
+      const authToken = sessionStorage.getItem("authToken");
+      
+      // Call backend API to add to cart
+      const response = await fetch("http://localhost:5000/api/cart/add", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${authToken}`,
+        },
+        body: JSON.stringify({
+          productId: product._id,
+          quantity: quantity,
+        }),
+      });
 
-    for (let i = 0; i < quantity; i++) {
-      addToCart(cartItem);
+      const data = await response.json();
+
+      if (data.success) {
+        alert(`${quantity} item(s) added to cart!`);
+      } else {
+        alert(data.message || "Failed to add to cart");
+      }
+    } catch (error) {
+      console.error("Error adding to cart:", error);
+      alert("Error adding to cart. Please try again.");
     }
-
-    alert(`${quantity} item(s) added to cart!`);
   };
 
-  const handleBuyNow = () => {
+  const handleBuyNow = async () => {
     if (!selectedSize) {
       alert("Please select a size");
       return;
@@ -94,17 +145,25 @@ const ProductDetail = () => {
       return;
     }
 
-    const cartItem = {
-      ...product,
-      selectedSize,
-      quantity,
-    };
+    // For "Buy Now", create a direct checkout for this single item
+    // without adding to cart first
+    try {
+      const authToken = sessionStorage.getItem("authToken");
+      
+      // Directly navigate to checkout with just this product
+      // The checkout page will need to handle single-item purchase
+      // We'll store the product temporarily and redirect
+      sessionStorage.setItem("buyNowItem", JSON.stringify({
+        productId: product._id,
+        quantity: quantity,
+        size: selectedSize,
+      }));
 
-    for (let i = 0; i < quantity; i++) {
-      addToCart(cartItem);
+      navigate("/checkout");
+    } catch (error) {
+      console.error("Error processing buy now:", error);
+      alert("Error processing your request");
     }
-
-    navigate("/checkout");
   };
 
   return (
