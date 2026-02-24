@@ -14,10 +14,11 @@ import {
   Lock,
   PartyPopper,
   Sparkles,
+  Zap,
 } from "lucide-react";
 
 const Checkout = () => {
-  const { cartItems, getCartTotal, clearCart } = useCart();
+  const { cartItems, getCartTotal, clearCart, fetchCart, loading } = useCart();
   const { user } = useAuth();
   const { createOrder } = useOrder();
   const { addNotification } = useNotifications();
@@ -37,11 +38,19 @@ const Checkout = () => {
   const [loadingAddresses, setLoadingAddresses] = useState(true);
   const [loadingCards, setLoadingCards] = useState(true);
 
+  // Fetch cart on component mount if not already loaded
   useEffect(() => {
-    if (user && cartItems.length === 0 && !showSuccessModal && !isFinalizing) {
+    if (user && cartItems.length === 0 && !loading) {
+      fetchCart();
+    }
+  }, [user, fetchCart, loading]);
+
+  useEffect(() => {
+    // Only redirect to cart if cart is truly empty and fully loaded
+    if (user && cartItems.length === 0 && !loading && !showSuccessModal && !isFinalizing) {
       navigate("/cart");
     }
-  }, [user, cartItems, navigate, showSuccessModal, isFinalizing]);
+  }, [user, cartItems, navigate, showSuccessModal, isFinalizing, loading]);
 
   // Fetch user addresses
   useEffect(() => {
@@ -133,13 +142,8 @@ const Checkout = () => {
 
       // Prepare order data
       const orderData = {
-        items: cartItems.map((item) => ({
-          product: item._id || item.id,
-          quantity: item.quantity,
-          price: item.price,
-        })),
         shippingAddress: addressToUse ? {
-          fullName: addressToUse.fullName,
+          fullName: addressToUse.fullName || user?.name || user?.fullName,
           address: addressToUse.address,
           city: addressToUse.city,
           state: addressToUse.state,
@@ -178,8 +182,18 @@ const Checkout = () => {
         return;
       }
 
-      // Order placed successfully
-      setNewOrderId(data.order._id);
+      // Order placed successfully - extract orderNumber from response
+      console.log("Order response:", data.order); // Debug log
+      const orderNumber = data.order?.orderNumber;
+      
+      if (!orderNumber) {
+        console.error("No orderNumber in response:", data.order);
+        setIsProcessing(false);
+        addNotification("Error: Order number not received", "error");
+        return;
+      }
+      
+      setNewOrderId(orderNumber);
       addNotification("Order placed successfully!", "success");
 
       setTimeout(() => {
@@ -268,52 +282,85 @@ const Checkout = () => {
                 {loadingAddresses ? (
                   <p className="text-muted">Loading addresses...</p>
                 ) : addresses.length > 0 ? (
-                  <div className="d-flex flex-column gap-2">
+                  <div className="d-flex flex-column gap-3">
                     {addresses.map((address) => (
                       <div
                         key={address._id}
-                        className={`p-3 border rounded cursor-pointer transition-all ${
+                        className={`p-4 border-2 rounded-3 cursor-pointer transition-all ${
                           selectedAddress === address._id
-                            ? "border-primary bg-light"
-                            : "border-gray"
+                            ? "border-primary bg-primary bg-opacity-10"
+                            : "border-light bg-white"
                         }`}
                         onClick={() => setSelectedAddress(address._id)}
                         style={{ cursor: "pointer" }}
                       >
-                        <div className="d-flex justify-content-between">
-                          <div>
+                        <div className="d-flex justify-content-between align-items-start mb-3">
+                          <div className="d-flex align-items-start gap-3">
                             <input
                               type="radio"
                               name="address"
                               checked={selectedAddress === address._id}
                               onChange={() => setSelectedAddress(address._id)}
-                              className="me-2"
+                              className="mt-1"
+                              style={{ cursor: "pointer" }}
                             />
-                            <span className="fw-bold">{address.fullName}</span>
+                            <div>
+                              <h6 className="fw-bold mb-1" style={{ fontSize: "15px" }}>
+                                {address.fullName || "Address"}
+                              </h6>
+                              <p className="text-muted small mb-2">
+                                {address.type || "HOME"}
+                              </p>
+                            </div>
                           </div>
                           <span className="badge bg-secondary">{address.type || "HOME"}</span>
                         </div>
-                        <p className="small text-muted mb-0 mt-1 d-flex gap-2">
-                          <MapPin size={16} className="text-dark flex-shrink-0" />
-                          {address.address}, {address.city}, {address.state} {address.zipCode}
-                        </p>
+                        <div className="ms-5">
+                          <p className="small mb-2 d-flex gap-2">
+                            <MapPin size={16} className="text-primary flex-shrink-0 mt-1" />
+                            <span className="text-dark">
+                              {address.address || address.street}, {address.city}, {address.state} - {address.zipCode}
+                            </span>
+                          </p>
+                          <p className="small mb-0">
+                            <strong>📞 {address.phone || user?.phone || "Not provided"}</strong>
+                          </p>
+                        </div>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <div className="p-3 border rounded border-primary bg-light">
-                    <div className="d-flex justify-content-between">
-                      <span className="fw-bold">
-                        {user.fullName || user.name}
-                      </span>
-                      <span className="badge bg-secondary">HOME</span>
+                  <div className="p-4 border-2 border-primary rounded-3 bg-primary bg-opacity-10">
+                    <div className="d-flex align-items-start gap-3 mb-3">
+                      <input
+                        type="radio"
+                        name="address"
+                        checked={true}
+                        readOnly
+                        className="mt-1"
+                      />
+                      <div>
+                        <h6 className="fw-bold mb-1" style={{ fontSize: "15px" }}>
+                          {user.fullName || user.name}
+                        </h6>
+                        <p className="text-muted small mb-0">HOME</p>
+                      </div>
                     </div>
-                    <p className="small text-muted mb-0 mt-1 d-flex gap-2">
-                      <MapPin size={16} className="text-dark flex-shrink-0" />
-                      {user.address
-                        ? `${user.address}`
-                        : "Address not provided"}
-                    </p>
+                    <div className="ms-5">
+                      <p className="small mb-2 d-flex gap-2">
+                        <MapPin size={16} className="text-primary flex-shrink-0 mt-1" />
+                        <span className="text-dark">
+                          {user.address
+                            ? `${user.address}, ${user.city || ""}, ${user.state || ""} - ${user.zipCode || ""}`
+                            : "No address provided. Please add an address in your profile."}
+                        </span>
+                      </p>
+                      {user.phone && (
+                        <p className="small mb-0">
+                          <strong>📞 {user.phone}</strong>
+                        </p>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>
@@ -414,14 +461,24 @@ const Checkout = () => {
                   <span>₹{getCartTotal().toLocaleString()}</span>
                 </div>
                 <div className="d-flex justify-content-between mb-3 text-success">
-                  <span>Delivery</span>
-                  <span>FREE</span>
+                  <span>Discount</span>
+                  <span>- ₹{(getCartTotal() > 1000 ? 200 : 0).toLocaleString()}</span>
+                </div>
+                <div className="d-flex justify-content-between mb-3">
+                  <span>Delivery Fee</span>
+                  <span className={getCartTotal() > 500 || getCartTotal() === 0 ? "text-success" : "text-dark"}>
+                    {getCartTotal() > 500 || getCartTotal() === 0 ? "FREE" : "₹50"}
+                  </span>
+                </div>
+                <div className="d-flex justify-content-between mb-3">
+                  <span>Platform Fee</span>
+                  <span>₹{getCartTotal() > 0 ? 10 : 0}</span>
                 </div>
                 <hr />
                 <div className="d-flex justify-content-between mb-4">
                   <h5 className="fw-bold">Total Payable</h5>
                   <h5 className="fw-bold text-dark">
-                    ₹{getCartTotal().toLocaleString()}
+                    ₹{(getCartTotal() - (getCartTotal() > 1000 ? 200 : 0) + (getCartTotal() > 500 || getCartTotal() === 0 ? 0 : 50) + (getCartTotal() > 0 ? 10 : 0)).toLocaleString()}
                   </h5>
                 </div>
                 <button
@@ -464,22 +521,39 @@ const Checkout = () => {
                     <CheckCircle size={60} className="text-success" />
                   </div>
                 </div>
-                <h2 className="fw-bold mb-2">Order Confirmed!</h2>
+                <h2 className="fw-bold mb-1">Thank You!</h2>
+                <h3 className="h5 text-muted mb-3">Order Confirmed</h3>
                 <p className="text-muted mb-4">
                   Thank you, <strong>{user?.fullName || user?.name}</strong>.
-                  Your style journey has begun!
+                  Your order has been placed successfully. A confirmation email has been sent to your registered email address.
                 </p>
-                <div className="bg-light p-3 rounded-3 mb-4 border border-dashed">
-                  <span className="small text-muted d-block text-uppercase">
+                <div className="bg-light p-4 rounded-3 mb-4 border-2" style={{ borderColor: "#28a745" }}>
+                  <span className="small text-muted d-block text-uppercase mb-2">
                     Order ID
                   </span>
-                  <span className="fw-bold text-primary">#{newOrderId}</span>
+                  <div className="d-flex align-items-center justify-content-center gap-2">
+                    <span className="fw-bold text-success fs-5">#{newOrderId}</span>
+                    <button
+                      className="btn btn-sm btn-outline-success"
+                      onClick={() => {
+                        navigator.clipboard.writeText(newOrderId);
+                        addNotification("Order ID copied to clipboard!", "success");
+                      }}
+                      title="Copy Order ID"
+                    >
+                      📋
+                    </button>
+                  </div>
                 </div>
+                <p className="text-muted small mb-4">
+                  Keep this Order ID for reference. You can use it to track your order status anytime.
+                </p>
                 <button
-                  className="btn btn-dark w-100 py-3 fw-bold"
+                  className="btn btn-dark w-100 py-3 fw-bold d-flex align-items-center justify-content-center gap-2"
                   onClick={handleFinalRedirect}
                 >
-                  TRACK ORDER
+                  <Zap size={18} />
+                  TRACK YOUR ORDER
                 </button>
               </div>
             </div>

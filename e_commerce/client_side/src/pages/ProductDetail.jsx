@@ -4,6 +4,7 @@ import { Heart, ShoppingCart, Zap, Loader2, ArrowLeft, Share2, Star, Send } from
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { useAuth } from "../context/AuthContext";
+import { useCart } from "../context/CartContext";
 import { useWishlist } from "../context/WishlistContext";
 import { useNotifications } from "../context/NotificationContext";
 import "bootstrap/dist/css/bootstrap.min.css";
@@ -12,6 +13,7 @@ const ProductDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { fetchCart } = useCart();
   const { isInWishlist, addToWishlist, removeFromWishlist } = useWishlist();
   const { addNotification } = useNotifications();
 
@@ -69,8 +71,54 @@ const ProductDetail = () => {
     }
 
     try {
+      const response = await fetch("http://localhost:5000/api/cart/add", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${sessionStorage.getItem("authToken")}`,
+        },
+        body: JSON.stringify({
+          productId: product._id,
+          quantity: parseInt(quantity),
+          size: selectedSize || undefined,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        addNotification(`${product.name} added to cart!`, "success");
+        // Refresh cart context
+        if (fetchCart) {
+          await fetchCart();
+        }
+        // Reset quantity to 1 after adding
+        setQuantity(1);
+      } else {
+        addNotification(data.message || "Error adding to cart", "error");
+      }
+    } catch (error) {
+      console.error("Error adding to cart:", error);
+      addNotification("Error adding to cart", "error");
+    }
+  };
+
+  const handleBuyNow = async () => {
+    if (!user) {
+      addNotification("Please login to purchase", "error");
+      navigate("/login");
+      return;
+    }
+
+    if (product.sizes && product.sizes.length > 0 && !selectedSize) {
+      addNotification("Please select a size", "error");
+      return;
+    }
+
+    try {
       const authToken = sessionStorage.getItem("authToken");
 
+      // Add item to cart first
       const response = await fetch("http://localhost:5000/api/cart/add", {
         method: "POST",
         headers: {
@@ -87,38 +135,21 @@ const ProductDetail = () => {
       const data = await response.json();
 
       if (data.success) {
-        addNotification(`${product.name} added to cart!`, "success");
+        // Refresh cart context to update the state
+        if (fetchCart) {
+          await fetchCart();
+        }
+        
+        addNotification("Proceeding to checkout...", "success");
+        // Navigate directly to checkout (skip cart page)
+        setTimeout(() => navigate("/checkout"), 300);
       } else {
         addNotification(data.message || "Error adding to cart", "error");
       }
     } catch (error) {
-      console.error("Error adding to cart:", error);
-      addNotification("Error adding to cart", "error");
+      console.error("Error in Buy Now:", error);
+      addNotification("Error processing purchase", "error");
     }
-  };
-
-  const handleBuyNow = () => {
-    if (!user) {
-      addNotification("Please login to purchase", "error");
-      navigate("/login");
-      return;
-    }
-
-    if (product.sizes && product.sizes.length > 0 && !selectedSize) {
-      addNotification("Please select a size", "error");
-      return;
-    }
-
-    sessionStorage.setItem(
-      "buyNowItem",
-      JSON.stringify({
-        productId: product._id,
-        quantity: parseInt(quantity),
-        size: selectedSize || undefined,
-      })
-    );
-
-    navigate("/checkout");
   };
 
   const handleWishlist = async () => {

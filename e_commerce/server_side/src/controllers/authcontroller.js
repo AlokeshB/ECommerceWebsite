@@ -262,12 +262,12 @@ exports.changePassword = async (req, res, next) => {
 // @access  Private
 exports.addAddress = async (req, res, next) => {
   try {
-    const { street, city, state, zipCode, country, isDefault } = req.body;
+    const { fullName, phone, street, address, city, state, zipCode, country, type, isDefault } = req.body;
 
-    if (!street || !city || !state || !zipCode) {
+    if (!fullName || !phone || (!street && !address) || !city || !state || !zipCode) {
       return res.status(400).json({
         success: false,
-        message: "Please provide all required address fields",
+        message: "Please provide all required address fields (fullName, phone, address/street, city, state, zipCode)",
       });
     }
 
@@ -286,11 +286,15 @@ exports.addAddress = async (req, res, next) => {
     }
 
     const newAddress = {
-      street,
+      fullName: fullName || user.name,
+      phone: phone || user.phone,
+      street: street || address,
+      address: address || street,
       city,
       state,
       zipCode,
       country: country || "India",
+      type: type || "HOME",
       isDefault: isDefault || user.addresses.length === 0,
     };
 
@@ -336,7 +340,7 @@ exports.getAddresses = async (req, res, next) => {
 exports.updateAddress = async (req, res, next) => {
   try {
     const { addressId } = req.params;
-    const { street, city, state, zipCode, country, isDefault } = req.body;
+    const { fullName, phone, street, address, city, state, zipCode, country, type, isDefault } = req.body;
 
     const user = await User.findById(req.user.id);
 
@@ -347,24 +351,28 @@ exports.updateAddress = async (req, res, next) => {
       });
     }
 
-    const address = user.addresses.id(addressId);
+    const addressObj = user.addresses.id(addressId);
 
-    if (!address) {
+    if (!addressObj) {
       return res.status(404).json({
         success: false,
         message: "Address not found",
       });
     }
 
-    if (street) address.street = street;
-    if (city) address.city = city;
-    if (state) address.state = state;
-    if (zipCode) address.zipCode = zipCode;
-    if (country) address.country = country;
+    if (fullName) addressObj.fullName = fullName;
+    if (phone) addressObj.phone = phone;
+    if (street) addressObj.street = street;
+    if (address) addressObj.address = address;
+    if (city) addressObj.city = city;
+    if (state) addressObj.state = state;
+    if (zipCode) addressObj.zipCode = zipCode;
+    if (country) addressObj.country = country;
+    if (type) addressObj.type = type;
 
     if (isDefault) {
       user.addresses.forEach((addr) => (addr.isDefault = false));
-      address.isDefault = true;
+      addressObj.isDefault = true;
     }
 
     await user.save();

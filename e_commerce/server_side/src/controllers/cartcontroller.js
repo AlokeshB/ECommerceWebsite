@@ -216,21 +216,20 @@ exports.removeFromCart = async (req, res, next) => {
 // @access  Private
 exports.clearCart = async (req, res, next) => {
   try {
-    const cart = await Cart.findOne({ userId: req.user.id });
+    let cart = await Cart.findOne({ userId: req.user.id });
 
     if (!cart) {
-      return res.status(404).json({
-        success: false,
-        message: "Cart not found",
-      });
+      // If cart doesn't exist, create an empty one
+      cart = await Cart.create({ userId: req.user.id, items: [] });
+    } else {
+      // Clear existing cart items
+      cart.items = [];
+      await cart.save();
     }
-
-    cart.items = [];
-    await cart.save();
 
     res.status(200).json({
       success: true,
-      message: "Cart cleared",
+      message: "Cart cleared successfully",
       cart,
     });
   } catch (error) {

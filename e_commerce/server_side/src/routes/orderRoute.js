@@ -9,13 +9,13 @@ const {
   trackOrder,
 } = require("../controllers/ordercontroller");
 
-// All order routes require authentication
+// Public route for tracking (no auth required) - MUST BE BEFORE /:id ROUTE
+router.get("/track/:id", trackOrder);
+
+// All other order routes require authentication
 router.post("/create", authMiddleware, createOrder);
 router.get("/my-orders", authMiddleware, getMyOrders);
 router.get("/:id", authMiddleware, getOrderDetail);
 router.put("/:id/cancel", authMiddleware, cancelOrder);
-
-// Public route for tracking (no auth required)
-router.get("/track/:id", trackOrder);
 
 module.exports = router;
