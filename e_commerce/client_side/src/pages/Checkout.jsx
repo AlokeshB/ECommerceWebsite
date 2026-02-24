@@ -30,12 +30,84 @@ const Checkout = () => {
   const [isFinalizing, setIsFinalizing] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState("upi");
   const [newOrderId, setNewOrderId] = useState("");
+  const [addresses, setAddresses] = useState([]);
+  const [paymentCards, setPaymentCards] = useState([]);
+  const [selectedAddress, setSelectedAddress] = useState(null);
+  const [selectedCard, setSelectedCard] = useState(null);
+  const [loadingAddresses, setLoadingAddresses] = useState(true);
+  const [loadingCards, setLoadingCards] = useState(true);
 
   useEffect(() => {
     if (user && cartItems.length === 0 && !showSuccessModal && !isFinalizing) {
       navigate("/cart");
     }
   }, [user, cartItems, navigate, showSuccessModal, isFinalizing]);
+
+  // Fetch user addresses
+  useEffect(() => {
+    const fetchAddresses = async () => {
+      try {
+        const authToken = sessionStorage.getItem("authToken");
+        if (!authToken) return;
+
+        const response = await fetch("http://localhost:5000/api/auth/addresses", {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${authToken}`,
+          },
+        });
+
+        const data = await response.json();
+        if (data.success && Array.isArray(data.addresses)) {
+          setAddresses(data.addresses);
+          // Set first address as default
+          if (data.addresses.length > 0) {
+            setSelectedAddress(data.addresses[0]._id);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching addresses:", error);
+      } finally {
+        setLoadingAddresses(false);
+      }
+    };
+
+    if (user) fetchAddresses();
+  }, [user]);
+
+  // Fetch payment cards
+  useEffect(() => {
+    const fetchCards = async () => {
+      try {
+        const authToken = sessionStorage.getItem("authToken");
+        if (!authToken) return;
+
+        const response = await fetch("http://localhost:5000/api/payment-cards", {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${authToken}`,
+          },
+        });
+
+        const data = await response.json();
+        if (data.success && Array.isArray(data.paymentCards)) {
+          setPaymentCards(data.paymentCards);
+          // Set first card as default
+          if (data.paymentCards.length > 0) {
+            setSelectedCard(data.paymentCards[0]._id);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching payment cards:", error);
+      } finally {
+        setLoadingCards(false);
+      }
+    };
+
+    if (user && paymentMethod === "card") fetchCards();
+  }, [user, paymentMethod]);
 
   const handlePlaceOrder = async () => {
     if (!user) {
@@ -48,9 +120,17 @@ const Checkout = () => {
       return;
     }
 
+    if (paymentMethod === "card" && !selectedCard) {
+      addNotification("Please select a payment card", "error");
+      return;
+    }
+
     setIsProcessing(true);
 
     try {
+      // Get selected address or use user default
+      const addressToUse = addresses.find(a => a._id === selectedAddress) || addresses[0];
+
       // Prepare order data
       const orderData = {
         items: cartItems.map((item) => ({
@@ -58,7 +138,15 @@ const Checkout = () => {
           quantity: item.quantity,
           price: item.price,
         })),
-        shippingAddress: {
+        shippingAddress: addressToUse ? {
+          fullName: addressToUse.fullName,
+          address: addressToUse.address,
+          city: addressToUse.city,
+          state: addressToUse.state,
+          zipCode: addressToUse.zipCode,
+          country: addressToUse.country || "India",
+          phone: addressToUse.phone,
+        } : {
           fullName: user?.name || user?.fullName || "Customer",
           address: user?.address || "",
           city: user?.city || "",
@@ -68,6 +156,7 @@ const Checkout = () => {
           phone: user?.phone || "",
         },
         paymentMethod: paymentMethod,
+        paymentCard: selectedCard || undefined,
       };
 
       // Call backend API
@@ -176,21 +265,57 @@ const Checkout = () => {
                 1. Delivery Address
               </div>
               <div className="card-body">
-                <div className="p-3 border rounded border-primary bg-light">
-                  <div className="d-flex justify-content-between">
-                    <span className="fw-bold">
-                      {user.fullName || user.name}
-                    </span>
-                    <span className="badge bg-secondary">HOME</span>
+                {loadingAddresses ? (
+                  <p className="text-muted">Loading addresses...</p>
+                ) : addresses.length > 0 ? (
+                  <div className="d-flex flex-column gap-2">
+                    {addresses.map((address) => (
+                      <div
+                        key={address._id}
+                        className={`p-3 border rounded cursor-pointer transition-all ${
+                          selectedAddress === address._id
+                            ? "border-primary bg-light"
+                            : "border-gray"
+                        }`}
+                        onClick={() => setSelectedAddress(address._id)}
+                        style={{ cursor: "pointer" }}
+                      >
+                        <div className="d-flex justify-content-between">
+                          <div>
+                            <input
+                              type="radio"
+                              name="address"
+                              checked={selectedAddress === address._id}
+                              onChange={() => setSelectedAddress(address._id)}
+                              className="me-2"
+                            />
+                            <span className="fw-bold">{address.fullName}</span>
+                          </div>
+                          <span className="badge bg-secondary">{address.type || "HOME"}</span>
+                        </div>
+                        <p className="small text-muted mb-0 mt-1 d-flex gap-2">
+                          <MapPin size={16} className="text-dark flex-shrink-0" />
+                          {address.address}, {address.city}, {address.state} {address.zipCode}
+                        </p>
+                      </div>
+                    ))}
                   </div>
-                  <p className="small text-muted mb-0 mt-1 d-flex gap-2">
-                    <MapPin size={16} className="text-dark flex-shrink-0" />
-                    {user.address
-                      ? `${user.address}`
-                      // , ${user.city} - ${user.zip}`
-                      : "Address not provided"}
-                  </p>
-                </div>
+                ) : (
+                  <div className="p-3 border rounded border-primary bg-light">
+                    <div className="d-flex justify-content-between">
+                      <span className="fw-bold">
+                        {user.fullName || user.name}
+                      </span>
+                      <span className="badge bg-secondary">HOME</span>
+                    </div>
+                    <p className="small text-muted mb-0 mt-1 d-flex gap-2">
+                      <MapPin size={16} className="text-dark flex-shrink-0" />
+                      {user.address
+                        ? `${user.address}`
+                        : "Address not provided"}
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -200,27 +325,75 @@ const Checkout = () => {
               </div>
               <div className="card-body">
                 {["upi", "card", "cod"].map((method) => (
-                  <div
-                    key={method}
-                    className={`form-check p-3 border rounded mb-2 ${paymentMethod === method ? "border-primary bg-light" : ""}`}
-                  >
-                    <input
-                      className="form-check-input me-2"
-                      type="radio"
-                      id={method}
-                      checked={paymentMethod === method}
-                      onChange={() => setPaymentMethod(method)}
-                    />
-                    <label
-                      className="form-check-label fw-bold text-uppercase small"
-                      htmlFor={method}
+                  <div key={method}>
+                    <div
+                      className={`form-check p-3 border rounded mb-2 ${paymentMethod === method ? "border-primary bg-light" : ""}`}
                     >
-                      {method === "upi"
-                        ? "UPI / PhonePe / GPay"
-                        : method === "card"
-                          ? "Credit / Debit Card"
-                          : "Cash on Delivery"}
-                    </label>
+                      <input
+                        className="form-check-input me-2"
+                        type="radio"
+                        id={method}
+                        checked={paymentMethod === method}
+                        onChange={() => setPaymentMethod(method)}
+                      />
+                      <label
+                        className="form-check-label fw-bold text-uppercase small"
+                        htmlFor={method}
+                      >
+                        {method === "upi"
+                          ? "UPI / PhonePe / GPay"
+                          : method === "card"
+                            ? "Credit / Debit Card"
+                            : "Cash on Delivery"}
+                      </label>
+                    </div>
+
+                    {/* Card Selection */}
+                    {paymentMethod === "card" && method === "card" && (
+                      <div className="ms-4 mb-3">
+                        {loadingCards ? (
+                          <p className="text-muted small">Loading saved cards...</p>
+                        ) : paymentCards.length > 0 ? (
+                          <div className="d-flex flex-column gap-2">
+                            {paymentCards.map((card) => (
+                              <div
+                                key={card._id}
+                                className={`p-3 border rounded cursor-pointer transition-all ${
+                                  selectedCard === card._id
+                                    ? "border-primary bg-light"
+                                    : "border-gray"
+                                }`}
+                                onClick={() => setSelectedCard(card._id)}
+                                style={{ cursor: "pointer" }}
+                              >
+                                <div className="d-flex justify-content-between align-items-center">
+                                  <div>
+                                    <input
+                                      type="radio"
+                                      name="card"
+                                      checked={selectedCard === card._id}
+                                      onChange={() => setSelectedCard(card._id)}
+                                      className="me-2"
+                                    />
+                                    <span className="small">
+                                      {card.cardHolderName} - ****
+                                      {card.cardNumber?.slice(-4)}
+                                    </span>
+                                  </div>
+                                  <span className="small text-muted">
+                                    Exp: {card.expiryMonth}/{card.expiryYear}
+                                  </span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-muted small">
+                            No saved cards. Please add a card in your profile.
+                          </p>
+                        )}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

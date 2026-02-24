@@ -78,17 +78,17 @@ const Cart = () => {
                     >
                       {/* Modern Small Image Container */}
                       <div
-                        className="rounded-3 border bg-white d-flex align-items-center justify-content-center overflow-hidden flex-shrink-0"
+                        className="rounded-3 border bg-light d-flex align-items-center justify-content-center overflow-hidden flex-shrink-0"
                         style={{
                           width: "100px",
                           height: "100px",
                           padding: "8px",
                         }}
                       >
-                        {item.productId?.image ? (
+                        {item.productId && typeof item.productId === 'object' && item.productId.image ? (
                           <img
                             src={item.productId.image}
-                            alt={item.productId?.name}
+                            alt={item.productId?.name || "Product"}
                             style={{
                               width: "100%",
                               height: "100%",

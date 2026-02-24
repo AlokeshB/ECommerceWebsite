@@ -110,6 +110,10 @@ export const WishlistProvider = ({ children }) => {
     );
   };
 
+  const getWishlistCount = () => {
+    return wishlistItems.length;
+  };
+
   const clearWishlist = async () => {
     if (!token) return { success: false };
 
@@ -142,6 +146,7 @@ export const WishlistProvider = ({ children }) => {
         checkIfInWishlist,
         clearWishlist,
         fetchWishlist,
+        getWishlistCount,
       }}
     >
       {children}

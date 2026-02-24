@@ -1,6 +1,7 @@
 const Product = require("../models/Product");
 const Order = require("../models/Order");
 const User = require("../models/User");
+const Notification = require("../models/Notification");
 const APIFeatures = require("../utils/apiFeatures");
 
 // @route   POST /api/admin/products/create
@@ -8,13 +9,13 @@ const APIFeatures = require("../utils/apiFeatures");
 // @access  Private/Admin
 exports.createProduct = async (req, res, next) => {
   try {
-    const { name, category, subCategory, price, discountPercentage, stock, image, description, sizes } = req.body;
+    const { name, category, subCategory, price, discountPercentage, image, description, sizes, deliveryFee } = req.body;
 
     // Validate required fields
-    if (!name || !price || !category || stock === undefined) {
+    if (!name || !price || !category) {
       return res.status(400).json({
         success: false,
-        message: "Please provide all required fields: name, category, price, stock",
+        message: "Please provide all required fields: name, category, price",
       });
     }
 
@@ -42,12 +43,30 @@ exports.createProduct = async (req, res, next) => {
       price: parseFloat(price),
       discountPercentage: discountPercentageValue,
       discountPrice: discountPriceValue,
-      stock: parseInt(stock),
       image: image || "",
       description: productDescription,
       sizes: parsedSizes,
+      deliveryFee: deliveryFee ? parseFloat(deliveryFee) : 0,
       createdBy: req.user.id,
     });
+
+    // Send notifications to all users about new product
+    try {
+      const allUsers = await User.find({ role: "user" });
+      const notificationPromises = allUsers.map(user =>
+        Notification.create({
+          userId: user._id,
+          message: `New product "${name}" added to the store! Check it out now.`,
+          type: "product",
+          role: "user",
+          relatedId: product._id.toString(),
+        })
+      );
+      await Promise.all(notificationPromises);
+    } catch (notificationError) {
+      console.error("Error creating notifications:", notificationError);
+      // Don't fail the product creation if notifications fail
+    }
 
     res.status(201).json({
       success: true,
@@ -64,7 +83,7 @@ exports.createProduct = async (req, res, next) => {
 // @access  Private/Admin
 exports.updateProduct = async (req, res, next) => {
   try {
-    const { name, category, subCategory, price, discountPercentage, stock, image, description, isActive, sizes } = req.body;
+    const { name, category, subCategory, price, discountPercentage, image, description, isActive, sizes, deliveryFee } = req.body;
 
     const product = await Product.findById(req.params.id);
 
@@ -79,9 +98,9 @@ exports.updateProduct = async (req, res, next) => {
     if (name) product.name = name;
     if (description) product.description = description;
     if (price !== undefined) product.price = parseFloat(price);
+    if (deliveryFee !== undefined) product.deliveryFee = parseFloat(deliveryFee);
     if (category) product.category = category;
     if (subCategory) product.subCategory = subCategory;
-    if (stock !== undefined) product.stock = parseInt(stock);
     if (image) product.image = image;
     if (isActive !== undefined) product.isActive = isActive;
     if (sizes && Array.isArray(sizes)) {
