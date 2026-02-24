@@ -188,7 +188,7 @@ exports.updateOrderStatus = async (req, res, next) => {
   try {
     const { orderStatus, paymentStatus, trackingNumber, note } = req.body;
 
-    const order = await Order.findById(req.params.id);
+    const order = await Order.findById(req.params.id).populate("userId", "name email");
 
     if (!order) {
       return res.status(404).json({
@@ -203,6 +203,31 @@ exports.updateOrderStatus = async (req, res, next) => {
         status: orderStatus,
         note: note || "Status updated by admin",
       });
+
+      // Create notification for user about order status change
+      try {
+        const statusMessages = {
+          pending: "Your order is pending confirmation",
+          confirmed: "Your order has been confirmed and will be shipped soon",
+          shipped: `Your order has been shipped! Tracking number: ${trackingNumber || "Available soon"}`,
+          delivered: "Your order has been delivered. Thank you for shopping!",
+          cancelled: "Your order has been cancelled",
+          returned: "Your order return has been processed",
+        };
+
+        const message = statusMessages[orderStatus] || `Your order status has been updated to ${orderStatus}`;
+
+        await Notification.create({
+          userId: order.userId._id,
+          message: message,
+          type: "order",
+          role: "user",
+          relatedId: order._id.toString(),
+        });
+      } catch (notificationError) {
+        console.error("Error creating user notification:", notificationError);
+        // Don't fail status update if notification fails
+      }
     }
 
     if (paymentStatus) {

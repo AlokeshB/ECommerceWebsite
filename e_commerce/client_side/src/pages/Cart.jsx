@@ -20,6 +20,8 @@ const Cart = () => {
   const handleCheckout = () => {
     if (!user) {
       alert("Please log in to place your order.");
+    } else if (cartItems.length === 0) {
+      alert("Your cart is empty. Please add items before checkout.");
     } else {
       navigate("/checkout");
     }
@@ -27,8 +29,9 @@ const Cart = () => {
 
   const totalAmount = getCartTotal?.() || 0;
   const discount = totalAmount > 1000 ? 200 : 0;
-  const deliveryCharges = totalAmount > 500 || totalAmount === 0 ? 0 : 40;
-  const finalAmount = totalAmount - discount + deliveryCharges;
+  const deliveryCharges = totalAmount > 500 || totalAmount === 0 ? 0 : 50;
+  const platformFee = totalAmount > 0 ? 10 : 0;
+  const finalAmount = totalAmount - discount + deliveryCharges + platformFee;
 
   return (
     <>
@@ -152,7 +155,7 @@ const Cart = () => {
                               className="badge bg-success-subtle text-success border border-success-subtle rounded-pill"
                               style={{ fontSize: "10px" }}
                             >
-                              20% OFF
+                              {item.productId?.discountPercentage || 20}% OFF
                             </span>
                           </div>
 
@@ -160,7 +163,12 @@ const Cart = () => {
                           <div className="d-flex align-items-center border rounded-pill bg-light px-1">
                             <button
                               className="btn btn-sm border-0 p-1"
-                              onClick={() => updateQuantity(item.productId?._id || item.productId, -1)}
+                              onClick={() => {
+                                const newQty = (item.quantity || 1) - 1;
+                                if (newQty >= 1) {
+                                  updateQuantity(item.productId?._id || item.productId, newQty);
+                                }
+                              }}
                               disabled={(item.quantity || 1) <= 1}
                             >
                               <Minus size={14} className="text-dark" />
@@ -173,7 +181,10 @@ const Cart = () => {
                             </span>
                             <button
                               className="btn btn-sm border-0 p-1"
-                              onClick={() => updateQuantity(item.productId?._id || item.productId, 1)}
+                              onClick={() => {
+                                const newQty = (item.quantity || 1) + 1;
+                                updateQuantity(item.productId?._id || item.productId, newQty);
+                              }}
                             >
                               <Plus size={14} className="text-dark" />
                             </button>
@@ -223,6 +234,12 @@ const Cart = () => {
                         }
                       >
                         {deliveryCharges === 0 ? "FREE" : `₹${deliveryCharges}`}
+                      </span>
+                    </div>
+                    <div className="d-flex justify-content-between small">
+                      <span className="text-muted">Platform Fee</span>
+                      <span className="text-dark">
+                        ₹{platformFee}
                       </span>
                     </div>
                   </div>

@@ -13,6 +13,10 @@ const OrderManagement = () => {
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [selectedOrderForCancel, setSelectedOrderForCancel] = useState(null);
   const [cancelling, setCancelling] = useState(false);
+  const [showStatusModal, setShowStatusModal] = useState(false);
+  const [selectedOrderForStatus, setSelectedOrderForStatus] = useState(null);
+  const [newStatus, setNewStatus] = useState(null);
+  const [updatingStatus, setUpdatingStatus] = useState(false);
 
   const statuses = ["pending", "confirmed", "shipped", "delivered", "cancelled", "returned"];
   const allStatuses = ["All", ...statuses];
@@ -109,6 +113,55 @@ const OrderManagement = () => {
       addNotification("Error cancelling order", "error");
     } finally {
       setCancelling(false);
+    }
+  };
+
+  const handleUpdateOrderStatus = async () => {
+    if (!selectedOrderForStatus || !newStatus) return;
+
+    setUpdatingStatus(true);
+    try {
+      const authToken = sessionStorage.getItem("authToken");
+      const response = await fetch(
+        `http://localhost:5000/api/admin/orders/${selectedOrderForStatus._id}/status`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${authToken}`,
+          },
+          body: JSON.stringify({
+            orderStatus: newStatus,
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Update the order in local state
+        setOrders(
+          orders.map((order) =>
+            order._id === selectedOrderForStatus._id
+              ? { ...order, orderStatus: newStatus }
+              : order
+          )
+        );
+        addNotification(
+          `Order #${selectedOrderForStatus.orderNumber} status updated to ${newStatus}`,
+          "success"
+        );
+        setShowStatusModal(false);
+        setSelectedOrderForStatus(null);
+        setNewStatus(null);
+      } else {
+        addNotification(data.message || "Failed to update status", "error");
+      }
+    } catch (error) {
+      console.error("Error updating order status:", error);
+      addNotification("Error updating status", "error");
+    } finally {
+      setUpdatingStatus(false);
     }
   };
 
@@ -224,8 +277,20 @@ const OrderManagement = () => {
                                   expandedOrder === order._id ? null : order._id
                                 )
                               }
+                              title="View Details"
                             >
                               <Eye size={16} />
+                            </button>
+                            <button
+                              className="btn btn-sm btn-outline-primary me-2"
+                              onClick={() => {
+                                setSelectedOrderForStatus(order);
+                                setNewStatus(order.orderStatus);
+                                setShowStatusModal(true);
+                              }}
+                              title="Update Status"
+                            >
+                              <Edit2 size={16} />
                             </button>
                             {order.orderStatus !== "delivered" &&
                               order.orderStatus !== "cancelled" && (
@@ -235,6 +300,7 @@ const OrderManagement = () => {
                                     setSelectedOrderForCancel(order);
                                     setShowCancelModal(true);
                                   }}
+                                  title="Cancel Order"
                                 >
                                   <X size={16} />
                                 </button>
@@ -344,6 +410,72 @@ const OrderManagement = () => {
             </div>
           </div>
         </>
+      )}
+
+      {/* Status Update Modal */}
+      {showStatusModal && selectedOrderForStatus && (
+        <div
+          className="modal d-block show"
+          tabIndex="-1"
+          style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+        >
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content border-0 shadow">
+              <div className="modal-header bg-primary text-white">
+                <h5 className="modal-title fw-bold">Update Order Status</h5>
+                <button
+                  type="button"
+                  className="btn-close btn-close-white"
+                  onClick={() => setShowStatusModal(false)}
+                  disabled={updatingStatus}
+                ></button>
+              </div>
+              <div className="modal-body">
+                <p className="text-muted small mb-3">
+                  Order #<strong>{selectedOrderForStatus.orderNumber}</strong> - Current Status: <span className={`badge bg-${statusColors[selectedOrderForStatus.orderStatus]}`}>{selectedOrderForStatus.orderStatus}</span>
+                </p>
+                <label className="form-label fw-bold">Select New Status</label>
+                <select
+                  className="form-select"
+                  value={newStatus || ""}
+                  onChange={(e) => setNewStatus(e.target.value)}
+                >
+                  <option value="">Choose a status...</option>
+                  {statuses.map((status) => (
+                    <option key={status} value={status}>
+                      {status.charAt(0).toUpperCase() + status.slice(1)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="btn btn-light"
+                  onClick={() => setShowStatusModal(false)}
+                  disabled={updatingStatus}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={handleUpdateOrderStatus}
+                  disabled={updatingStatus || !newStatus}
+                >
+                  {updatingStatus ? (
+                    <>
+                      <Loader2 size={16} className="spinner-border me-2" />
+                      Updating...
+                    </>
+                  ) : (
+                    "Update Status"
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Cancel Order Modal */}

@@ -1,5 +1,4 @@
 const mongoose = require("mongoose");
-
 const orderSchema = new mongoose.Schema(
   {
     orderNumber: {
@@ -126,14 +125,5 @@ const orderSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
-
-// Generate unique order number
-orderSchema.pre("save", async function (next) {
-  if (this.isNew) {
-    const count = await this.constructor.countDocuments();
-    this.orderNumber = `ORD-${Date.now()}-${count + 1}`;
-  }
-  // Don't call next() in async pre-hooks - let it complete automatically
-});
 
 module.exports = mongoose.model("Order", orderSchema);

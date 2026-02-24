@@ -2,6 +2,7 @@ const Order = require("../models/Order");
 const Cart = require("../models/Cart");
 const Product = require("../models/Product");
 const User = require("../models/User");
+const Notification = require("../models/Notification");
 
 // @route   POST /api/orders/create
 // @desc    Create a new order
@@ -44,25 +45,39 @@ exports.createOrder = async (req, res, next) => {
 
     const shippingCost = 50; // Fixed shipping cost
     const tax = Math.round(totalAmount * 0.18); // 18% GST
+    
+    // Generate unique order number - Format: ORDER<5-digit-random>
+    const randomNumber = Math.floor(10000 + Math.random() * 90000);
+    const orderNumber = `ORDER${randomNumber}`;
+
+    // Ensure all required shipping address fields are present
+    // Concatenate address from street, address, and other fields if needed
+    const addressParts = [];
+    if (shippingAddress.street) addressParts.push(shippingAddress.street);
+    if (shippingAddress.address) addressParts.push(shippingAddress.address);
+    const fullAddress = addressParts.length > 0 ? addressParts.join(", ") : user.address || "Address not provided";
+    
+    const completeShippingAddress = {
+      name: shippingAddress.fullName || user.name || "Customer",
+      email: user.email,
+      phone: shippingAddress.phone || user.phone || "",
+      address: fullAddress,
+      city: shippingAddress.city || user.city || "Unknown",
+      state: shippingAddress.state || user.state || "Unknown",
+      zipCode: shippingAddress.zipCode || user.zipCode || "000000",
+      country: shippingAddress.country || "India",
+    };
 
     // Create order
     const order = await Order.create({
+      orderNumber,
       userId: req.user.id,
       items,
-      shippingAddress: {
-        name: user.name,
-        email: user.email,
-        phone: shippingAddress.phone,
-        address: shippingAddress.address,
-        city: shippingAddress.city,
-        state: shippingAddress.state,
-        zipCode: shippingAddress.zipCode,
-        country: shippingAddress.country,
-      },
+      shippingAddress: completeShippingAddress,
       totalAmount: totalAmount + shippingCost + tax,
       shippingCost,
       tax,
-      paymentMethod: paymentMethod || "credit_card",
+      paymentMethod: paymentMethod === "upi" ? "bank_transfer" : paymentMethod === "cod" ? "credit_card" : "credit_card",
       orderStatus: "pending",
       paymentStatus: "pending",
       estimatedDelivery: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
@@ -94,10 +109,38 @@ exports.createOrder = async (req, res, next) => {
     // Clear cart
     await Cart.findByIdAndDelete(cart._id);
 
+    // Create notification for admin about new order
+    try {
+      const admins = await User.find({ role: "admin" });
+      const adminNotificationPromises = admins.map(admin =>
+        Notification.create({
+          userId: admin._id,
+          message: `New order #${order.orderNumber} received from ${user.name || user.email}. Amount: ₹${order.totalAmount}`,
+          type: "order",
+          role: "admin",
+          relatedId: order._id.toString(),
+        })
+      );
+      await Promise.all(adminNotificationPromises);
+    } catch (notificationError) {
+      console.error("Error creating admin notifications:", notificationError);
+      // Don't fail order creation if notifications fail
+    }
+
+    // Return success response with order details
     res.status(201).json({
       success: true,
       message: "Order created successfully",
-      order,
+      order: {
+        _id: order._id,
+        orderNumber: order.orderNumber,
+        orderStatus: order.orderStatus,
+        paymentStatus: order.paymentStatus,
+        totalAmount: order.totalAmount,
+        createdAt: order.createdAt,
+        items: order.items,
+        shippingAddress: order.shippingAddress,
+      },
     });
   } catch (error) {
     next(error);
@@ -109,7 +152,15 @@ exports.createOrder = async (req, res, next) => {
 // @access  Private
 exports.getOrderDetail = async (req, res, next) => {
   try {
-    const order = await Order.findById(req.params.id).populate("userId", "name email");
+    const { id } = req.params;
+    
+    // Try to find by MongoDB ID first, then by orderNumber
+    let order = await Order.findById(id).populate("userId", "name email");
+    
+    if (!order) {
+      // Try to find by orderNumber
+      order = await Order.findOne({ orderNumber: id }).populate("userId", "name email");
+    }
 
     if (!order) {
       return res.status(404).json({
@@ -221,7 +272,15 @@ exports.cancelOrder = async (req, res, next) => {
 // @access  Public
 exports.trackOrder = async (req, res, next) => {
   try {
-    const order = await Order.findById(req.params.id);
+    const { id } = req.params;
+    
+    // Try to find by MongoDB ID first, then by orderNumber
+    let order = await Order.findById(id);
+    
+    if (!order) {
+      // Try to find by orderNumber
+      order = await Order.findOne({ orderNumber: id });
+    }
 
     if (!order) {
       return res.status(404).json({
@@ -232,11 +291,19 @@ exports.trackOrder = async (req, res, next) => {
 
     res.status(200).json({
       success: true,
-      orderNumber: order.orderNumber,
-      currentStatus: order.orderStatus,
-      trackingNumber: order.trackingNumber,
-      estimatedDelivery: order.estimatedDelivery,
-      statusHistory: order.statusHistory,
+      order: {
+        orderNumber: order.orderNumber,
+        orderStatus: order.orderStatus,
+        paymentStatus: order.paymentStatus,
+        paymentMethod: order.paymentMethod,
+        trackingNumber: order.trackingNumber,
+        estimatedDelivery: order.estimatedDelivery,
+        statusHistory: order.statusHistory,
+        totalAmount: order.totalAmount,
+        shippingAddress: order.shippingAddress,
+        items: order.items,
+        createdAt: order.createdAt,
+      },
     });
   } catch (error) {
     next(error);

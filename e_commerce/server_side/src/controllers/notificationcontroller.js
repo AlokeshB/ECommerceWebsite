@@ -29,16 +29,16 @@ exports.createNotification = async (req, res, next) => {
     const { message, role, type } = req.body;
     const userId = req.user.id;
 
-    if (!message) {
+    if (!message || (typeof message === 'string' && message.trim().length === 0)) {
       return res.status(400).json({
         success: false,
-        message: "Please provide a message",
+        message: "Please provide a valid message",
       });
     }
 
     const notification = await Notification.create({
       userId,
-      message,
+      message: String(message).trim(),
       role: role || "user",
       type: type || "system",
     });

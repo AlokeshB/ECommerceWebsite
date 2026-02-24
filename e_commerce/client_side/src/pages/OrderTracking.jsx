@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import { Check, Package, Truck, Home, MapPin, Loader2 } from "lucide-react";
@@ -8,33 +8,46 @@ const OrderTracking = () => {
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    // Fetch order from backend API
-    const fetchOrder = async () => {
-      try {
-        const authToken = sessionStorage.getItem("authToken");
-        const response = await fetch(`http://localhost:5000/api/orders/track/${orderId}`, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${authToken}`,
-          },
-        });
+  // Fetch order data
+  const fetchOrder = useCallback(async () => {
+    try {
+      const authToken = sessionStorage.getItem("authToken");
+      console.log("Fetching order with ID:", orderId); // Debug log
+      
+      const response = await fetch(`http://localhost:5000/api/orders/track/${orderId}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${authToken}`,
+        },
+      });
 
-        const data = await response.json();
-        
-        if (data.success) {
-          setOrder(data.order);
-        }
-      } catch (error) {
-        console.error("Error fetching order:", error);
-      } finally {
-        setLoading(false);
+      const data = await response.json();
+      console.log("Order tracking response:", data); // Debug log
+      
+      if (data.success) {
+        setOrder(data.order);
+      } else {
+        console.error("Order not found:", data.message);
       }
-    };
-
-    fetchOrder();
+    } catch (error) {
+      console.error("Error fetching order:", error);
+    } finally {
+      setLoading(false);
+    }
   }, [orderId]);
+
+  useEffect(() => {
+    if (orderId) {
+      fetchOrder();
+      
+      // Set up polling to refresh order status every 10 seconds
+      const intervalId = setInterval(fetchOrder, 10000);
+      
+      // Cleanup interval on component unmount
+      return () => clearInterval(intervalId);
+    }
+  }, [orderId, fetchOrder]);
  
   const steps = [
     { status: "pending", icon: Check, label: "Order Placed" },
@@ -80,6 +93,8 @@ const OrderTracking = () => {
         <Navbar />
         <div className="container py-5 text-center">
           <h3>Order not found!</h3>
+          <p className="text-muted">Order ID: <strong>{orderId}</strong></p>
+          <p className="text-muted small">Please check the order ID and try again. You may also contact support.</p>
           <Link to="/" className="btn btn-dark mt-3">
             Go Home
           </Link>
@@ -93,6 +108,17 @@ const OrderTracking = () => {
       <div className="container py-5">
         <div className="row justify-content-center">
           <div className="col-lg-8">
+            {/* Refresh Button */}
+            <div className="text-end mb-3">
+              <button
+                className="btn btn-sm btn-outline-dark"
+                onClick={fetchOrder}
+                title="Refresh order status"
+              >
+                🔄 Refresh Status
+              </button>
+            </div>
+
             {/* Order Header */}
             <div className="card border-0 shadow-sm p-4 mb-4">
               <div className="d-flex justify-content-between align-items-start border-bottom pb-3 mb-4">
@@ -103,9 +129,14 @@ const OrderTracking = () => {
                     {order.totalAmount?.toLocaleString()}
                   </p>
                 </div>
-                <span className={`badge p-2 ${order.paymentStatus === 'completed' ? 'bg-success' : order.paymentStatus === 'pending' ? 'bg-warning' : 'bg-danger'}`}>
-                  Payment: {order.paymentStatus?.toUpperCase()}
-                </span>
+                <div className="d-flex gap-2">
+                  <span className={`badge p-2 ${order.paymentStatus === 'completed' ? 'bg-success' : order.paymentStatus === 'pending' ? 'bg-warning' : 'bg-danger'}`}>
+                    Payment: {order.paymentStatus?.charAt(0).toUpperCase() + order.paymentStatus?.slice(1) || 'PENDING'}
+                  </span>
+                  <span className="badge p-2 bg-primary">
+                    {order.paymentMethod?.replace(/_/g, ' ').toUpperCase() || 'NOT SET'}
+                  </span>
+                </div>
               </div>
  
               {/* Progress Bar */}
@@ -160,7 +191,7 @@ const OrderTracking = () => {
                       📦
                     </div>
                     <div className="flex-grow-1">
-                      <span className="small fw-bold d-block">{item.product?.name || 'Product'}</span>
+                      <span className="small fw-bold d-block">{item.productName || item.product?.name || 'Product'}</span>
                       <span className="x-small text-muted">
                         Qty: {item.quantity}
                       </span>

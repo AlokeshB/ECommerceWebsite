@@ -56,10 +56,21 @@ export const NotificationProvider = ({ children }) => {
     }
   };
 
-  const addNotification = useCallback((message, role = "user") => {
+  const addNotification = useCallback((message, type = "info") => {
+    // Map type to role: error/success/info -> user role
+    const roleMap = {
+      error: "user",
+      success: "user",
+      info: "user",
+      warning: "user",
+    };
+    
+    const role = roleMap[type] || "user";
+    
     const newNotification = {
       id: Date.now(),
       message,
+      type,
       role,
       isRead: false,
       timestamp: new Date().toLocaleTimeString([], {
@@ -70,11 +81,11 @@ export const NotificationProvider = ({ children }) => {
     setNotifications((prev) => [newNotification, ...prev]);
 
     // Also save to backend if user is authenticated
-    saveNotificationToBackend(message, role);
+    saveNotificationToBackend(message, role, type);
   }, []);
 
   // Save notification to backend
-  const saveNotificationToBackend = async (message, role) => {
+  const saveNotificationToBackend = async (message, role, type = "system") => {
     try {
       const authToken = sessionStorage.getItem("authToken");
       if (!authToken || !message) return;
@@ -88,6 +99,7 @@ export const NotificationProvider = ({ children }) => {
         body: JSON.stringify({
           message: String(message).trim(),
           role: role || "user",
+          type: type || "system",
         }),
       });
 
