@@ -47,6 +47,20 @@ exports.register = async (req, res, next) => {
     if (zipCode) userData.zipCode = zipCode;
     if (country) userData.country = country;
 
+    // If address is provided during registration, also add it to addresses array
+    if (address && city && state && zipCode) {
+      userData.addresses = [
+        {
+          street: address,
+          city,
+          state,
+          zipCode,
+          country: country || "India",
+          isDefault: true,
+        },
+      ];
+    }
+
     const user = await User.create(userData);
 
     // Generate token
@@ -75,11 +89,11 @@ exports.register = async (req, res, next) => {
 };
 
 // @route   POST /api/auth/login
-// @desc    Login user
+// @desc    Login user or admin with strict role validation
 // @access  Public
 exports.login = async (req, res, next) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, loginMode } = req.body;
 
     // Validation
     if (!email || !password) {
@@ -104,6 +118,27 @@ exports.login = async (req, res, next) => {
         success: false,
         message: "Invalid email or password",
       });
+    }
+
+    // Strict role validation based on login mode
+    const mode = loginMode || "user";
+
+    if (mode === "user") {
+      // User login mode - reject admin accounts
+      if (user.role === "admin") {
+        return res.status(403).json({
+          success: false,
+          message: "Admin credentials detected. Please toggle to Admin Login to continue.",
+        });
+      }
+    } else if (mode === "admin") {
+      // Admin login mode - reject user accounts
+      if (user.role !== "admin") {
+        return res.status(403).json({
+          success: false,
+          message: "User credentials detected. Only admin accounts can access this portal.",
+        });
+      }
     }
 
     // Generate token
@@ -345,7 +380,7 @@ exports.updateAddress = async (req, res, next) => {
 };
 
 // @route   DELETE /api/auth/addresses/:addressId
-// @desc    Delete address
+// @desc    Delete address (cannot delete default address)
 // @access  Private
 exports.deleteAddress = async (req, res, next) => {
   try {
@@ -366,6 +401,14 @@ exports.deleteAddress = async (req, res, next) => {
       return res.status(404).json({
         success: false,
         message: "Address not found",
+      });
+    }
+
+    // Prevent deletion of default address
+    if (address.isDefault) {
+      return res.status(400).json({
+        success: false,
+        message: "Cannot delete your registered address. You can only edit it.",
       });
     }
 

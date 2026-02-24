@@ -7,15 +7,19 @@ import { AuthProvider } from "./context/AuthContext.jsx";
 import { OrderProvider } from "./context/OrderContext.jsx";
 import { ProductProvider } from "./context/ProductContext.jsx";
 import { NotificationProvider } from "./context/NotificationContext.jsx";
+import { WishlistProvider } from "./context/WishlistContext.jsx";
+
 createRoot(document.getElementById("root")).render(
   <StrictMode>
     <NotificationProvider>
       <AuthProvider>
         <ProductProvider>
           <CartProvider>
-            <OrderProvider>
-              <App />
-            </OrderProvider>
+            <WishlistProvider>
+              <OrderProvider>
+                <App />
+              </OrderProvider>
+            </WishlistProvider>
           </CartProvider>
         </ProductProvider>
       </AuthProvider>

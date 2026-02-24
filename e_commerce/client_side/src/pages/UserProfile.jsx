@@ -628,32 +628,95 @@ const UserProfile = () => {
                     </div>
                   )}
 
-                  {addresses.map((a) => (
-                    <div
-                      key={a._id}
-                      className="border rounded p-3 mb-3 position-relative d-flex gap-3 bg-white"
-                    >
-                      <MapPin size={20} className="text-primary mt-1" />
-                      <div>
-                        <span
-                          className={`badge ${
-                            a.isDefault ? "bg-dark" : "bg-secondary"
-                          } mb-1`}
-                        >
-                          {a.isDefault ? "Default" : "Custom"}
-                        </span>
-                        <p className="mb-0 fw-medium">
-                          {a.street}, {a.city}, {a.state} - {a.zipCode}
-                        </p>
+                  {/* Registered Address Section */}
+                  {addresses.filter((a) => a.isDefault).map((a) => (
+                    <div key={a._id} className="mb-4">
+                      <h6 className="fw-bold text-muted mb-2">
+                        <span className="badge bg-primary me-2">Registered Address</span>
+                        (From Registration)
+                      </h6>
+                      <div className="border rounded p-3 bg-white" style={{ borderLeft: "4px solid #007bff" }}>
+                        <div className="d-flex gap-3">
+                          <MapPin size={20} className="text-primary mt-1 flex-shrink-0" />
+                          <div className="flex-grow-1">
+                            <p className="mb-0 fw-medium">
+                              {a.street}, {a.city}, {a.state} - {a.zipCode}
+                            </p>
+                            <small className="text-muted">Default Address</small>
+                          </div>
+                          <button
+                            className="btn btn-sm btn-outline-primary align-self-start"
+                            onClick={() => {
+                              setNewAddress({
+                                street: a.street,
+                                city: a.city,
+                                state: a.state,
+                                zip: a.zipCode,
+                              });
+                              // Show edit mode
+                              const editBtn = document.querySelector("[data-edit-default]");
+                              if (editBtn) editBtn.click();
+                            }}
+                          >
+                            <Edit2 size={14} /> Edit
+                          </button>
+                        </div>
                       </div>
-                      <button
-                        className="btn btn-link text-danger position-absolute top-0 end-0"
-                        onClick={() => removeAddress(a._id)}
-                      >
-                        <Trash2 size={16} />
-                      </button>
                     </div>
                   ))}
+
+                  {/* Additional Addresses Section */}
+                  {addresses.filter((a) => !a.isDefault).length > 0 && (
+                    <div className="mt-4">
+                      <h6 className="fw-bold text-muted mb-2">
+                        <span className="badge bg-secondary me-2">Additional Addresses</span>
+                      </h6>
+                      <div className="d-flex flex-column gap-3">
+                        {addresses.filter((a) => !a.isDefault).map((a) => (
+                          <div
+                            key={a._id}
+                            className="border rounded p-3 position-relative d-flex gap-3 bg-white"
+                          >
+                            <MapPin size={20} className="text-success mt-1 flex-shrink-0" />
+                            <div className="flex-grow-1">
+                              <p className="mb-0 fw-medium">
+                                {a.street}, {a.city}, {a.state} - {a.zipCode}
+                              </p>
+                              <small className="text-muted">Custom Address</small>
+                            </div>
+                            <div className="d-flex gap-1">
+                              <button
+                                className="btn btn-sm btn-outline-primary"
+                                onClick={() => {
+                                  setNewAddress({
+                                    street: a.street,
+                                    city: a.city,
+                                    state: a.state,
+                                    zip: a.zipCode,
+                                  });
+                                }}
+                              >
+                                <Edit2 size={14} />
+                              </button>
+                              <button
+                                className="btn btn-sm btn-outline-danger"
+                                onClick={() => removeAddress(a._id)}
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {addresses.length === 0 && (
+                    <div className="text-center py-5 text-muted">
+                      <MapPin size={40} className="mb-3 opacity-25" />
+                      <h5>No addresses saved yet.</h5>
+                    </div>
+                  )}
                 </div>
               )}
 

@@ -85,18 +85,21 @@ const Cart = () => {
                           padding: "8px",
                         }}
                       >
-                        {item.image ? (
+                        {item.productId?.image ? (
                           <img
-                            src={item.image}
-                            alt={item.name}
+                            src={item.productId.image}
+                            alt={item.productId?.name}
                             style={{
                               width: "100%",
                               height: "100%",
                               objectFit: "contain",
                             }}
+                            onError={(e) => {
+                              e.target.src = "https://via.placeholder.com/100?text=No+Image";
+                            }}
                           />
                         ) : (
-                          <span style={{ fontSize: "2rem" }}>{item.img}</span>
+                          <span style={{ fontSize: "2rem" }}>📦</span>
                         )}
                       </div>
 
@@ -108,7 +111,7 @@ const Cart = () => {
                               className="fw-bold mb-0 text-dark"
                               style={{ fontSize: "15px" }}
                             >
-                              {item.name}
+                              {item.productId?.name}
                             </h6>
                             <p
                               className="text-muted mb-2"
@@ -123,7 +126,7 @@ const Cart = () => {
                           <button
                             className="btn btn-link text-danger p-0 border-0 transition-all opacity-75"
                             style={{ hover: { opacity: 1 } }}
-                            onClick={() => removeFromCart(item.id)}
+                            onClick={() => removeFromCart(item.productId?._id || item.productId)}
                           >
                             <Trash2 size={18} />
                           </button>
@@ -133,7 +136,7 @@ const Cart = () => {
                           {/* Prices */}
                           <div className="d-flex align-items-center gap-2">
                             <span className="fw-bold text-dark">
-                              ₹{(item.price * (item.qty || 1)).toLocaleString()}
+                              ₹{(item.price * (item.quantity || 1)).toLocaleString()}
                             </span>
                             <span
                               className="text-muted text-decoration-line-through x-small"
@@ -141,8 +144,8 @@ const Cart = () => {
                             >
                               ₹
                               {(
-                                (item.price + 500) *
-                                (item.qty || 1)
+                                (item.productId?.price || item.price + 500) *
+                                (item.quantity || 1)
                               ).toLocaleString()}
                             </span>
                             <span
@@ -157,8 +160,8 @@ const Cart = () => {
                           <div className="d-flex align-items-center border rounded-pill bg-light px-1">
                             <button
                               className="btn btn-sm border-0 p-1"
-                              onClick={() => updateQuantity(item.id, -1)}
-                              disabled={(item.qty || 1) <= 1}
+                              onClick={() => updateQuantity(item.productId?._id || item.productId, -1)}
+                              disabled={(item.quantity || 1) <= 1}
                             >
                               <Minus size={14} className="text-dark" />
                             </button>
@@ -166,11 +169,11 @@ const Cart = () => {
                               className="fw-bold px-2"
                               style={{ fontSize: "13px" }}
                             >
-                              {item.qty || 1}
+                              {item.quantity || 1}
                             </span>
                             <button
                               className="btn btn-sm border-0 p-1"
-                              onClick={() => updateQuantity(item.id, 1)}
+                              onClick={() => updateQuantity(item.productId?._id || item.productId, 1)}
                             >
                               <Plus size={14} className="text-dark" />
                             </button>

@@ -14,6 +14,7 @@ const {
 } = require("../controllers/admincontroller");
 
 // Product management routes
+router.post("/products", authMiddleware, adminMiddleware, createProduct);
 router.post("/products/create", authMiddleware, adminMiddleware, createProduct);
 router.put("/products/:id", authMiddleware, adminMiddleware, updateProduct);
 router.delete("/products/:id", authMiddleware, adminMiddleware, deleteProduct);

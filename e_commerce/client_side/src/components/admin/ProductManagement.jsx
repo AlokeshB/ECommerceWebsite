@@ -18,9 +18,13 @@ const ProductManagement = () => {
     category: "Men",
     subCategory: "Topwear",
     price: "",
+    discountPercentage: "",
     stock: "",
     image: "",
+    description: "",
+    sizes: [],
   });
+  const [newSize, setNewSize] = useState({ size: "", stock: "" });
 
   // Fetch products from backend on component mount
   useEffect(() => {
@@ -68,7 +72,8 @@ const ProductManagement = () => {
 
   const handleAddProduct = () => {
     setEditingProduct(null);
-    setFormData({ name: "", category: "Men", subCategory: "Topwear", price: "", stock: "", image: "" });
+    setFormData({ name: "", category: "Men", subCategory: "Topwear", price: "", discountPercentage: "", stock: "", image: "", description: "", sizes: [] });
+    setNewSize({ size: "", stock: "" });
     setShowModal(true);
   };
 
@@ -111,7 +116,7 @@ const ProductManagement = () => {
     
     // Validation
     if (!formData.name || !formData.price || !formData.stock || !formData.image) {
-      addNotification("Please fill all required fields", "error");
+      addNotification("Please fill in: Name, Price, Stock Quantity, and Image URL", "error");
       return;
     }
 
@@ -124,8 +129,11 @@ const ProductManagement = () => {
         category: formData.category,
         subCategory: formData.subCategory,
         price: parseFloat(formData.price),
+        discountPercentage: formData.discountPercentage ? parseFloat(formData.discountPercentage) : 0,
         stock: parseInt(formData.stock),
         image: formData.image,
+        description: formData.description || "",
+        sizes: formData.sizes || [],
       };
 
       if (editingProduct) {
@@ -175,6 +183,19 @@ const ProductManagement = () => {
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handleAddSize = () => {
+    if (newSize.size && newSize.stock) {
+      const updatedSizes = [...(formData.sizes || []), { size: newSize.size, stock: parseInt(newSize.stock) }];
+      setFormData({ ...formData, sizes: updatedSizes });
+      setNewSize({ size: "", stock: "" });
+    }
+  };
+
+  const handleRemoveSize = (index) => {
+    const updatedSizes = formData.sizes.filter((_, i) => i !== index);
+    setFormData({ ...formData, sizes: updatedSizes });
   };
 
   const getStockBadgeClass = (stock) => {
@@ -391,6 +412,23 @@ const ProductManagement = () => {
                     />
                   </div>
                   <div className="mb-3">
+                    <label className="form-label fw-bold">Discount Percentage (%)</label>
+                    <input
+                      type="number"
+                      className="form-control"
+                      placeholder="Enter discount percentage (optional)"
+                      value={formData.discountPercentage}
+                      onChange={(e) => setFormData({ ...formData, discountPercentage: e.target.value })}
+                      min="0"
+                      max="100"
+                    />
+                    {formData.price && formData.discountPercentage && (
+                      <small className="text-success mt-2 d-block">
+                        Discounted Price: ₹{(formData.price * (1 - formData.discountPercentage / 100)).toFixed(2)}
+                      </small>
+                    )}
+                  </div>
+                  <div className="mb-3">
                     <label className="form-label fw-bold">Stock Quantity</label>
                     <input
                       type="number"
@@ -427,6 +465,66 @@ const ProductManagement = () => {
                             e.target.style.display = "none";
                           }}
                         />
+                      </div>
+                    )}
+                  </div>
+                  <div className="mb-3">
+                    <label className="form-label fw-bold">Product Description</label>
+                    <textarea
+                      className="form-control"
+                      placeholder="Enter product description (optional)"
+                      value={formData.description}
+                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                      rows="3"
+                    ></textarea>
+                  </div>
+                  <div className="mb-3">
+                    <label className="form-label fw-bold">Available Sizes</label>
+                    <div className="card border-light p-3 mb-3">
+                      <div className="row g-2 mb-2">
+                        <div className="col-8">
+                          <input
+                            type="text"
+                            className="form-control"
+                            placeholder="Size (e.g., XS, S, M, L, XL, XXL)"
+                            value={newSize.size}
+                            onChange={(e) => setNewSize({ ...newSize, size: e.target.value })}
+                          />
+                        </div>
+                        <div className="col-4">
+                          <input
+                            type="number"
+                            className="form-control"
+                            placeholder="Stock"
+                            value={newSize.stock}
+                            onChange={(e) => setNewSize({ ...newSize, stock: e.target.value })}
+                          />
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-outline-primary"
+                        onClick={handleAddSize}
+                      >
+                        + Add Size
+                      </button>
+                    </div>
+                    {formData.sizes && formData.sizes.length > 0 && (
+                      <div>
+                        <p className="text-muted small mb-2">Added Sizes:</p>
+                        <div className="d-flex flex-wrap gap-2">
+                          {formData.sizes.map((s, idx) => (
+                            <div key={idx} className="badge bg-info p-2 d-flex align-items-center gap-2">
+                              <span>{s.size} ({s.stock})</span>
+                              <button
+                                type="button"
+                                className="btn-close btn-close-white"
+                                onClick={() => handleRemoveSize(idx)}
+                                style={{ fontSize: "0.75rem" }}
+                              ></button>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     )}
                   </div>

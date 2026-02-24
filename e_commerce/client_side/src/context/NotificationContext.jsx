@@ -77,19 +77,23 @@ export const NotificationProvider = ({ children }) => {
   const saveNotificationToBackend = async (message, role) => {
     try {
       const authToken = sessionStorage.getItem("authToken");
-      if (!authToken) return;
+      if (!authToken || !message) return;
 
-      await fetch("http://localhost:5000/api/notifications", {
+      const response = await fetch("http://localhost:5000/api/notifications", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${authToken}`,
         },
         body: JSON.stringify({
-          message,
-          role,
+          message: String(message).trim(),
+          role: role || "user",
         }),
       });
+
+      if (!response.ok) {
+        console.warn(`Notification API returned ${response.status}`);
+      }
     } catch (error) {
       console.error("Error saving notification to backend:", error);
     }
