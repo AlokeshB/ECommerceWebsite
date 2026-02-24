@@ -84,8 +84,8 @@ const Register = () => {
     const result = await authRegister(formData);
 
     if (result.success) {
-      setSuccess("Registration successful! Redirecting to home...");
-      setTimeout(() => navigate("/"), 1500);
+      setSuccess("Registration successful! Redirecting to login...");
+      setTimeout(() => navigate("/login"), 1500);
     } else {
       setError(result.error || "Registration failed. Please try again.");
       setLoading(false);

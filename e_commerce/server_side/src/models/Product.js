@@ -10,8 +10,8 @@ const productSchema = new mongoose.Schema(
     },
     description: {
       type: String,
-      required: [true, "Please provide a description"],
       trim: true,
+      default: "",
     },
     price: {
       type: Number,
@@ -27,6 +27,11 @@ const productSchema = new mongoose.Schema(
       type: String,
       required: [true, "Please provide a category"],
       trim: true,
+    },
+    subCategory: {
+      type: String,
+      trim: true,
+      default: "",
     },
     image: {
       type: String,

@@ -8,22 +8,27 @@ const APIFeatures = require("../utils/apiFeatures");
 // @access  Private/Admin
 exports.createProduct = async (req, res, next) => {
   try {
-    const { name, description, price, discountPrice, category, stock } = req.body;
+    const { name, category, subCategory, price, stock, image, description } = req.body;
 
-    if (!name || !description || !price || !category || stock === undefined) {
+    // Validate required fields
+    if (!name || !price || !category || stock === undefined) {
       return res.status(400).json({
         success: false,
-        message: "Please provide all required fields",
+        message: "Please provide all required fields: name, category, price, stock",
       });
     }
 
+    // If image is provided but not description, use image as a fallback
+    const productDescription = description || image || "";
+
     const product = await Product.create({
       name,
-      description,
-      price,
-      discountPrice: discountPrice || null,
       category,
-      stock,
+      subCategory: subCategory || "",
+      price: parseFloat(price),
+      stock: parseInt(stock),
+      image: image || "",
+      description: productDescription,
       createdBy: req.user.id,
     });
 
@@ -42,7 +47,7 @@ exports.createProduct = async (req, res, next) => {
 // @access  Private/Admin
 exports.updateProduct = async (req, res, next) => {
   try {
-    const { name, description, price, discountPrice, category, stock, isActive } = req.body;
+    const { name, category, subCategory, price, stock, image, description, isActive } = req.body;
 
     const product = await Product.findById(req.params.id);
 
@@ -56,10 +61,11 @@ exports.updateProduct = async (req, res, next) => {
     // Update fields if provided
     if (name) product.name = name;
     if (description) product.description = description;
-    if (price !== undefined) product.price = price;
-    if (discountPrice !== undefined) product.discountPrice = discountPrice;
+    if (price !== undefined) product.price = parseFloat(price);
     if (category) product.category = category;
-    if (stock !== undefined) product.stock = stock;
+    if (subCategory) product.subCategory = subCategory;
+    if (stock !== undefined) product.stock = parseInt(stock);
+    if (image) product.image = image;
     if (isActive !== undefined) product.isActive = isActive;
 
     await product.save();

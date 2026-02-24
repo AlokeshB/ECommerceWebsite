@@ -1,28 +1,128 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { User as UserIcon, ShoppingCart, X, Power, Menu } from "lucide-react";
+import { User as UserIcon, ShoppingCart, X, Power, Menu, ChevronLeft, ChevronRight } from "lucide-react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { useCart } from "../context/CartContext.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import { NotificationBell } from "./NotificationBell.jsx";
-const CategoryButton = ({ id, title, navigate, onClick }) => (
-  <button
-    onClick={() => {
-      navigate(`/category/${id}`);
-      onClick?.();
-    }}
-    className="btn btn-link text-dark text-decoration-none fw-bold p-0 w-100 text-start"
-    style={{ fontSize: "16px" }}
-  >
-    {title}
-  </button>
-);
+
+const CategorySlider = ({ navigate, closeMobileMenu, isOpen, onToggle }) => {
+  const sliderRef = useRef(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
+  const categories = [
+    { id: "men", title: "Men", emoji: "👔" },
+    { id: "women", title: "Women", emoji: "👗" },
+    { id: "kids", title: "Kids", emoji: "👶" },
+  ];
+
+  const handleScroll = () => {
+    if (sliderRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = sliderRef.current;
+      setCanScrollLeft(scrollLeft > 0);
+      setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 5);
+    }
+  };
+
+  const scroll = (direction) => {
+    if (sliderRef.current) {
+      const scrollAmount = 150;
+      sliderRef.current.scrollBy({
+        left: direction === "left" ? -scrollAmount : scrollAmount,
+        behavior: "smooth",
+      });
+      setTimeout(handleScroll, 300);
+    }
+  };
+
+  const handleCategoryClick = (id) => {
+    navigate(`/category/${id}`);
+    closeMobileMenu?.();
+    onToggle?.(false);
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="position-relative d-flex align-items-center gap-2">
+      <button
+        className="btn btn-sm p-1"
+        style={{
+          opacity: canScrollLeft ? 1 : 0.4,
+          cursor: canScrollLeft ? "pointer" : "default",
+          minWidth: "32px",
+          background: "transparent",
+          border: "none",
+        }}
+        onClick={() => scroll("left")}
+        disabled={!canScrollLeft}
+        title="Previous"
+      >
+        <ChevronLeft size={18} />
+      </button>
+
+      <div
+        ref={sliderRef}
+        className="d-flex gap-2 overflow-hidden"
+        style={{
+          scrollBehavior: "smooth",
+          flex: 1,
+          maxWidth: "300px",
+        }}
+        onScroll={handleScroll}
+      >
+        {categories.map((cat) => (
+          <button
+            key={cat.id}
+            className="btn btn-outline-dark fw-6 text-nowrap px-3 py-2"
+            style={{
+              fontSize: "13px",
+              minWidth: "90px",
+              transition: "all 0.2s ease",
+              borderRadius: "6px",
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.background = "#333";
+              e.target.style.color = "white";
+              e.target.style.borderColor = "#333";
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.background = "transparent";
+              e.target.style.color = "#333";
+              e.target.style.borderColor = "#333";
+            }}
+            onClick={() => handleCategoryClick(cat.id)}
+          >
+            {cat.emoji} {cat.title}
+          </button>
+        ))}
+      </div>
+
+      <button
+        className="btn btn-sm p-1"
+        style={{
+          opacity: canScrollRight ? 1 : 0.4,
+          cursor: canScrollRight ? "pointer" : "default",
+          minWidth: "32px",
+          background: "transparent",
+          border: "none",
+        }}
+        onClick={() => scroll("right")}
+        disabled={!canScrollRight}
+        title="Next"
+      >
+        <ChevronRight size={18} />
+      </button>
+    </div>
+  );
+};
 
 const Navbar = () => {
   const navigate = useNavigate();
   const { getCartCount } = useCart();
   const { user, logout } = useAuth();
   const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [showCategorySlider, setShowCategorySlider] = useState(false);
 
   const handleUserAction = () => {
     navigate(user ? "/profile" : "/login");
@@ -38,6 +138,14 @@ const Navbar = () => {
   };
 
   const closeMobileMenu = () => setShowMobileMenu(false);
+
+  const scrollToFooter = () => {
+    const footerElement = document.querySelector("footer");
+    if (footerElement) {
+      footerElement.scrollIntoView({ behavior: "smooth" });
+      closeMobileMenu();
+    }
+  };
 
   return (
     <>
@@ -63,18 +171,53 @@ const Navbar = () => {
             FASHION-HUB
           </Link>
 
-          {/* Category Links - Centered (Desktop Only - xl screens and up) */}
+          {/* Desktop Menu - Centered (Desktop Only - xl screens and up) */}
           <div
-            className="d-none d-xl-flex gap-4"
+            className="d-none d-xl-flex gap-3 align-items-center"
             style={{
               position: "absolute",
               left: "50%",
               transform: "translateX(-50%)",
+              minWidth: "400px",
+              justifyContent: "center",
             }}
           >
-            <CategoryButton id="women" title="WOMEN" navigate={navigate} />
-            <CategoryButton id="men" title="MEN" navigate={navigate} />
-            <CategoryButton id="kids" title="KIDS" navigate={navigate} />
+            {/* CATEGORIES Toggle */}
+            <button
+              className="btn btn-link text-dark text-decoration-none fw-bold p-0"
+              style={{ fontSize: "15px" }}
+              onClick={() => setShowCategorySlider(!showCategorySlider)}
+            >
+              CATEGORIES ▼
+            </button>
+
+            {showCategorySlider && (
+              <CategorySlider
+                navigate={navigate}
+                isOpen={true}
+                onToggle={setShowCategorySlider}
+              />
+            )}
+
+            {!showCategorySlider && (
+              <>
+                <Link
+                  to="/about"
+                  className="btn btn-link text-dark text-decoration-none fw-bold p-0"
+                  style={{ fontSize: "15px" }}
+                >
+                  ABOUT US
+                </Link>
+
+                <button
+                  className="btn btn-link text-dark text-decoration-none fw-bold p-0"
+                  style={{ fontSize: "15px" }}
+                  onClick={scrollToFooter}
+                >
+                  CONTACT US
+                </button>
+              </>
+            )}
           </div>
 
           {/* Mobile Menu Toggle and Right side actions */}
@@ -153,39 +296,64 @@ const Navbar = () => {
         </div>
       </nav>
 
-      {/* Mobile Menu - Only show on screens smaller than xl */}
+      {/* Mobile Menu */}
       {showMobileMenu && (
         <div
           className="d-xl-none bg-light border-bottom py-3 px-3"
           style={{ zIndex: 999 }}
         >
-          <div className="d-flex flex-column gap-3">
-            <CategoryButton
-              id="women"
-              title="WOMEN"
-              navigate={navigate}
-              onClick={closeMobileMenu}
-            />
-            <CategoryButton
-              id="men"
-              title="MEN"
-              navigate={navigate}
-              onClick={closeMobileMenu}
-            />
-            <CategoryButton
-              id="kids"
-              title="KIDS"
-              navigate={navigate}
-              onClick={closeMobileMenu}
-            />
-            <hr className="my-2" />
-            <Link
-              to="/profile"
+          <div className="d-flex flex-column gap-2">
+            {/* Mobile Categories Toggle */}
+            <button
               className="btn btn-link text-dark text-decoration-none fw-bold p-0 text-start"
-              onClick={closeMobileMenu}
+              style={{ fontSize: "15px" }}
+              onClick={() => setShowCategorySlider(!showCategorySlider)}
             >
-              My Profile
-            </Link>
+              CATEGORIES {showCategorySlider ? "▲" : "▼"}
+            </button>
+
+            {showCategorySlider && (
+              <div className="ms-2">
+                <CategorySlider
+                  navigate={navigate}
+                  closeMobileMenu={closeMobileMenu}
+                  isOpen={true}
+                  onToggle={setShowCategorySlider}
+                />
+              </div>
+            )}
+
+            {!showCategorySlider && (
+              <>
+                <Link
+                  to="/about"
+                  className="btn btn-link text-dark text-decoration-none fw-bold p-0 text-start"
+                  style={{ fontSize: "15px" }}
+                  onClick={closeMobileMenu}
+                >
+                  ABOUT US
+                </Link>
+
+                <button
+                  className="btn btn-link text-dark text-decoration-none fw-bold p-0 w-100 text-start"
+                  style={{ fontSize: "15px" }}
+                  onClick={scrollToFooter}
+                >
+                  CONTACT US
+                </button>
+              </>
+            )}
+
+            <hr className="my-2" />
+            {user && (
+              <Link
+                to="/profile"
+                className="btn btn-link text-dark text-decoration-none fw-bold p-0 text-start"
+                onClick={closeMobileMenu}
+              >
+                My Profile
+              </Link>
+            )}
           </div>
         </div>
       )}

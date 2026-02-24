@@ -20,6 +20,7 @@ const ProductManagement = () => {
     price: "",
     stock: "",
     image: "",
+    description: "",
   });
 
   // Fetch products from backend on component mount
@@ -68,7 +69,7 @@ const ProductManagement = () => {
 
   const handleAddProduct = () => {
     setEditingProduct(null);
-    setFormData({ name: "", category: "Men", subCategory: "Topwear", price: "", stock: "", image: "" });
+    setFormData({ name: "", category: "Men", subCategory: "Topwear", price: "", stock: "", image: "", description: "" });
     setShowModal(true);
   };
 
@@ -111,7 +112,7 @@ const ProductManagement = () => {
     
     // Validation
     if (!formData.name || !formData.price || !formData.stock || !formData.image) {
-      addNotification("Please fill all required fields", "error");
+      addNotification("Please fill in: Name, Price, Stock Quantity, and Image URL", "error");
       return;
     }
 
@@ -126,6 +127,7 @@ const ProductManagement = () => {
         price: parseFloat(formData.price),
         stock: parseInt(formData.stock),
         image: formData.image,
+        description: formData.description || "",
       };
 
       if (editingProduct) {
@@ -429,6 +431,16 @@ const ProductManagement = () => {
                         />
                       </div>
                     )}
+                  </div>
+                  <div className="mb-3">
+                    <label className="form-label fw-bold">Product Description</label>
+                    <textarea
+                      className="form-control"
+                      placeholder="Enter product description (optional)"
+                      value={formData.description}
+                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                      rows="3"
+                    ></textarea>
                   </div>
                 </div>
                 <div className="modal-footer">
