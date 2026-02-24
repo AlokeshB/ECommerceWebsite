@@ -8,7 +8,7 @@ const APIFeatures = require("../utils/apiFeatures");
 // @access  Private/Admin
 exports.createProduct = async (req, res, next) => {
   try {
-    const { name, category, subCategory, price, stock, image, description } = req.body;
+    const { name, category, subCategory, price, discountPercentage, stock, image, description, sizes } = req.body;
 
     // Validate required fields
     if (!name || !price || !category || stock === undefined) {
@@ -21,14 +21,31 @@ exports.createProduct = async (req, res, next) => {
     // If image is provided but not description, use image as a fallback
     const productDescription = description || image || "";
 
+    // Parse sizes if provided
+    let parsedSizes = [];
+    if (sizes && Array.isArray(sizes)) {
+      parsedSizes = sizes.filter(s => s.size && s.stock !== undefined);
+    }
+
+    // Calculate discount price from percentage if provided
+    let discountPriceValue = null;
+    let discountPercentageValue = 0;
+    if (discountPercentage && discountPercentage > 0) {
+      discountPercentageValue = parseFloat(discountPercentage);
+      discountPriceValue = parseFloat(price) * (1 - discountPercentageValue / 100);
+    }
+
     const product = await Product.create({
       name,
       category,
       subCategory: subCategory || "",
       price: parseFloat(price),
+      discountPercentage: discountPercentageValue,
+      discountPrice: discountPriceValue,
       stock: parseInt(stock),
       image: image || "",
       description: productDescription,
+      sizes: parsedSizes,
       createdBy: req.user.id,
     });
 
@@ -47,7 +64,7 @@ exports.createProduct = async (req, res, next) => {
 // @access  Private/Admin
 exports.updateProduct = async (req, res, next) => {
   try {
-    const { name, category, subCategory, price, stock, image, description, isActive } = req.body;
+    const { name, category, subCategory, price, discountPercentage, stock, image, description, isActive, sizes } = req.body;
 
     const product = await Product.findById(req.params.id);
 
@@ -67,6 +84,20 @@ exports.updateProduct = async (req, res, next) => {
     if (stock !== undefined) product.stock = parseInt(stock);
     if (image) product.image = image;
     if (isActive !== undefined) product.isActive = isActive;
+    if (sizes && Array.isArray(sizes)) {
+      product.sizes = sizes.filter(s => s.size && s.stock !== undefined);
+    }
+
+    // Calculate discount price from percentage if provided
+    if (discountPercentage !== undefined) {
+      if (discountPercentage > 0) {
+        product.discountPercentage = parseFloat(discountPercentage);
+        product.discountPrice = product.price * (1 - discountPercentage / 100);
+      } else {
+        product.discountPercentage = 0;
+        product.discountPrice = null;
+      }
+    }
 
     await product.save();
 

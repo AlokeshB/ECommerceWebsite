@@ -93,9 +93,12 @@ const About = () => {
                 }}
               >
                 <img
-                  src="https://images.unsplash.com/photo-1552664730-d307ca884978?w=500&h=300&fit=crop"
+                  src="https://images.unsplash.com/photo-1552664730-d307ca884978?w=500&h=300&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8ZW58MHx8fHx8fA%3D%3D"
                   alt="Mission"
-                  style={{ height: "200px", objectFit: "cover", opacity: 0.2 }}
+                  style={{ height: "200px", objectFit: "cover", opacity: 0.3, background: "#f0f0f0" }}
+                  onError={(e) => {
+                    e.target.style.display = "none";
+                  }}
                 />
                 <div className="card-body p-4 position-relative" style={{ zIndex: 1 }}>
                   <div className="d-flex align-items-center gap-3 mb-3">
@@ -120,9 +123,12 @@ const About = () => {
                 }}
               >
                 <img
-                  src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a5?w=500&h=300&fit=crop"
+                  src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a5?w=500&h=300&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8ZW58MHx8fHx8fA%3D%3D"
                   alt="Vision"
-                  style={{ height: "200px", objectFit: "cover", opacity: 0.2 }}
+                  style={{ height: "200px", objectFit: "cover", opacity: 0.3, background: "#f0f0f0" }}
+                  onError={(e) => {
+                    e.target.style.display = "none";
+                  }}
                 />
                 <div className="card-body p-4 position-relative" style={{ zIndex: 1 }}>
                   <div className="d-flex align-items-center gap-3 mb-3">
@@ -195,12 +201,15 @@ const About = () => {
                 }}
               >
                 <img
-                  src="https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=300&h=150&fit=crop"
+                  src="https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=300&h=150&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8ZW58MHx8fHx8fA%3D%3D"
                   alt="Trends"
                   style={{
                     height: "150px",
                     objectFit: "cover",
                     opacity: 0.3,
+                  }}
+                  onError={(e) => {
+                    e.target.style.display = "none";
                   }}
                 />
                 <div className="card-body p-4 text-center">
@@ -231,12 +240,15 @@ const About = () => {
                 }}
               >
                 <img
-                  src="https://images.unsplash.com/photo-1575260051383-30fbc6905ee1?w=300&h=150&fit=crop"
+                  src="https://images.unsplash.com/photo-1575260051383-30fbc6905ee1?w=300&h=150&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8ZW58MHx8fHx8fA%3D%3D"
                   alt="Prices"
                   style={{
                     height: "150px",
                     objectFit: "cover",
                     opacity: 0.3,
+                  }}
+                  onError={(e) => {
+                    e.target.style.display = "none";
                   }}
                 />
                 <div className="card-body p-4 text-center">
@@ -267,12 +279,15 @@ const About = () => {
                 }}
               >
                 <img
-                  src="https://images.unsplash.com/photo-1566073771259-6a8506099945?w=300&h=150&fit=crop"
+                  src="https://images.unsplash.com/photo-1566073771259-6a8506099945?w=300&h=150&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8ZW58MHx8fHx8fA%3D%3D"
                   alt="Delivery"
                   style={{
                     height: "150px",
                     objectFit: "cover",
                     opacity: 0.3,
+                  }}
+                  onError={(e) => {
+                    e.target.style.display = "none";
                   }}
                 />
                 <div className="card-body p-4 text-center">
@@ -303,12 +318,15 @@ const About = () => {
                 }}
               >
                 <img
-                  src="https://images.unsplash.com/photo-1579165466741-7664c59ea290?w=300&h=150&fit=crop"
+                  src="https://images.unsplash.com/photo-1579165466741-7664c59ea290?w=300&h=150&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8ZW58MHx8fHx8fA%3D%3D"
                   alt="Security"
                   style={{
                     height: "150px",
                     objectFit: "cover",
                     opacity: 0.3,
+                  }}
+                  onError={(e) => {
+                    e.target.style.display = "none";
                   }}
                 />
                 <div className="card-body p-4 text-center">

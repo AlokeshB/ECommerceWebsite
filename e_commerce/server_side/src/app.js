@@ -10,6 +10,7 @@ const orderRoute = require("./routes/orderRoute");
 const adminRoute = require("./routes/adminRoute");
 const notificationRoute = require("./routes/notificationRoute");
 const paymentcardRoute = require("./routes/paymentcardRoute");
+const wishlistRoute = require("./routes/wishlistRoute");
 
 const app = express();
 
@@ -35,6 +36,7 @@ app.use("/api/orders", orderRoute);
 app.use("/api/admin", adminRoute);
 app.use("/api/notifications", notificationRoute);
 app.use("/api/payment-cards", paymentcardRoute);
+app.use("/api/wishlist", wishlistRoute);
 
 // Root route
 app.get("/", (req, res) => {

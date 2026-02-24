@@ -23,6 +23,12 @@ const productSchema = new mongoose.Schema(
       min: [0, "Discount price cannot be negative"],
       default: null,
     },
+    discountPercentage: {
+      type: Number,
+      min: [0, "Discount percentage cannot be negative"],
+      max: [100, "Discount percentage cannot exceed 100"],
+      default: 0,
+    },
     category: {
       type: String,
       required: [true, "Please provide a category"],
@@ -48,6 +54,19 @@ const productSchema = new mongoose.Schema(
       min: [0, "Stock cannot be negative"],
       default: 0,
     },
+    sizes: [
+      {
+        size: {
+          type: String,
+          required: true,
+        },
+        stock: {
+          type: Number,
+          default: 0,
+          min: 0,
+        },
+      },
+    ],
     rating: {
       type: Number,
       min: 0,
