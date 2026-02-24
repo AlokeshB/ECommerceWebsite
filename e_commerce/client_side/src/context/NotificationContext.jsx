@@ -166,8 +166,44 @@ export const NotificationProvider = ({ children }) => {
     }
   }, [notifications]);
 
-  const clearNotifications = (role) => {
-    setNotifications((prev) => prev.filter((n) => n.role !== role));
+  const clearNotifications = async (role) => {
+    // First delete all notifications with this role from backend
+    try {
+      const authToken = sessionStorage.getItem("authToken");
+      if (!authToken) {
+        // If no auth token, just clear from local state
+        setNotifications((prev) => prev.filter((n) => n.role !== role));
+        return;
+      }
+
+      // Delete each notification with matching role
+      const toDelete = notifications.filter((n) => n.role === role);
+      for (const notif of toDelete) {
+        if (notif._id) {
+          try {
+            await fetch(
+              `http://localhost:5000/api/notifications/${notif._id}`,
+              {
+                method: "DELETE",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${authToken}`,
+                },
+              }
+            );
+          } catch (error) {
+            console.error("Error deleting notification:", error);
+          }
+        }
+      }
+
+      // Clear from local state
+      setNotifications((prev) => prev.filter((n) => n.role !== role));
+    } catch (error) {
+      console.error("Error clearing notifications:", error);
+      // Still clear from local state even if backend call fails
+      setNotifications((prev) => prev.filter((n) => n.role !== role));
+    }
   };
 
   return (

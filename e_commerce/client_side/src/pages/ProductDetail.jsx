@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Heart, ShoppingCart, Zap, Loader2, ArrowLeft, Share2 } from "lucide-react";
+import { Heart, ShoppingCart, Zap, Loader2, ArrowLeft, Share2, Star, Send } from "lucide-react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { useAuth } from "../context/AuthContext";
@@ -20,6 +20,9 @@ const ProductDetail = () => {
   const [selectedSize, setSelectedSize] = useState("");
   const [quantity, setQuantity] = useState(1);
   const [inWishlist, setInWishlist] = useState(false);
+  const [reviewRating, setReviewRating] = useState(0);
+  const [reviewComment, setReviewComment] = useState("");
+  const [submittingReview, setSubmittingReview] = useState(false);
 
   const fetchProduct = useCallback(async () => {
     try {
@@ -144,6 +147,59 @@ const ProductDetail = () => {
       addNotification("Error updating wishlist", "error");
     }
   };
+
+  const handleAddReview = async () => {
+    if (!user) {
+      addNotification("Please login to add a review", "error");
+      navigate("/login");
+      return;
+    }
+
+    if (reviewRating === 0) {
+      addNotification("Please select a rating", "error");
+      return;
+    }
+
+    if (!reviewComment.trim()) {
+      addNotification("Please add a comment", "error");
+      return;
+    }
+
+    try {
+      setSubmittingReview(true);
+      const authToken = sessionStorage.getItem("authToken");
+
+      const response = await fetch(`http://localhost:5000/api/products/${id}/review`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${authToken}`,
+        },
+        body: JSON.stringify({
+          rating: reviewRating,
+          comment: reviewComment,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        addNotification("Review added successfully!", "success");
+        setReviewRating(0);
+        setReviewComment("");
+        // Refresh product to show new review
+        fetchProduct();
+      } else {
+        addNotification(data.message || "Failed to add review", "error");
+      }
+    } catch (error) {
+      console.error("Error adding review:", error);
+      addNotification("Error adding review", "error");
+    } finally {
+      setSubmittingReview(false);
+    }
+  };
+
 
   if (loading) {
     return (
@@ -319,7 +375,9 @@ const ProductDetail = () => {
                 {product.description && (
                   <div className="mb-4">
                     <h6 className="fw-bold">Description</h6>
-                    <p className="text-muted">{product.description}</p>
+                    <p className="text-muted" style={{ whiteSpace: "pre-wrap", lineHeight: "1.6" }}>
+                      {product.description}
+                    </p>
                   </div>
                 )}
 
@@ -405,6 +463,121 @@ const ProductDetail = () => {
                     <Share2 size={18} /> Share Product
                   </button>
                 </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Reviews Section */}
+          <div className="row mt-5">
+            <div className="col-12">
+              <div className="card border-0 shadow-sm p-4">
+                <h4 className="fw-bold mb-4">
+                  Customer Reviews
+                  <small className="text-muted d-block" style={{ fontSize: "0.7em" }}>
+                    ({product.numReviews || 0} reviews)
+                  </small>
+                </h4>
+
+                {/* Add Review Form */}
+                {user && (
+                  <div className="bg-light p-4 rounded mb-4">
+                    <h6 className="fw-bold mb-3">Add Your Review</h6>
+                    
+                    {/* Rating Selection */}
+                    <div className="mb-3">
+                      <label className="form-label fw-bold">Rating</label>
+                      <div className="d-flex gap-2">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <button
+                            key={star}
+                            onClick={() => setReviewRating(star)}
+                            className="btn btn-light p-1"
+                            style={{
+                              background: star <= reviewRating ? "#ffc107" : "#e9ecef",
+                              border: "none",
+                              borderRadius: "50%",
+                              width: "40px",
+                              height: "40px",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              cursor: "pointer",
+                            }}
+                          >
+                            <Star size={20} fill={star <= reviewRating ? "#ffc107" : "none"} color={star <= reviewRating ? "#ffc107" : "#666"} />
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Comment Input */}
+                    <div className="mb-3">
+                      <label className="form-label fw-bold">Comment</label>
+                      <textarea
+                        className="form-control"
+                        rows="3"
+                        placeholder="Share your experience with this product..."
+                        value={reviewComment}
+                        onChange={(e) => setReviewComment(e.target.value)}
+                      />
+                    </div>
+
+                    <button
+                      onClick={handleAddReview}
+                      disabled={submittingReview}
+                      className="btn btn-dark d-flex align-items-center gap-2"
+                    >
+                      {submittingReview ? (
+                        <>
+                          <Loader2 size={18} style={{ animation: "spin 1s linear infinite" }} />
+                          Submitting...
+                        </>
+                      ) : (
+                        <>
+                          <Send size={18} />
+                          Submit Review
+                        </>
+                      )}
+                    </button>
+                  </div>
+                )}
+
+                {/* Display Reviews */}
+                {product.reviews && product.reviews.length > 0 ? (
+                  <div className="space-y-4">
+                    {product.reviews.map((review, index) => (
+                      <div key={index} className="border-top pt-3">
+                        <div className="d-flex justify-content-between align-items-start mb-2">
+                          <div>
+                            <h6 className="fw-bold mb-1">{review.userName}</h6>
+                            <div className="d-flex gap-1 mb-2">
+                              {[...Array(5)].map((_, i) => (
+                                <Star
+                                  key={i}
+                                  size={16}
+                                  fill={i < review.rating ? "#ffc107" : "none"}
+                                  color={i < review.rating ? "#ffc107" : "#ddd"}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                          <small className="text-muted">
+                            {new Date(review.createdAt).toLocaleDateString("en-IN", {
+                              year: "numeric",
+                              month: "short",
+                              day: "numeric",
+                            })}
+                          </small>
+                        </div>
+                        <p className="text-muted mb-0">{review.comment}</p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-5">
+                    <p className="text-muted">No reviews yet. Be the first to review!</p>
+                  </div>
+                )}
               </div>
             </div>
           </div>

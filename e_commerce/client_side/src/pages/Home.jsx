@@ -1,20 +1,25 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { ShoppingCart, Zap, Loader2, Heart } from "lucide-react";
+import { ShoppingCart, Zap, Loader2, Heart, X } from "lucide-react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { useAuth } from "../context/AuthContext";
+import { useCart } from "../context/CartContext";
 import { useWishlist } from "../context/WishlistContext";
 import { useNotifications } from "../context/NotificationContext";
 
 const Home = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { addToCart } = useCart();
   const { isInWishlist, addToWishlist, removeFromWishlist } = useWishlist();
   const { addNotification } = useNotifications();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [wishlistItems, setWishlistItems] = useState({});
+  const [sizeModalProduct, setSizeModalProduct] = useState(null);
+  const [selectedSize, setSelectedSize] = useState("");
+  const [cartActionType, setCartActionType] = useState("");
 
   useEffect(() => {
     // Fetch products from backend API
@@ -55,6 +60,14 @@ const Home = () => {
       return;
     }
     
+    // Check if product has sizes
+    if (product.sizes && product.sizes.length > 0) {
+      setSizeModalProduct(product);
+      setSelectedSize("");
+      setCartActionType("buy");
+      return;
+    }
+    
     // Store product for single-item checkout
     sessionStorage.setItem("buyNowItem", JSON.stringify({
       productId: product._id,
@@ -64,38 +77,36 @@ const Home = () => {
     navigate("/checkout");
   };
 
-  const handleAddToCart = async (product) => {
+  const handleAddToCart = (product) => {
     if (!user) {
       addNotification("Please login to add items", "error");
       navigate("/login");
       return;
     }
+    
+    // Check if product has sizes
+    if (product.sizes && product.sizes.length > 0) {
+      setSizeModalProduct(product);
+      setSelectedSize("");
+      setCartActionType("cart");
+      return;
+    }
+    
+    // Add product without size to cart
+    addProductToCart(product._id, 1, null);
+  };
 
-    try {
-      const authToken = sessionStorage.getItem("authToken");
-      
-      const response = await fetch("http://localhost:5000/api/cart/add", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${authToken}`,
-        },
-        body: JSON.stringify({
-          productId: product._id,
-          quantity: 1,
-        }),
-      });
+  const addProductToCart = async (productId, quantity, size) => {
+    const result = await addToCart({
+      _id: productId,
+      qty: quantity,
+      size: size,
+    });
 
-      const data = await response.json();
-
-      if (data.success) {
-        addNotification(`${product.name} added to cart!`, "success");
-      } else {
-        addNotification(data.message || "Failed to add to cart", "error");
-      }
-    } catch (error) {
-      console.error("Error adding to cart:", error);
-      addNotification("Error adding to cart", "error");
+    if (result.success) {
+      addNotification("Product added to cart!", "success");
+    } else {
+      addNotification(result.error || "Failed to add to cart", "error");
     }
   };
 
@@ -181,7 +192,25 @@ const Home = () => {
               {product.category}
             </span>
             <h6 className="fw-bold text-truncate mb-1" style={{ color: "#333" }}>{product.name}</h6>
-            <p className="text-dark fw-bold mb-2">₹{product.price?.toLocaleString("en-IN") || 0}</p>
+            
+            {/* Price with Discount */}
+            <div className="mb-2">
+              {product.discountPercentage && product.discountPercentage > 0 ? (
+                <div className="d-flex align-items-center gap-2">
+                  <p className="text-muted mb-0" style={{ textDecoration: "line-through", fontSize: "12px" }}>
+                    ₹{product.price?.toLocaleString("en-IN") || 0}
+                  </p>
+                  <p className="text-danger fw-bold mb-0">
+                    ₹{(product.price * (1 - product.discountPercentage / 100)).toFixed(0)}
+                  </p>
+                  <span className="badge bg-danger" style={{ fontSize: "10px" }}>
+                    {product.discountPercentage}% off
+                  </span>
+                </div>
+              ) : (
+                <p className="text-dark fw-bold mb-2">₹{product.price?.toLocaleString("en-IN") || 0}</p>
+              )}
+            </div>
 
             <div className="d-flex gap-2">
               <button
@@ -241,6 +270,93 @@ const Home = () => {
           )}
         </div>
       </main>
+
+      {/* Size Selection Modal */}
+      {sizeModalProduct && (
+        <div className="modal d-block show" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Select Size</h5>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={() => {
+                    setSizeModalProduct(null);
+                    setSelectedSize("");
+                  }}
+                ></button>
+              </div>
+              <div className="modal-body">
+                <p className="text-muted mb-3">Please select a size for {sizeModalProduct.name}</p>
+                <div className="d-flex gap-2 flex-wrap">
+                  {sizeModalProduct.sizes.map((size, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => size.stock > 0 && setSelectedSize(size.size)}
+                      className={`btn ${
+                        selectedSize === size.size
+                          ? "btn-dark"
+                          : "btn-outline-dark"
+                      }`}
+                      style={{
+                        minWidth: "80px",
+                        borderWidth: selectedSize === size.size ? "2px" : "1px",
+                      }}
+                      disabled={size.stock === 0}
+                    >
+                      {size.size}
+                      {size.stock === 0 && <small> (Out)</small>}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => {
+                    setSizeModalProduct(null);
+                    setSelectedSize("");
+                    setCartActionType("");
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-dark"
+                  onClick={() => {
+                    if (!selectedSize) {
+                      addNotification("Please select a size", "error");
+                      return;
+                    }
+
+                    if (cartActionType === "cart") {
+                      addProductToCart(sizeModalProduct._id, 1, selectedSize);
+                    } else if (cartActionType === "buy") {
+                      sessionStorage.setItem("buyNowItem", JSON.stringify({
+                        productId: sizeModalProduct._id,
+                        quantity: 1,
+                        size: selectedSize,
+                      }));
+                      navigate("/checkout");
+                    }
+
+                    setSizeModalProduct(null);
+                    setSelectedSize("");
+                    setCartActionType("");
+                  }}
+                  disabled={!selectedSize}
+                >
+                  {cartActionType === "cart" ? "Confirm & Add to Cart" : "Confirm & Buy Now"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <Footer />
     </div>
   );

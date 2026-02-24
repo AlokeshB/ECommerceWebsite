@@ -11,6 +11,7 @@ import Checkout from './pages/Checkout';
 import UserProfile from './pages/UserProfile';
 import ProductDetail from './pages/ProductDetail';
 import CategoryProducts from './pages/CategoryProducts';
+import Wishlist from './pages/Wishlist';
 import AdminDashboard from './pages/AdminDashboard';
 import ProtectedAdminRoute from './routes/ProtectedAdminRoute';
 
@@ -20,6 +21,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/cart" element={<Cart />} />
+        <Route path="/wishlist" element={<Wishlist />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/about" element={<About />} />

@@ -74,14 +74,21 @@ exports.createOrder = async (req, res, next) => {
       ],
     });
 
-    // Update product stock
+    // Update product stock based on sizes
     for (let item of cart.items) {
-      await Product.findByIdAndUpdate(
-        item.productId._id,
-        {
-          $inc: { stock: -item.quantity },
+      const product = await Product.findById(item.productId._id);
+      
+      if (product && product.sizes && product.sizes.length > 0) {
+        // Update size-based stock
+        if (item.size) {
+          const sizeIndex = product.sizes.findIndex(s => s.size === item.size);
+          if (sizeIndex !== -1) {
+            product.sizes[sizeIndex].stock -= item.quantity;
+          }
         }
-      );
+      }
+      
+      await product.save();
     }
 
     // Clear cart
@@ -173,14 +180,21 @@ exports.cancelOrder = async (req, res, next) => {
       });
     }
 
-    // Refund stock
+    // Refund stock based on sizes
     for (let item of order.items) {
-      await Product.findByIdAndUpdate(
-        item.productId,
-        {
-          $inc: { stock: item.quantity },
+      const product = await Product.findById(item.productId);
+      
+      if (product && product.sizes && product.sizes.length > 0) {
+        // Refund size-based stock
+        if (item.size) {
+          const sizeIndex = product.sizes.findIndex(s => s.size === item.size);
+          if (sizeIndex !== -1) {
+            product.sizes[sizeIndex].stock += item.quantity;
+          }
         }
-      );
+      }
+      
+      await product.save();
     }
 
     order.orderStatus = "cancelled";

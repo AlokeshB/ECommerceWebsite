@@ -22,11 +22,12 @@ exports.getCart = async (req, res, next) => {
 };
 
 // @route   POST /api/cart/add
+// @route   POST /api/cart/add
 // @desc    Add product to cart
 // @access  Private
 exports.addToCart = async (req, res, next) => {
   try {
-    const { productId, quantity } = req.body;
+    const { productId, quantity, size } = req.body;
 
     if (!productId || !quantity) {
       return res.status(400).json({
@@ -51,11 +52,29 @@ exports.addToCart = async (req, res, next) => {
       });
     }
 
-    if (product.stock < quantity) {
-      return res.status(400).json({
-        success: false,
-        message: "Insufficient stock",
-      });
+    // Check stock based on size if product has sizes
+    if (product.sizes && product.sizes.length > 0) {
+      if (!size) {
+        return res.status(400).json({
+          success: false,
+          message: "Please select a size",
+        });
+      }
+
+      const sizeData = product.sizes.find(s => s.size === size);
+      if (!sizeData) {
+        return res.status(400).json({
+          success: false,
+          message: "Size not available",
+        });
+      }
+
+      if (sizeData.stock < quantity) {
+        return res.status(400).json({
+          success: false,
+          message: "Insufficient stock for selected size",
+        });
+      }
     }
 
     let cart = await Cart.findOne({ userId: req.user.id });
@@ -75,6 +94,7 @@ exports.addToCart = async (req, res, next) => {
       cart.items.push({
         productId,
         quantity,
+        size: size || undefined,
         price: product.effectivePrice || product.price,
       });
     }
@@ -127,11 +147,15 @@ exports.updateCartItem = async (req, res, next) => {
 
     const product = await Product.findById(cartItem.productId);
 
-    if (product.stock < quantity) {
-      return res.status(400).json({
-        success: false,
-        message: "Insufficient stock",
-      });
+    // Check size-based stock if product has sizes
+    if (product.sizes && product.sizes.length > 0 && cartItem.size) {
+      const sizeData = product.sizes.find(s => s.size === cartItem.size);
+      if (!sizeData || sizeData.stock < quantity) {
+        return res.status(400).json({
+          success: false,
+          message: "Insufficient stock for selected size",
+        });
+      }
     }
 
     cartItem.quantity = quantity;

@@ -1,25 +1,179 @@
-# Logs
-logs
-*.log
+################################################################################
+# E-COMMERCE PLATFORM - COMPREHENSIVE GITIGNORE
+# Covers both frontend (client_side) and backend (server_side)
+################################################################################
+
+################################################################################
+# DEPENDENCIES & PACKAGE MANAGERS
+################################################################################
+# Node.js
+node_modules/
+package-lock.json
+yarn.lock
+
+# npm
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
-*.local
-.env
+# Dependency directories (using npm link or yarn link)
+.pnp
+.pnp.js
 
-# Editor directories and files
-.vscode/*
+################################################################################
+# ENVIRONMENT VARIABLES & SECRETS
+################################################################################
+.env
+.env.local
+.env.*.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+################################################################################
+# IDE & EDITOR FILES
+################################################################################
+.vscode/
 !.vscode/extensions.json
-.idea
+.idea/
+*.swp
+*.swo
+*~
 .DS_Store
+*.iml
+.project
+.classpath
+.c9/
+*.sublime-workspace
+*.sublime-project
+*.komodoproject
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
+
+################################################################################
+# OS SPECIFIC FILES
+################################################################################
+Thumbs.db
+.AppleDouble
+.LSOverride
+*.cab
+._*
+.Spotlight-V100
+.Trashes
+
+################################################################################
+# LOGS & RUNTIME DATA
+################################################################################
+logs/
+*.log
+*.log.gz
+pids/
+*.pid
+*.seed
+*.pid.lock
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_esm/
+.rts2_cache_umd/
+
+################################################################################
+# TEMPORARY & CACHE FILES
+################################################################################
+tmp/
+temp/
+.cache
+.grunt
+.next
+.nuxt
+out/
+.vuepress/dist
+.vite/
+
+################################################################################
+# BUILD OUTPUT
+################################################################################
+dist/
+dist-ssr/
+build/
+[Dd]ist/
+[Bb]uild/
+public/build/
+*.local
+
+################################################################################
+# TEST & COVERAGE FILES
+################################################################################
+coverage/
+.nyc_output/
+*.lcov
+.mocha_output
+
+################################################################################
+# ARCHIVES
+################################################################################
+*.tar
+*.tar.gz
+*.rar
+*.zip
+*.7z
+*.bak
+
+################################################################################
+# DATABASE
+################################################################################
+*.db
+*.sqlite
+*.sqlite3
+*.mongo
+
+################################################################################
+# MISCELLANEOUS
+################################################################################
+*.bk
+.babelrc.json
+.eslintcache
+.flake8
+.pytest_cache/
+.tox.ini
+
+# Optional npm cache directory
+.npm
+
+# Output of 'npm pack'
+*.tgz
+
+# dotenv files
+.env*.local
+
+################################################################################
+# CUSTOM IGNORES FOR ECOMMERCE PROJECT
+################################################################################
+# Uploads
+uploads/
+public/uploads/
+
+# Test files
+*.test.js
+*.spec.js
+
+# Documentation generated files
+docs/api/
+
+# Backup files
+*.backup
+*.bak
+
+# Temporary build files
+.tmp/
+
+# Vite specific
+.vite/
+
+# React specific
+build/
+dist/

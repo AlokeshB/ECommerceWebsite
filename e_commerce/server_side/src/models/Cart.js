@@ -25,6 +25,10 @@ const cartSchema = new mongoose.Schema(
           type: Number,
           required: true,
         },
+        size: {
+          type: String,
+          default: null,
+        },
         addedAt: {
           type: Date,
           default: Date.now,

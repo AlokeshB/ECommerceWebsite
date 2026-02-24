@@ -19,10 +19,10 @@ const ProductManagement = () => {
     subCategory: "Topwear",
     price: "",
     discountPercentage: "",
-    stock: "",
     image: "",
     description: "",
     sizes: [],
+    deliveryFee: "",
   });
   const [newSize, setNewSize] = useState({ size: "", stock: "" });
 
@@ -72,7 +72,7 @@ const ProductManagement = () => {
 
   const handleAddProduct = () => {
     setEditingProduct(null);
-    setFormData({ name: "", category: "Men", subCategory: "Topwear", price: "", discountPercentage: "", stock: "", image: "", description: "", sizes: [] });
+    setFormData({ name: "", category: "Men", subCategory: "Topwear", price: "", discountPercentage: "", image: "", description: "", sizes: [], deliveryFee: "" });
     setNewSize({ size: "", stock: "" });
     setShowModal(true);
   };
@@ -115,8 +115,8 @@ const ProductManagement = () => {
     e.preventDefault();
     
     // Validation
-    if (!formData.name || !formData.price || !formData.stock || !formData.image) {
-      addNotification("Please fill in: Name, Price, Stock Quantity, and Image URL", "error");
+    if (!formData.name || !formData.price || !formData.image) {
+      addNotification("Please fill in: Name, Price, and Image URL", "error");
       return;
     }
 
@@ -130,10 +130,10 @@ const ProductManagement = () => {
         subCategory: formData.subCategory,
         price: parseFloat(formData.price),
         discountPercentage: formData.discountPercentage ? parseFloat(formData.discountPercentage) : 0,
-        stock: parseInt(formData.stock),
         image: formData.image,
         description: formData.description || "",
         sizes: formData.sizes || [],
+        deliveryFee: formData.deliveryFee ? parseFloat(formData.deliveryFee) : 0,
       };
 
       if (editingProduct) {
@@ -305,9 +305,14 @@ const ProductManagement = () => {
                       </td>
                       <td className="small fw-bold">₹{product.price}</td>
                       <td className="small">
-                        <span className={`badge ${getStockBadgeClass(product.stock)}`}>
-                          {product.stock} units
-                        </span>
+                        {(() => {
+                          const totalStock = product.sizes?.reduce((sum, size) => sum + (size.stock || 0), 0) || 0;
+                          return (
+                            <span className={`badge ${getStockBadgeClass(totalStock)}`}>
+                              {totalStock} units
+                            </span>
+                          );
+                        })()}
                       </td>
                       <td className="small">
                         <button
@@ -343,7 +348,7 @@ const ProductManagement = () => {
       {/* Modal */}
       {showModal && (
         <div className="modal d-block show" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
-          <div className="modal-dialog">
+          <div className="modal-dialog modal-lg">
             <div className="modal-content">
               <div className="modal-header">
                 <h5 className="modal-title">{editingProduct ? "Edit Product" : "Add New Product"}</h5>
@@ -366,78 +371,95 @@ const ProductManagement = () => {
                       required
                     />
                   </div>
-                  <div className="mb-3">
-                    <label className="form-label fw-bold">Category</label>
-                    <select
-                      className="form-select"
-                      value={formData.category}
-                      onChange={(e) => {
-                        const newCategory = e.target.value;
-                        setFormData({
-                          ...formData,
-                          category: newCategory,
-                          subCategory: subCategories[newCategory][0],
-                        });
-                      }}
-                    >
-                      {CATEGORIES.map((cat) => (
-                        <option key={cat} value={cat}>
-                          {cat}
-                        </option>
-                      ))}
-                    </select>
+                  
+                  {/* Category and Sub Category in same row */}
+                  <div className="row g-2 mb-3">
+                    <div className="col-md-6">
+                      <label className="form-label fw-bold">Category</label>
+                      <select
+                        className="form-select"
+                        value={formData.category}
+                        onChange={(e) => {
+                          const newCategory = e.target.value;
+                          setFormData({
+                            ...formData,
+                            category: newCategory,
+                            subCategory: subCategories[newCategory][0],
+                          });
+                        }}
+                      >
+                        {CATEGORIES.map((cat) => (
+                          <option key={cat} value={cat}>
+                            {cat}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="col-md-6">
+                      <label className="form-label fw-bold">Sub Category</label>
+                      <select
+                        className="form-select"
+                        value={formData.subCategory}
+                        onChange={(e) => setFormData({ ...formData, subCategory: e.target.value })}
+                      >
+                        {subCategories[formData.category].map((sub) => (
+                          <option key={sub} value={sub}>
+                            {sub}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
-                  <div className="mb-3">
-                    <label className="form-label fw-bold">Sub Category</label>
-                    <select
-                      className="form-select"
-                      value={formData.subCategory}
-                      onChange={(e) => setFormData({ ...formData, subCategory: e.target.value })}
-                    >
-                      {subCategories[formData.category].map((sub) => (
-                        <option key={sub} value={sub}>
-                          {sub}
-                        </option>
-                      ))}
-                    </select>
+
+                  {/* Price and Discount in same row */}
+                  <div className="row g-2 mb-3">
+                    <div className="col-md-6">
+                      <label className="form-label fw-bold">Price (₹)</label>
+                      <input
+                        type="number"
+                        className="form-control"
+                        value={formData.price}
+                        onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                        required
+                      />
+                    </div>
+                    <div className="col-md-6">
+                      <label className="form-label fw-bold">Discount Percentage (%)</label>
+                      <input
+                        type="number"
+                        className="form-control"
+                        placeholder="Enter discount (optional)"
+                        value={formData.discountPercentage}
+                        onChange={(e) => setFormData({ ...formData, discountPercentage: e.target.value })}
+                        min="0"
+                        max="100"
+                      />
+                    </div>
                   </div>
-                  <div className="mb-3">
-                    <label className="form-label fw-bold">Price (₹)</label>
-                    <input
-                      type="number"
-                      className="form-control"
-                      value={formData.price}
-                      onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                      required
-                    />
-                  </div>
-                  <div className="mb-3">
-                    <label className="form-label fw-bold">Discount Percentage (%)</label>
-                    <input
-                      type="number"
-                      className="form-control"
-                      placeholder="Enter discount percentage (optional)"
-                      value={formData.discountPercentage}
-                      onChange={(e) => setFormData({ ...formData, discountPercentage: e.target.value })}
-                      min="0"
-                      max="100"
-                    />
-                    {formData.price && formData.discountPercentage && (
-                      <small className="text-success mt-2 d-block">
+
+                  {/* Discount Preview */}
+                  {formData.price && formData.discountPercentage && (
+                    <div className="mb-3 p-2 bg-light border-start border-success border-3 rounded-2">
+                      <small className="text-success fw-bold">
                         Discounted Price: ₹{(formData.price * (1 - formData.discountPercentage / 100)).toFixed(2)}
                       </small>
-                    )}
-                  </div>
+                    </div>
+                  )}
+
+                  {/* Delivery Fee */}
                   <div className="mb-3">
-                    <label className="form-label fw-bold">Stock Quantity</label>
+                    <label className="form-label fw-bold">Delivery Fee (₹) - Leave empty for Free Delivery</label>
                     <input
                       type="number"
                       className="form-control"
-                      value={formData.stock}
-                      onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
-                      required
+                      placeholder="Enter delivery fee or leave empty for free"
+                      value={formData.deliveryFee}
+                      onChange={(e) => setFormData({ ...formData, deliveryFee: e.target.value })}
+                      min="0"
+                      step="0.01"
                     />
                   </div>
+
                   <div className="mb-3">
                     <label className="form-label fw-bold">Product Image URL</label>
                     <input

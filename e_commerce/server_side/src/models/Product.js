@@ -48,12 +48,6 @@ const productSchema = new mongoose.Schema(
         type: String,
       },
     ],
-    stock: {
-      type: Number,
-      required: [true, "Please provide stock quantity"],
-      min: [0, "Stock cannot be negative"],
-      default: 0,
-    },
     sizes: [
       {
         size: {
@@ -100,6 +94,11 @@ const productSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    deliveryFee: {
+      type: Number,
+      default: 0,
+      min: [0, "Delivery fee cannot be negative"],
+    },
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
@@ -110,14 +109,6 @@ const productSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
-
-// Calculate discount percentage
-productSchema.virtual("discountPercentage").get(function () {
-  if (this.discountPrice && this.price) {
-    return Math.round(((this.price - this.discountPrice) / this.price) * 100);
-  }
-  return 0;
-});
 
 // Get effective price (discount price if available, otherwise regular price)
 productSchema.virtual("effectivePrice").get(function () {

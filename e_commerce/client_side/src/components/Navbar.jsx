@@ -1,9 +1,10 @@
 import React, { useState, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { User as UserIcon, ShoppingCart, X, Power, Menu, ChevronLeft, ChevronRight } from "lucide-react";
+import { User as UserIcon, ShoppingCart, X, Power, Menu, ChevronLeft, ChevronRight, Heart } from "lucide-react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { useCart } from "../context/CartContext.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
+import { useWishlist } from "../context/WishlistContext.jsx";
 import { NotificationBell } from "./NotificationBell.jsx";
 
 const CategorySlider = ({ navigate, closeMobileMenu, isOpen, onToggle }) => {
@@ -121,6 +122,7 @@ const Navbar = () => {
   const navigate = useNavigate();
   const { getCartCount } = useCart();
   const { user, logout } = useAuth();
+  const { getWishlistCount } = useWishlist();
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showCategorySlider, setShowCategorySlider] = useState(false);
 
@@ -234,6 +236,22 @@ const Navbar = () => {
               {showMobileMenu ? <X size={20} /> : <Menu size={20} />}
             </button>
             {user && <NotificationBell role="user" />}
+            {/* Wishlist Icon */}
+            <Link
+              to="/wishlist"
+              className="btn btn-link text-dark p-0 position-relative"
+              title="Wishlist"
+            >
+              <Heart size={20} />
+              {getWishlistCount?.() > 0 && (
+                <span
+                  className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                  style={{ fontSize: "10px" }}
+                >
+                  {getWishlistCount()}
+                </span>
+              )}
+            </Link>
             {/* Cart Icon */}
             <Link
               to="/cart"

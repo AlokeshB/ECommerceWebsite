@@ -52,6 +52,7 @@ export const CartProvider = ({ children }) => {
         body: JSON.stringify({
           productId: product._id || product.id,
           quantity: product.qty || 1,
+          size: product.size || undefined,
         }),
       });
 

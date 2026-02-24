@@ -104,7 +104,7 @@ exports.searchProducts = async (req, res, next) => {
 };
 
 // @route   POST /api/products/:id/review
-// @desc    Add review to product
+// @desc    Add review to product (only allowed if user has delivered order for this product)
 // @access  Private
 exports.addReview = async (req, res, next) => {
   try {
@@ -124,6 +124,32 @@ exports.addReview = async (req, res, next) => {
       return res.status(404).json({
         success: false,
         message: "Product not found",
+      });
+    }
+
+    // Check if user has already reviewed this product
+    const existingReview = product.reviews.find(
+      (review) => review.userId.toString() === req.user.id
+    );
+    if (existingReview) {
+      return res.status(400).json({
+        success: false,
+        message: "You have already reviewed this product",
+      });
+    }
+
+    // Check if user has a delivered order for this product
+    const Order = require("../models/Order");
+    const userDeliveredOrder = await Order.findOne({
+      userId: req.user.id,
+      status: "delivered",
+      "items.productId": productId,
+    });
+
+    if (!userDeliveredOrder) {
+      return res.status(403).json({
+        success: false,
+        message: "You can only review products you have purchased and received",
       });
     }
 
