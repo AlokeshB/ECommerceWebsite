@@ -15,32 +15,35 @@ const Analytics = () => {
   const [dateRange, setDateRange] = useState("7days");
 
   // Fetch analytics from backend API
-  useEffect(() => {
-    const fetchAnalytics = async () => {
-      try {
-        setLoading(true);
-        const authToken = sessionStorage.getItem("authToken");
-        const response = await fetch("http://localhost:5000/api/admin/analytics", {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${authToken}`,
-          },
-        });
+  const fetchAnalytics = async () => {
+    try {
+      setLoading(true);
+      const authToken = sessionStorage.getItem("authToken");
+      const response = await fetch("http://localhost:5000/api/admin/analytics/dashboard", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${authToken}`,
+        },
+      });
 
-        const data = await response.json();
-        
-        if (data.success) {
-          setAnalytics(data.analytics);
-        }
-      } catch (error) {
-        console.error("Error fetching analytics:", error);
-      } finally {
-        setLoading(false);
+      const data = await response.json();
+      
+      if (data.success) {
+        setAnalytics(data.analytics);
       }
-    };
+    } catch (error) {
+      console.error("Error fetching analytics:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchAnalytics();
+    // Auto-refresh analytics every 30 seconds
+    const interval = setInterval(fetchAnalytics, 30000);
+    return () => clearInterval(interval);
   }, [dateRange]);
 
   return (
@@ -49,6 +52,14 @@ const Analytics = () => {
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h5 className="fw-bold mb-0">Sales Analytics & Reports</h5>
         <div className="d-flex align-items-center gap-2">
+          <button
+            className="btn btn-sm btn-outline-dark"
+            onClick={fetchAnalytics}
+            disabled={loading}
+            title="Refresh analytics"
+          >
+            🔄 Refresh
+          </button>
           <Calendar size={18} className="text-muted" />
           <select
             className="form-select form-select-sm"
@@ -151,28 +162,30 @@ const Analytics = () => {
               <h6 className="mb-0 fw-bold">Top Selling Products</h6>
             </div>
             <div className="card-body">
-              {topProducts.length > 0 ? (
-                topProducts.map((product, index) => (
-                  <div key={index} className="mb-3 pb-3 border-bottom">
-                    <div className="d-flex justify-content-between align-items-start mb-2">
-                      <p className="mb-0 small fw-bold">{product.name}</p>
-                      <span className="badge bg-primary">
-                        {product.sales} sales
-                      </span>
+              {analytics?.topProducts && analytics.topProducts.length > 0 ? (
+                analytics.topProducts.map((item, index) => {
+                  const productName = item.product?.[0]?.name || "Unknown Product";
+                  const totalSold = item.totalSold || 0;
+                  const maxSales = Math.max(...analytics.topProducts.map(p => p.totalSold || 0));
+                  return (
+                    <div key={index} className="mb-3 pb-3 border-bottom">
+                      <div className="d-flex justify-content-between align-items-start mb-2">
+                        <p className="mb-0 small fw-bold">{productName}</p>
+                        <span className="badge bg-primary">
+                          {totalSold} sales
+                        </span>
+                      </div>
+                      <div className="progress" style={{ height: "6px" }}>
+                        <div
+                          className="progress-bar bg-success"
+                          style={{
+                            width: `${maxSales > 0 ? (totalSold / maxSales) * 100 : 0}%`,
+                          }}
+                        ></div>
+                      </div>
                     </div>
-                    <div className="progress" style={{ height: "6px" }}>
-                      <div
-                        className="progress-bar bg-success"
-                        style={{
-                          width: `${topProducts.length > 0 ? (product.sales / Math.max(...topProducts.map((p) => p.sales))) * 100 : 0}%`,
-                        }}
-                      ></div>
-                    </div>
-                    <p className="mb-0 text-muted small mt-1">
-                      Revenue: ₹{product.revenue.toLocaleString()}
-                    </p>
-                  </div>
-                ))
+                  );
+                })
               ) : (
                 <p className="text-muted text-center py-3">No sales data yet</p>
               )}
@@ -184,39 +197,43 @@ const Analytics = () => {
         <div className="col-lg-6">
           <div className="card border-0 shadow-sm">
             <div className="card-header bg-light border-bottom py-3">
-              <h6 className="mb-0 fw-bold">Sales by Category</h6>
+              <h6 className="mb-0 fw-bold">Order Distribution by Status</h6>
             </div>
             <div className="card-body">
-              {categoryStats.length > 0 ? (
-                categoryStats.map((cat, index) => (
-                  <div key={index} className="mb-3">
-                    <div className="d-flex justify-content-between align-items-center mb-2">
-                      <p className="mb-0 small fw-bold">{cat.category}</p>
-                      <span className="badge bg-secondary">
-                        {cat.sales} sales
-                      </span>
-                    </div>
-                    <div className="progress" style={{ height: "24px" }}>
-                      <div
-                        className={`progress-bar bg-${
-                          index === 0
-                            ? "primary"
-                            : index === 1
-                              ? "success"
-                              : index === 2
-                                ? "info"
-                                : "warning"
-                        }`}
-                        style={{ width: `${cat.percentage}%` }}
-                      >
-                        <small className="fw-bold">{cat.percentage}%</small>
+              {analytics?.ordersByStatus && analytics.ordersByStatus.length > 0 ? (
+                analytics.ordersByStatus.map((item, index) => {
+                  const totalOrders = analytics.ordersByStatus.reduce((sum, o) => sum + o.count, 0);
+                  const percentage = totalOrders > 0 ? Math.round((item.count / totalOrders) * 100) : 0;
+                  return (
+                    <div key={index} className="mb-3">
+                      <div className="d-flex justify-content-between align-items-center mb-2">
+                        <p className="mb-0 small fw-bold text-capitalize">{item._id}</p>
+                        <span className="badge bg-secondary">
+                          {item.count} orders
+                        </span>
+                      </div>
+                      <div className="progress" style={{ height: "24px" }}>
+                        <div
+                          className={`progress-bar bg-${
+                            item._id === "pending"
+                              ? "warning"
+                              : item._id === "delivered"
+                                ? "success"
+                                : item._id === "cancelled"
+                                  ? "danger"
+                                  : "info"
+                          }`}
+                          style={{ width: `${percentage}%` }}
+                        >
+                          <small className="fw-bold">{percentage}%</small>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))
+                  );
+                })
               ) : (
                 <p className="text-muted text-center py-3">
-                  No category data yet
+                  No order data yet
                 </p>
               )}
             </div>
@@ -225,94 +242,71 @@ const Analytics = () => {
       </div>
 
       <div className="row g-3">
-        {/* Recent Activity */}
+        {/* Recent Orders */}
         <div className="col-lg-8">
           <div className="card border-0 shadow-sm">
             <div className="card-header bg-light border-bottom py-3">
-              <h6 className="mb-0 fw-bold">Recent Activity</h6>
+              <h6 className="mb-0 fw-bold">Top Selling Products</h6>
             </div>
             <div className="card-body">
-              {recentActivity.map((activity, index) => {
-                const Icon = activity.icon;
-                return (
-                  <div
-                    key={index}
-                    className="d-flex gap-3 mb-3 pb-3 border-bottom"
-                  >
-                    <div
-                      className="bg-light rounded-circle d-flex align-items-center justify-content-center"
-                      style={{ width: "40px", height: "40px", flexShrink: 0 }}
-                    >
-                      <Icon size={20} className="text-primary" />
-                    </div>
-                    <div className="flex-grow-1">
-                      <p className="mb-1 small fw-bold">{activity.action}</p>
-                      <p className="mb-0 text-muted small">
-                        {activity.details}
-                      </p>
-                    </div>
-                    <p
-                      className="mb-0 text-muted small"
-                      style={{ minWidth: "60px", textAlign: "right" }}
-                    >
-                      {activity.time}
-                    </p>
-                  </div>
-                );
-              })}
+              {analytics?.topProducts && analytics.topProducts.length > 0 ? (
+                <div className="table-responsive">
+                  <table className="table table-sm table-hover mb-0">
+                    <thead className="table-light">
+                      <tr>
+                        <th className="small">Product Name</th>
+                        <th className="small">Units Sold</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {analytics.topProducts.slice(0, 5).map((item, index) => {
+                        const productName = item.product?.[0]?.name || "Unknown Product";
+                        return (
+                          <tr key={index}>
+                            <td className="small fw-bold">{productName}</td>
+                            <td className="small">
+                              <span className="badge bg-primary">{item.totalSold} sold</span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <p className="text-muted text-center py-3">No product sales data yet</p>
+              )}
             </div>
           </div>
         </div>
 
-        {/* Summary Stats */}
+        {/* Quick Stats */}
         <div className="col-lg-4">
           <div className="card border-0 shadow-sm">
             <div className="card-header bg-light border-bottom py-3">
-              <h6 className="mb-0 fw-bold">Key Metrics</h6>
+              <h6 className="mb-0 fw-bold">Quick Stats</h6>
             </div>
             <div className="card-body">
               <div className="mb-4">
-                <p className="text-muted small mb-1">Conversion Rate</p>
-                <h5 className="mb-2 fw-bold">{currentData.conversionRate}%</h5>
-                <div className="progress" style={{ height: "6px" }}>
-                  <div
-                    className="progress-bar bg-success"
-                    style={{ width: `${currentData.conversionRate * 10}%` }}
-                  ></div>
-                </div>
+                <p className="text-muted small mb-1">Avg Order Value</p>
+                <h5 className="mb-2 fw-bold">
+                  ₹{analytics?.totalOrders > 0 ? Math.round(analytics.totalRevenue / analytics.totalOrders) : 0}
+                </h5>
               </div>
 
               <div className="mb-4">
-                <p className="text-muted small mb-1">Customer Satisfaction</p>
-                <h5 className="mb-2 fw-bold">4.6/5.0</h5>
-                <div className="progress" style={{ height: "6px" }}>
-                  <div
-                    className="progress-bar bg-warning"
-                    style={{ width: "92%" }}
-                  ></div>
-                </div>
+                <p className="text-muted small mb-1">Total Orders</p>
+                <h5 className="mb-2 fw-bold">{analytics?.totalOrders || 0}</h5>
               </div>
 
               <div className="mb-4">
-                <p className="text-muted small mb-1">Inventory Health</p>
-                <h5 className="mb-2 fw-bold">87%</h5>
-                <div className="progress" style={{ height: "6px" }}>
-                  <div
-                    className="progress-bar bg-info"
-                    style={{ width: "87%" }}
-                  ></div>
-                </div>
+                <p className="text-muted small mb-1">Active Users</p>
+                <h5 className="mb-2 fw-bold">{analytics?.totalUsers || 0}</h5>
               </div>
 
               <div>
-                <p className="text-muted small mb-1">Return Rate</p>
-                <h5 className="mb-2 fw-bold">2.3%</h5>
-                <div className="progress" style={{ height: "6px" }}>
-                  <div
-                    className="progress-bar bg-danger"
-                    style={{ width: "23%" }}
-                  ></div>
-                </div>
+                <p className="text-muted small mb-1">Total Products</p>
+                <h5 className="mb-2 fw-bold">{analytics?.totalProducts || 0}</h5>
               </div>
             </div>
           </div>

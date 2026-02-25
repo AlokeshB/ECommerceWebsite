@@ -35,7 +35,7 @@ const OrderManagement = () => {
     const fetchOrders = async () => {
       try {
         const authToken = sessionStorage.getItem("authToken");
-        const response = await fetch("http://localhost:5000/api/orders/my-orders", {
+        const response = await fetch("http://localhost:5000/api/admin/orders", {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
@@ -252,7 +252,9 @@ const OrderManagement = () => {
                       <React.Fragment key={order._id}>
                         <tr>
                           <td className="small fw-bold">{order.orderNumber}</td>
-                          <td className="small">{order.shippingAddress?.fullName || "N/A"}</td>
+                          <td className="small">
+                            {order.userId?.name || order.shippingAddress?.fullName || "N/A"}
+                          </td>
                           <td className="small">
                             {new Date(order.createdAt).toLocaleDateString("en-IN")}
                           </td>
