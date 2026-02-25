@@ -18,8 +18,8 @@ const OrderManagement = () => {
   const [newStatus, setNewStatus] = useState(null);
   const [updatingStatus, setUpdatingStatus] = useState(false);
 
-  const statuses = ["pending", "confirmed", "shipped", "delivered", "cancelled", "returned"];
-  const allStatuses = ["All", ...statuses];
+  const statuses = ["pending", "confirmed", "shipped", "delivered"];
+  const allStatuses = ["All", ...statuses, "cancelled", "returned"];
 
   const statusColors = {
     pending: "warning",
@@ -106,7 +106,7 @@ const OrderManagement = () => {
         setShowCancelModal(false);
         setSelectedOrderForCancel(null);
       } else {
-        addNotification(data.message || "Failed to cancel order", "error");
+        addNotification("Could not cancel order", "error");
       }
     } catch (error) {
       console.error("Error cancelling order:", error);
@@ -155,7 +155,7 @@ const OrderManagement = () => {
         setSelectedOrderForStatus(null);
         setNewStatus(null);
       } else {
-        addNotification(data.message || "Failed to update status", "error");
+        addNotification("Could not update order status", "error");
       }
     } catch (error) {
       console.error("Error updating order status:", error);
@@ -441,14 +441,20 @@ const OrderManagement = () => {
                   className="form-select"
                   value={newStatus || ""}
                   onChange={(e) => setNewStatus(e.target.value)}
+                  disabled={selectedOrderForStatus?.orderStatus === "cancelled"}
                 >
                   <option value="">Choose a status...</option>
-                  {statuses.map((status) => (
+                  {statuses.filter(status => status !== "cancelled").map((status) => (
                     <option key={status} value={status}>
                       {status.charAt(0).toUpperCase() + status.slice(1)}
                     </option>
                   ))}
                 </select>
+                {selectedOrderForStatus?.orderStatus === "cancelled" && (
+                  <div className="alert alert-warning mt-2 mb-0" role="alert">
+                    <small>This order is cancelled and cannot be changed.</small>
+                  </div>
+                )}
               </div>
               <div className="modal-footer">
                 <button
@@ -457,13 +463,13 @@ const OrderManagement = () => {
                   onClick={() => setShowStatusModal(false)}
                   disabled={updatingStatus}
                 >
-                  Cancel
+                  Close
                 </button>
                 <button
                   type="button"
                   className="btn btn-primary"
                   onClick={handleUpdateOrderStatus}
-                  disabled={updatingStatus || !newStatus}
+                  disabled={updatingStatus || !newStatus || selectedOrderForStatus?.orderStatus === "cancelled"}
                 >
                   {updatingStatus ? (
                     <>

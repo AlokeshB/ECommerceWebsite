@@ -139,11 +139,13 @@ const CategoryProducts = () => {
                       <div className="d-flex justify-content-between align-items-center">
                         <div>
                           <p className="fw-bold mb-0">
-                            ₹{product.price.toLocaleString("en-IN")}
+                            ₹{(product.discountPrice || (product.price * (1 - (product.discountPercentage || 0) / 100))).toLocaleString("en-IN")}
                           </p>
-                          <p className="text-muted text-decoration-line-through small mb-0">
-                            ₹{product.old_price.toLocaleString("en-IN")}
-                          </p>
+                          {product.discountPercentage > 0 || product.discountPrice ? (
+                            <p className="text-muted text-decoration-line-through small mb-0">
+                              ₹{product.price.toLocaleString("en-IN")}
+                            </p>
+                          ) : null}
                         </div>
                         <span className="badge bg-danger">Sale</span>
                       </div>
