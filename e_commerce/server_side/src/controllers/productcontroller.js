@@ -52,14 +52,17 @@ exports.getProductDetail = async (req, res, next) => {
 };
 
 // @route   GET /api/products/category/:category
-// @desc    Get products by category
+// @desc    Get products by category (case-insensitive)
 // @access  Public
 exports.getProductsByCategory = async (req, res, next) => {
   try {
     const { category } = req.params;
 
+    // Use case-insensitive regex to match category
+    const categoryRegex = new RegExp(`^${category}$`, "i");
+
     const apiFeature = new APIFeatures(
-      Product.find({ category, isActive: true }),
+      Product.find({ category: categoryRegex, isActive: true }),
       req.query
     )
       .search()

@@ -45,6 +45,7 @@ const UserProfile = () => {
     city: "",
     zip: "",
     state: "",
+    phone: "",
   });
 
   const [newCard, setNewCard] = useState({
@@ -200,7 +201,7 @@ const UserProfile = () => {
         setShowAddCard(false);
         addNotification("Card added successfully", "success");
       } else {
-        addNotification(data.message || "Error adding card", "error");
+        addNotification("Could not add card", "error");
       }
     } catch (error) {
       console.error("Error adding card:", error);
@@ -231,7 +232,7 @@ const UserProfile = () => {
           setCards(cards.filter((c) => c._id !== cardId));
           addNotification("Card deleted successfully", "success");
         } else {
-          addNotification(data.message || "Error deleting card", "error");
+          addNotification("Could not delete card", "error");
         }
       } catch (error) {
         console.error("Error deleting card:", error);
@@ -284,7 +285,7 @@ const UserProfile = () => {
       }
     } catch (error) {
       console.error("Error updating profile:", error);
-      addNotification("Error updating profile", "error");
+      addNotification("Could not update profile", "error");
     }
   };
 
@@ -303,8 +304,8 @@ const UserProfile = () => {
           Authorization: `Bearer ${authToken}`,
         },
         body: JSON.stringify({
-          fullName: profileData.name || user?.name,
-          phone: profileData.mobile || user?.phone,
+          fullName: profileData.firstName || user?.name,
+          phone: newAddress.phone || profileData.mobile || user?.phone,
           street: newAddress.street,
           address: newAddress.street,
           city: newAddress.city,
@@ -318,15 +319,15 @@ const UserProfile = () => {
       const data = await response.json();
       if (data.success) {
         setAddresses(data.addresses);
-        setNewAddress({ street: "", city: "", zip: "", state: "" });
+        setNewAddress({ street: "", city: "", zip: "", state: "", phone: "" });
         setShowAddAddress(false);
         addNotification("Address added successfully", "success");
       } else {
-        addNotification(data.message || "Error adding address", "error");
+        addNotification("Error adding address. Please check the required fields.", "error");
       }
     } catch (error) {
       console.error("Error adding address:", error);
-      addNotification("Error adding address", "error");
+      addNotification("Could not add address", "error");
     }
   };
 
@@ -349,7 +350,7 @@ const UserProfile = () => {
         setAddresses(data.addresses);
         addNotification("Address deleted successfully", "success");
       } else {
-        addNotification(data.message || "Error deleting address", "error");
+        addNotification("Could not delete address", "error");
       }
     } catch (error) {
       console.error("Error deleting address:", error);
@@ -359,7 +360,6 @@ const UserProfile = () => {
 
   const tabs = [
     { id: "orders", icon: Package, label: "My Orders" },
-    { id: "profile", icon: User, label: "Profile Info" },
     { id: "address", icon: MapPin, label: "Addresses" },
     { id: "cards", icon: CreditCard, label: "Payment Cards" },
   ];
@@ -391,6 +391,7 @@ const UserProfile = () => {
                 </div>
                 <h5 className="fw-bold m-0">{profileData.firstName}</h5>
                 <small className="text-muted">{user.email}</small>
+                <small className="text-muted d-block mt-1">📞 {user.phone || "Not provided"}</small>
               </div>
               <div className="list-group list-group-flush">
                 {tabs.map((t) => (
@@ -470,73 +471,6 @@ const UserProfile = () => {
                 </div>
               )}
 
-              {/* PROFILE TAB */}
-              {activeTab === "profile" && (
-                <div className="animate__animated animate__fadeIn">
-                  <div className="d-flex justify-content-between mb-4 border-bottom pb-2">
-                    <h5 className="fw-bold">Personal Information</h5>
-                    <button
-                      className={`btn btn-sm ${
-                        isEditing ? "btn-success" : "btn-outline-dark"
-                      }`}
-                      onClick={() =>
-                        isEditing ? handleSave() : setIsEditing(true)
-                      }
-                    >
-                      {isEditing ? (
-                        <>
-                          <Save size={14} className="me-1" /> Save
-                        </>
-                      ) : (
-                        <>
-                          <Edit2 size={14} className="me-1" /> Edit
-                        </>
-                      )}
-                    </button>
-                  </div>
-                  <div className="row g-3">
-                    <div className="col-md-6">
-                      <label className="small text-muted fw-bold">
-                        Full Name
-                      </label>
-                      <input
-                        className="form-control bg-light"
-                        value={profileData.firstName}
-                        disabled
-                      />
-                    </div>
-                    <div className="col-md-6">
-                      <label className="small text-muted fw-bold">
-                        Email Address
-                      </label>
-                      <input
-                        className={`form-control ${
-                          isEditing ? "border-primary" : ""
-                        }`}
-                        value={profileData.email}
-                        disabled={!isEditing}
-                        onChange={(e) =>
-                          setProfileData({
-                            ...profileData,
-                            email: e.target.value,
-                          })
-                        }
-                      />
-                    </div>
-                    <div className="col-md-6">
-                      <label className="small text-muted fw-bold">
-                        Mobile Number <span className="text-muted small">(Read-only)</span>
-                      </label>
-                      <input
-                        className="form-control bg-light"
-                        value={profileData.mobile}
-                        disabled
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-
               {/* ADDRESS TAB */}
               {activeTab === "address" && (
                 <div className="animate__animated animate__fadeIn">
@@ -566,7 +500,7 @@ const UserProfile = () => {
                             }
                           />
                         </div>
-                        <div className="col-4">
+                        <div className="col-6">
                           <input
                             className="form-control form-control-sm"
                             placeholder="City"
@@ -575,6 +509,19 @@ const UserProfile = () => {
                               setNewAddress({
                                 ...newAddress,
                                 city: e.target.value,
+                              })
+                            }
+                          />
+                        </div>
+                        <div className="col-6">
+                          <input
+                            className="form-control form-control-sm"
+                            placeholder="Phone (Optional)"
+                            value={newAddress.phone}
+                            onChange={(e) =>
+                              setNewAddress({
+                                ...newAddress,
+                                phone: e.target.value,
                               })
                             }
                           />
