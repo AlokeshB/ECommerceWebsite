@@ -1,7 +1,9 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
 import Navbar from "../components/Navbar";
+import Footer from "../components/Footer";
 import { Check, Package, Truck, Home, MapPin, Loader2 } from "lucide-react";
+import "bootstrap/dist/css/bootstrap.min.css";
 
 const OrderTracking = () => {
   const { orderId } = useParams();
@@ -11,14 +13,13 @@ const OrderTracking = () => {
   // Fetch order data
   const fetchOrder = useCallback(async () => {
     try {
-      const authToken = sessionStorage.getItem("authToken");
       console.log("Fetching order with ID:", orderId); // Debug log
       
+      // Track endpoint doesn't require authentication
       const response = await fetch(`http://localhost:5000/api/orders/track/${orderId}`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${authToken}`,
         },
       });
 
@@ -83,27 +84,33 @@ const OrderTracking = () => {
   if (loading)
     return (
       <div className="min-vh-100 d-flex align-items-center justify-content-center">
-        <Loader2 className="spinner-border text-dark" />
+        <div className="text-center">
+          <Loader2 size={48} className="spinner-border text-dark mb-3" />
+          <p>Loading order details...</p>
+        </div>
       </div>
     );
  
   if (!order)
     return (
-      <div className="min-vh-100 bg-light">
+      <div className="d-flex flex-column min-vh-100">
         <Navbar />
-        <div className="container py-5 text-center">
-          <h3>Order not found!</h3>
-          <p className="text-muted">Order ID: <strong>{orderId}</strong></p>
-          <p className="text-muted small">Please check the order ID and try again. You may also contact support.</p>
-          <Link to="/" className="btn btn-dark mt-3">
-            Go Home
-          </Link>
+        <div className="flex-grow-1 d-flex align-items-center justify-content-center">
+          <div className="text-center">
+            <h3>Order not found!</h3>
+            <p className="text-muted">Order ID: <strong>{orderId}</strong></p>
+            <p className="text-muted small">Please check the order ID and try again. You may also contact support.</p>
+            <Link to="/" className="btn btn-dark mt-3">
+              Go Home
+            </Link>
+          </div>
         </div>
+        <Footer />
       </div>
     );
  
   return (
-    <div className="bg-light min-vh-100 pb-5">
+    <div className="d-flex flex-column min-vh-100" style={{ background: "#f8f9fa" }}>
       <Navbar />
       <div className="container py-5">
         <div className="row justify-content-center">
@@ -228,6 +235,7 @@ const OrderTracking = () => {
           </div>
         </div>
       </div>
+      <Footer />
     </div>
   );
 };

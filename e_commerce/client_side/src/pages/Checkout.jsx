@@ -47,8 +47,14 @@ const Checkout = () => {
 
   useEffect(() => {
     // Only redirect to cart if cart is truly empty and fully loaded
-    if (user && cartItems.length === 0 && !loading && !showSuccessModal && !isFinalizing) {
+    // But NOT if we just came from Buy Now flow
+    const isBuyNowFlow = sessionStorage.getItem("isBuyNowFlow") === "true";
+    if (user && cartItems.length === 0 && !loading && !showSuccessModal && !isFinalizing && !isBuyNowFlow) {
       navigate("/cart");
+    }
+    // Clear the flag after checking
+    if (isBuyNowFlow) {
+      sessionStorage.removeItem("isBuyNowFlow");
     }
   }, [user, cartItems, navigate, showSuccessModal, isFinalizing, loading]);
 
