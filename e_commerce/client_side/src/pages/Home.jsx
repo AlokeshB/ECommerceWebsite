@@ -68,13 +68,8 @@ const Home = () => {
       return;
     }
     
-    // Store product for single-item checkout
-    sessionStorage.setItem("buyNowItem", JSON.stringify({
-      productId: product._id,
-      quantity: 1,
-    }));
-    
-    navigate("/checkout");
+    // Add product without sizes directly to cart and proceed to checkout
+    addProductToCart(product._id, 1, null, "buy");
   };
 
   const handleAddToCart = (product) => {
@@ -96,7 +91,7 @@ const Home = () => {
     addProductToCart(product._id, 1, null);
   };
 
-  const addProductToCart = async (productId, quantity, size) => {
+  const addProductToCart = async (productId, quantity, size, action = "cart") => {
     const result = await addToCart({
       _id: productId,
       qty: quantity,
@@ -104,7 +99,13 @@ const Home = () => {
     });
 
     if (result.success) {
-      addNotification("Product added to cart!", "success");
+      if (action === "buy") {
+        addNotification("Proceeding to checkout...", "success");
+        sessionStorage.setItem("isBuyNowFlow", "true");
+        setTimeout(() => navigate("/checkout"), 300);
+      } else {
+        addNotification("Product added to cart!", "success");
+      }
     } else {
       addNotification(result.error || "Failed to add to cart", "error");
     }
@@ -333,14 +334,9 @@ const Home = () => {
                     }
 
                     if (cartActionType === "cart") {
-                      addProductToCart(sizeModalProduct._id, 1, selectedSize);
+                      addProductToCart(sizeModalProduct._id, 1, selectedSize, "cart");
                     } else if (cartActionType === "buy") {
-                      sessionStorage.setItem("buyNowItem", JSON.stringify({
-                        productId: sizeModalProduct._id,
-                        quantity: 1,
-                        size: selectedSize,
-                      }));
-                      navigate("/checkout");
+                      addProductToCart(sizeModalProduct._id, 1, selectedSize, "buy");
                     }
 
                     setSizeModalProduct(null);

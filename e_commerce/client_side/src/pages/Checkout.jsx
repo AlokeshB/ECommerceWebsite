@@ -47,8 +47,14 @@ const Checkout = () => {
 
   useEffect(() => {
     // Only redirect to cart if cart is truly empty and fully loaded
-    if (user && cartItems.length === 0 && !loading && !showSuccessModal && !isFinalizing) {
+    // But NOT if we just came from Buy Now flow
+    const isBuyNowFlow = sessionStorage.getItem("isBuyNowFlow") === "true";
+    if (user && cartItems.length === 0 && !loading && !showSuccessModal && !isFinalizing && !isBuyNowFlow) {
       navigate("/cart");
+    }
+    // Clear the flag after checking
+    if (isBuyNowFlow) {
+      sessionStorage.removeItem("isBuyNowFlow");
     }
   }, [user, cartItems, navigate, showSuccessModal, isFinalizing, loading]);
 
@@ -101,11 +107,11 @@ const Checkout = () => {
         });
 
         const data = await response.json();
-        if (data.success && Array.isArray(data.paymentCards)) {
-          setPaymentCards(data.paymentCards);
+        if (data.success && Array.isArray(data.cards)) {
+          setPaymentCards(data.cards);
           // Set first card as default
-          if (data.paymentCards.length > 0) {
-            setSelectedCard(data.paymentCards[0]._id);
+          if (data.cards.length > 0) {
+            setSelectedCard(data.cards[0]._id);
           }
         }
       } catch (error) {
@@ -115,8 +121,8 @@ const Checkout = () => {
       }
     };
 
-    if (user && paymentMethod === "card") fetchCards();
-  }, [user, paymentMethod]);
+    if (user) fetchCards();
+  }, [user]);
 
   const handlePlaceOrder = async () => {
     if (!user) {
@@ -137,10 +143,17 @@ const Checkout = () => {
     setIsProcessing(true);
 
     try {
+      // Calculate pricing breakdown (matching frontend display)
+      const cartTotal = getCartTotal();
+      const discount = cartTotal > 1000 ? 200 : 0;
+      const shippingCost = cartTotal > 500 || cartTotal === 0 ? 0 : 50;
+      const platformFee = cartTotal > 0 ? 10 : 0;
+      const finalTotal = cartTotal - discount + shippingCost + platformFee;
+
       // Get selected address or use user default
       const addressToUse = addresses.find(a => a._id === selectedAddress) || addresses[0];
 
-      // Prepare order data
+      // Prepare order data with calculated breakdown
       const orderData = {
         shippingAddress: addressToUse ? {
           fullName: addressToUse.fullName || user?.name || user?.fullName,
@@ -161,6 +174,11 @@ const Checkout = () => {
         },
         paymentMethod: paymentMethod,
         paymentCard: selectedCard || undefined,
+        cartTotal: cartTotal,
+        discount: discount,
+        shippingCost: shippingCost,
+        platformFee: platformFee,
+        finalTotal: finalTotal,
       };
 
       // Call backend API
@@ -282,52 +300,63 @@ const Checkout = () => {
                 {loadingAddresses ? (
                   <p className="text-muted">Loading addresses...</p>
                 ) : addresses.length > 0 ? (
-                  <div className="d-flex flex-column gap-3">
-                    {addresses.map((address) => (
-                      <div
-                        key={address._id}
-                        className={`p-4 border-2 rounded-3 cursor-pointer transition-all ${
-                          selectedAddress === address._id
-                            ? "border-primary bg-primary bg-opacity-10"
-                            : "border-light bg-white"
-                        }`}
-                        onClick={() => setSelectedAddress(address._id)}
-                        style={{ cursor: "pointer" }}
+                  <div>
+                    <label className="small text-muted fw-bold d-block mb-3">
+                      📍 Select Delivery Address
+                    </label>
+                    <div className="mb-3">
+                      <select
+                        className="form-select"
+                        value={selectedAddress || ""}
+                        onChange={(e) => setSelectedAddress(e.target.value)}
+                        style={{
+                          backgroundColor: "#f8f9fa",
+                          borderColor: "#dee2e6",
+                          fontSize: "14px",
+                          fontWeight: "500",
+                          borderRadius: "6px",
+                          padding: "10px 12px",
+                          border: "1px solid #dee2e6"
+                        }}
                       >
-                        <div className="d-flex justify-content-between align-items-start mb-3">
-                          <div className="d-flex align-items-start gap-3">
-                            <input
-                              type="radio"
-                              name="address"
-                              checked={selectedAddress === address._id}
-                              onChange={() => setSelectedAddress(address._id)}
-                              className="mt-1"
-                              style={{ cursor: "pointer" }}
-                            />
-                            <div>
-                              <h6 className="fw-bold mb-1" style={{ fontSize: "15px" }}>
-                                {address.fullName || "Address"}
-                              </h6>
-                              <p className="text-muted small mb-2">
-                                {address.type || "HOME"}
+                        <option value="">Select an address...</option>
+                        {addresses.map((address) => (
+                          <option key={address._id} value={address._id}>
+                            {address.type || "HOME"} • {address.fullName} • {address.city}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    {selectedAddress && (
+                      <div className="p-4 rounded-3 border border-2" style={{ backgroundColor: "#f0f7ff", borderColor: "#0d6efd" }}>
+                        {addresses.map((address) => (
+                          selectedAddress === address._id && (
+                            <div key={address._id}>
+                              <div className="mb-3">
+                                <div className="d-flex align-items-center gap-2 mb-2">
+                                  <MapPin size={18} className="text-primary" style={{ flexShrink: 0 }} />
+                                  <div>
+                                    <h6 className="fw-bold mb-0" style={{ fontSize: "14px", color: "#212529" }}>
+                                      {address.fullName || "Address"}
+                                    </h6>
+                                  </div>
+                                  <span className="badge bg-primary" style={{ marginLeft: "auto", fontSize: "11px" }}>
+                                    {address.type || "HOME"}
+                                  </span>
+                                </div>
+                              </div>
+                              <p className="text-dark mb-2" style={{ fontSize: "13px", lineHeight: "1.6", marginLeft: "0" }}>
+                                {address.address || address.street}<br/>
+                                {address.city}, {address.state} - {address.zipCode}
+                              </p>
+                              <p className="mb-0 fw-500 text-dark" style={{ fontSize: "13px" }}>
+                                📞 <strong>{address.phone || user?.phone || "Not provided"}</strong>
                               </p>
                             </div>
-                          </div>
-                          <span className="badge bg-secondary">{address.type || "HOME"}</span>
-                        </div>
-                        <div className="ms-5">
-                          <p className="small mb-2 d-flex gap-2">
-                            <MapPin size={16} className="text-primary flex-shrink-0 mt-1" />
-                            <span className="text-dark">
-                              {address.address || address.street}, {address.city}, {address.state} - {address.zipCode}
-                            </span>
-                          </p>
-                          <p className="small mb-0">
-                            <strong>📞 {address.phone || user?.phone || "Not provided"}</strong>
-                          </p>
-                        </div>
+                          )
+                        ))}
                       </div>
-                    ))}
+                    )}
                   </div>
                 ) : (
                   <div className="p-4 border-2 border-primary rounded-3 bg-primary bg-opacity-10">
@@ -401,38 +430,61 @@ const Checkout = () => {
                         {loadingCards ? (
                           <p className="text-muted small">Loading saved cards...</p>
                         ) : paymentCards.length > 0 ? (
-                          <div className="d-flex flex-column gap-2">
-                            {paymentCards.map((card) => (
-                              <div
-                                key={card._id}
-                                className={`p-3 border rounded cursor-pointer transition-all ${
-                                  selectedCard === card._id
-                                    ? "border-primary bg-light"
-                                    : "border-gray"
-                                }`}
-                                onClick={() => setSelectedCard(card._id)}
-                                style={{ cursor: "pointer" }}
+                          <div>
+                            <label className="small text-muted fw-bold d-block mb-3">
+                              💳 Select Payment Card
+                            </label>
+                            <div className="mb-3">
+                              <select
+                                className="form-select"
+                                value={selectedCard || ""}
+                                onChange={(e) => setSelectedCard(e.target.value)}
+                                style={{
+                                  backgroundColor: "#f8f9fa",
+                                  borderColor: "#dee2e6",
+                                  fontSize: "14px",
+                                  fontWeight: "500",
+                                  borderRadius: "6px",
+                                  padding: "10px 12px",
+                                  border: "1px solid #dee2e6"
+                                }}
                               >
-                                <div className="d-flex justify-content-between align-items-center">
-                                  <div>
-                                    <input
-                                      type="radio"
-                                      name="card"
-                                      checked={selectedCard === card._id}
-                                      onChange={() => setSelectedCard(card._id)}
-                                      className="me-2"
-                                    />
-                                    <span className="small">
-                                      {card.cardHolderName} - ****
-                                      {card.cardNumber?.slice(-4)}
-                                    </span>
-                                  </div>
-                                  <span className="small text-muted">
-                                    Exp: {card.expiryMonth}/{card.expiryYear}
-                                  </span>
-                                </div>
+                                <option value="">Select a card...</option>
+                                {paymentCards.map((card) => (
+                                  <option key={card._id} value={card._id}>
+                                    {card.cardHolderName} • ••• {card.cardNumber?.slice(-4)} • Exp: {card.expiryMonth}/{card.expiryYear}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                            {selectedCard && (
+                              <div className="p-4 rounded-3 border border-2" style={{ backgroundColor: "#f0f7ff", borderColor: "#198754" }}>
+                                {paymentCards.map((card) => (
+                                  selectedCard === card._id && (
+                                    <div key={card._id}>
+                                      <div className="d-flex align-items-center gap-2 mb-3">
+                                        <div style={{ fontSize: "28px" }}>💳</div>
+                                        <div>
+                                          <h6 className="fw-bold mb-0" style={{ fontSize: "14px", color: "#212529" }}>
+                                            {card.cardHolderName}
+                                          </h6>
+                                          <p className="text-muted mb-0" style={{ fontSize: "12px" }}>Credit/Debit Card</p>
+                                        </div>
+                                        <span className="badge bg-success" style={{ marginLeft: "auto", fontSize: "11px" }}>
+                                          VERIFIED
+                                        </span>
+                                      </div>
+                                      <p className="text-dark mb-2" style={{ fontSize: "14px", letterSpacing: "2px", fontFamily: "monospace" }}>
+                                        •••• •••• •••• {card.cardNumber?.slice(-4)}
+                                      </p>
+                                      <p className="mb-0 text-muted" style={{ fontSize: "12px" }}>
+                                        Expires: {card.expiryMonth}/{card.expiryYear}
+                                      </p>
+                                    </div>
+                                  )
+                                ))}
                               </div>
-                            ))}
+                            )}
                           </div>
                         ) : (
                           <p className="text-muted small">

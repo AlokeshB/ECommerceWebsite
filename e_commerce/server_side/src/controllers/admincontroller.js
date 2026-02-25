@@ -163,7 +163,7 @@ exports.getAllOrders = async (req, res, next) => {
   try {
     const resultPerPage = 10;
 
-    const apiFeature = new APIFeatures(Order.find(), req.query)
+    const apiFeature = new APIFeatures(Order.find().populate("userId", "name email"), req.query)
       .sort()
       .pagination(resultPerPage);
 
@@ -259,7 +259,7 @@ exports.getDashboardAnalytics = async (req, res, next) => {
     const totalProducts = await Product.countDocuments({ isActive: true });
     const totalOrders = await Order.countDocuments();
 
-    // Calculate total revenue
+    // Calculate total revenue from completed orders
     const revenueData = await Order.aggregate([
       {
         $match: { paymentStatus: "completed" },
@@ -304,6 +304,11 @@ exports.getDashboardAnalytics = async (req, res, next) => {
         },
       },
     ]);
+
+    // Log for debugging
+    console.log("Total Orders:", totalOrders);
+    console.log("Revenue Data Match:", totalOrders);
+    console.log("Total Revenue Calculated:", totalRevenue);
 
     res.status(200).json({
       success: true,

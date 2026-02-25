@@ -142,7 +142,7 @@ exports.addReview = async (req, res, next) => {
     const Order = require("../models/Order");
     const userDeliveredOrder = await Order.findOne({
       userId: req.user.id,
-      status: "delivered",
+      orderStatus: "delivered",
       "items.productId": productId,
     });
 

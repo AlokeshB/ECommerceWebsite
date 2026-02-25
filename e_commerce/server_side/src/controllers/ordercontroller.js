@@ -9,7 +9,7 @@ const Notification = require("../models/Notification");
 // @access  Private
 exports.createOrder = async (req, res, next) => {
   try {
-    const { shippingAddress, paymentMethod } = req.body;
+    const { shippingAddress, paymentMethod, paymentCard, cartTotal, discount, shippingCost, platformFee, finalTotal } = req.body;
 
     if (!shippingAddress) {
       return res.status(400).json({
@@ -43,8 +43,11 @@ exports.createOrder = async (req, res, next) => {
       0
     );
 
-    const shippingCost = 50; // Fixed shipping cost
-    const tax = Math.round(totalAmount * 0.18); // 18% GST
+    // Use provided breakdown or calculate defaults
+    const orderShippingCost = shippingCost !== undefined ? shippingCost : (totalAmount > 500 ? 0 : 50);
+    const orderDiscount = discount !== undefined ? discount : (totalAmount > 1000 ? 200 : 0);
+    const orderPlatformFee = platformFee !== undefined ? platformFee : (totalAmount > 0 ? 10 : 0);
+    const orderTotal = finalTotal !== undefined ? finalTotal : (totalAmount - orderDiscount + orderShippingCost + orderPlatformFee);
     
     // Generate unique order number - Format: ORDER<5-digit-random>
     const randomNumber = Math.floor(10000 + Math.random() * 90000);
@@ -74,12 +77,14 @@ exports.createOrder = async (req, res, next) => {
       userId: req.user.id,
       items,
       shippingAddress: completeShippingAddress,
-      totalAmount: totalAmount + shippingCost + tax,
-      shippingCost,
-      tax,
+      totalAmount: orderTotal,
+      shippingCost: orderShippingCost,
+      discount: orderDiscount,
+      platformFee: orderPlatformFee,
       paymentMethod: paymentMethod === "upi" ? "bank_transfer" : paymentMethod === "cod" ? "credit_card" : "credit_card",
+      paymentCardId: paymentCard || null,
       orderStatus: "pending",
-      paymentStatus: "pending",
+      paymentStatus: "completed", // Always set to completed since payment is simulated
       estimatedDelivery: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
       statusHistory: [
         {
@@ -207,7 +212,21 @@ exports.getMyOrders = async (req, res, next) => {
 // @access  Private
 exports.cancelOrder = async (req, res, next) => {
   try {
-    const order = await Order.findById(req.params.id);
+    const { id } = req.params;
+    
+    let order = null;
+    
+    // Try to find by MongoDB ID first (handle invalid ObjectId gracefully)
+    try {
+      order = await Order.findById(id);
+    } catch (e) {
+      // If findById fails due to invalid ObjectId, continue to try orderNumber
+    }
+    
+    // If not found by ID, try to find by orderNumber
+    if (!order) {
+      order = await Order.findOne({ orderNumber: id });
+    }
 
     if (!order) {
       return res.status(404).json({
@@ -216,8 +235,8 @@ exports.cancelOrder = async (req, res, next) => {
       });
     }
 
-    // Check if user is the order owner
-    if (order.userId.toString() !== req.user.id) {
+    // Check if user is the order owner or admin
+    if (order.userId.toString() !== req.user.id && req.user.role !== "admin") {
       return res.status(403).json({
         success: false,
         message: "Not authorized to cancel this order",
@@ -274,11 +293,17 @@ exports.trackOrder = async (req, res, next) => {
   try {
     const { id } = req.params;
     
-    // Try to find by MongoDB ID first, then by orderNumber
-    let order = await Order.findById(id);
+    let order = null;
     
+    // Try to find by MongoDB ID first (handle invalid ObjectId gracefully)
+    try {
+      order = await Order.findById(id);
+    } catch (e) {
+      // If findById fails due to invalid ObjectId, continue to try orderNumber
+    }
+    
+    // If not found by ID, try to find by orderNumber
     if (!order) {
-      // Try to find by orderNumber
       order = await Order.findOne({ orderNumber: id });
     }
 
@@ -294,8 +319,9 @@ exports.trackOrder = async (req, res, next) => {
       order: {
         orderNumber: order.orderNumber,
         orderStatus: order.orderStatus,
-        paymentStatus: order.paymentStatus,
+        paymentStatus: order.paymentStatus || "completed",
         paymentMethod: order.paymentMethod,
+        paymentCardId: order.paymentCardId,
         trackingNumber: order.trackingNumber,
         estimatedDelivery: order.estimatedDelivery,
         statusHistory: order.statusHistory,

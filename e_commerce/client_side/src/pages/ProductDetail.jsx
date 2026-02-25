@@ -135,6 +135,9 @@ const ProductDetail = () => {
       const data = await response.json();
 
       if (data.success) {
+        // Mark that we're coming from Buy Now to prevent redirect
+        sessionStorage.setItem("isBuyNowFlow", "true");
+        
         // Refresh cart context to update the state
         if (fetchCart) {
           await fetchCart();
@@ -142,7 +145,7 @@ const ProductDetail = () => {
         
         addNotification("Proceeding to checkout...", "success");
         // Navigate directly to checkout (skip cart page)
-        setTimeout(() => navigate("/checkout"), 300);
+        navigate("/checkout");
       } else {
         addNotification(data.message || "Error adding to cart", "error");
       }

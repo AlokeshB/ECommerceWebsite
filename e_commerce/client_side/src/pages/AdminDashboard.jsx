@@ -85,56 +85,123 @@ const AdminDashboard = () => {
 
 // Dashboard Home Component
 const DashboardHome = ({ setActiveTab }) => {
-  const { orders } = useOrder();
-  const { products } = useProduct();
+  const [analytics, setAnalytics] = React.useState(null);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState(null);
 
-  // We use useMemo to filter out duplicates based on 'id' so this calculation only runs when 'orders' changes, not on every render.
-  const uniqueOrders = useMemo(() => {
-    if (!orders) return [];
-    const seen = new Set();
-    return orders.filter((order) => {
-      const duplicate = seen.has(order.id);
-      seen.add(order.id);
-      return !duplicate;
-    });
-  }, [orders]);
+  React.useEffect(() => {
+    const fetchAnalytics = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const authToken = sessionStorage.getItem("authToken");
+        
+        if (!authToken) {
+          setError("No auth token found");
+          setLoading(false);
+          return;
+        }
 
-  const totalRevenue = uniqueOrders.reduce(
-    (sum, order) => sum + (order.totalAmount || 0),
-    0,
-  );
+        const response = await fetch("http://localhost:5000/api/admin/analytics/dashboard", {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${authToken}`,
+          },
+        });
+
+        console.log("Analytics Response Status:", response.status);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log("Analytics Data:", data);
+        
+        if (data.success && data.analytics) {
+          setAnalytics(data.analytics);
+          setError(null);
+        } else {
+          setError(data.message || "Failed to fetch analytics");
+          setAnalytics(null);
+        }
+      } catch (error) {
+        console.error("Error fetching analytics:", error);
+        setError(error.message || "Error fetching analytics");
+        setAnalytics(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAnalytics();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="text-center py-5">
+        <div className="spinner-border text-dark" role="status">
+          <span className="visually-hidden">Loading...</span>
+        </div>
+        <p className="text-muted mt-2">Loading dashboard...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="alert alert-danger" role="alert">
+        <h5>Error Loading Analytics</h5>
+        <p>{error}</p>
+        <button 
+          className="btn btn-sm btn-primary"
+          onClick={() => window.location.reload()}
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
+
+  if (!analytics) {
+    return (
+      <div className="alert alert-warning" role="alert">
+        <h5>No Data Available</h5>
+        <p>Analytics data could not be loaded. Please check your connection and try again.</p>
+      </div>
+    );
+  }
 
   const stats = [
     {
       label: "Total Products",
-      value: products.length.toString(),
+      value: (analytics?.totalProducts || 0).toString(),
       icon: Package,
       color: "primary",
     },
     {
       label: "Total Orders",
-      value: uniqueOrders.length.toString(),
+      value: (analytics?.totalOrders || 0).toString(),
       icon: ShoppingCart,
       color: "success",
     },
     {
       label: "Total Revenue",
-      value: `₹${totalRevenue.toLocaleString("en-IN")}`,
+      value: `₹${(analytics?.totalRevenue || 0).toLocaleString("en-IN")}`,
       icon: BarChart3,
       color: "info",
     },
     {
-      label: "Pending Orders",
-      value: uniqueOrders
-        .filter((o) => o.status === "Pending")
-        .length.toString(),
+      label: "Total Users",
+      value: (analytics?.totalUsers || 0).toString(),
       icon: Package,
       color: "warning",
     },
   ];
 
-  // Use uniqueOrders instead of original orders for the table
-  const recentOrders = uniqueOrders.slice(0, 5);
+  // Get recent orders from analytics
+  const recentOrders = [];
 
   return (
     <div>
@@ -166,55 +233,33 @@ const DashboardHome = ({ setActiveTab }) => {
         <div className="col-lg-8">
           <div className="card border-0 shadow-sm">
             <div className="card-header bg-light border-bottom py-3">
-              <h6 className="mb-0 fw-bold">Recent Orders</h6>
+              <h6 className="mb-0 fw-bold">Order Status Distribution</h6>
             </div>
             <div className="card-body">
-              <div className="table-responsive">
-                <table className="table table-hover mb-0">
-                  <thead className="table-light">
-                    <tr>
-                      <th className="small">Order ID</th>
-                      <th className="small">Customer</th>
-                      <th className="small">Amount</th>
-                      <th className="small">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {recentOrders.length > 0 ? (
-                      recentOrders.map((order) => (
-                        <tr key={order.id}>
-                          <td className="small fw-bold">{order.id}</td>
+              {analytics?.ordersByStatus && analytics.ordersByStatus.length > 0 ? (
+                <div className="table-responsive">
+                  <table className="table table-hover mb-0">
+                    <thead className="table-light">
+                      <tr>
+                        <th className="small">Status</th>
+                        <th className="small">Count</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {analytics.ordersByStatus.map((item, index) => (
+                        <tr key={index}>
+                          <td className="small fw-bold text-capitalize">{item._id}</td>
                           <td className="small">
-                            {order.customerName || order.email}
-                          </td>
-                          <td className="small">
-                            ₹{order.totalAmount?.toLocaleString("en-IN") || "0"}
-                          </td>
-                          <td className="small">
-                            <span
-                              className={`badge ${
-                                order.status === "Delivered"
-                                  ? "bg-success"
-                                  : order.status === "Pending"
-                                    ? "bg-warning"
-                                    : "bg-info"
-                              }`}
-                            >
-                              {order.status}
-                            </span>
+                            <span className="badge bg-primary">{item.count}</span>
                           </td>
                         </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td colSpan="4" className="text-center text-muted py-3">
-                          No orders yet
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <p className="text-center text-muted py-3">No orders yet</p>
+              )}
             </div>
           </div>
         </div>

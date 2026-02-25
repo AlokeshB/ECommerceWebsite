@@ -303,7 +303,10 @@ const UserProfile = () => {
           Authorization: `Bearer ${authToken}`,
         },
         body: JSON.stringify({
+          fullName: profileData.name || user?.name,
+          phone: profileData.mobile || user?.phone,
           street: newAddress.street,
+          address: newAddress.street,
           city: newAddress.city,
           state: newAddress.state,
           zipCode: newAddress.zip,
@@ -442,7 +445,7 @@ const UserProfile = () => {
                       >
                         <div>
                           <span className="badge bg-success">
-                            Order #{o._id || "N/A"}
+                            Order #{o.orderNumber || o._id || "N/A"}
                           </span>
                           <p className="mb-0 small text-muted">
                             Placed on {formatDate(o.createdAt)}
@@ -455,7 +458,7 @@ const UserProfile = () => {
                           <button
                             className="btn btn-sm btn-outline-dark"
                             onClick={() =>
-                              navigate(`/tracking/${o._id}`)
+                              navigate(`/tracking/${o.orderNumber || o._id}`)
                             }
                           >
                             Track <ExternalLink size={14} />
@@ -522,20 +525,12 @@ const UserProfile = () => {
                     </div>
                     <div className="col-md-6">
                       <label className="small text-muted fw-bold">
-                        Mobile Number
+                        Mobile Number <span className="text-muted small">(Read-only)</span>
                       </label>
                       <input
-                        className={`form-control ${
-                          isEditing ? "border-primary" : ""
-                        }`}
+                        className="form-control bg-light"
                         value={profileData.mobile}
-                        disabled={!isEditing}
-                        onChange={(e) =>
-                          setProfileData({
-                            ...profileData,
-                            mobile: e.target.value,
-                          })
-                        }
+                        disabled
                       />
                     </div>
                   </div>

@@ -75,6 +75,14 @@ const orderSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    discount: {
+      type: Number,
+      default: 0,
+    },
+    platformFee: {
+      type: Number,
+      default: 0,
+    },
     tax: {
       type: Number,
       default: 0,
@@ -83,6 +91,11 @@ const orderSchema = new mongoose.Schema(
       type: String,
       enum: ["credit_card", "debit_card", "paypal", "upi", "bank_transfer"],
       default: "credit_card",
+    },
+    paymentCardId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "PaymentCard",
+      default: null,
     },
     paymentStatus: {
       type: String,
