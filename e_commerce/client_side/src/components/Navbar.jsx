@@ -45,7 +45,31 @@ const CategorySlider = ({ navigate, closeMobileMenu, isOpen, onToggle }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="position-relative d-flex align-items-center gap-2">
+    <div className="position-relative d-flex align-items-center gap-2" style={{
+      animation: isOpen ? 'slideInSmooth 0.3s ease-in-out forwards' : 'slideOutSmooth 0.3s ease-in-out forwards'
+    }}>
+      <style>{`
+        @keyframes slideInSmooth {
+          from {
+            opacity: 0;
+            transform: translateY(-10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        @keyframes slideOutSmooth {
+          from {
+            opacity: 1;
+            transform: translateY(0);
+          }
+          to {
+            opacity: 0;
+            transform: translateY(-10px);
+          }
+        }
+      `}</style>
       <button
         className="btn btn-sm p-1"
         style={{
@@ -156,21 +180,37 @@ const Navbar = () => {
         style={{ top: 0, zIndex: 1000 }}
       >
         <div
-          className="container-fluid px-2 px-md-5"
+          className="container-fluid px-4 px-lg-6"
           style={{
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
+            paddingLeft: "3rem",
+            paddingRight: "3rem",
           }}
         >
           {/* Brand */}
           <Link
-            className="navbar-brand fw-bold"
+            className="navbar-brand fw-bold d-flex align-items-center"
             to="/"
-            style={{ fontSize: "18px", minWidth: "110px", margin: 0 }}
+            style={{ fontSize: "18px", minWidth: "100px", margin: 0 }}
             onClick={closeMobileMenu}
           >
-            FASHION-HUB
+            <img
+              src="/Media (1).jpg"
+              alt="Fashion Hub Logo"
+              style={{ 
+                height: "80px", 
+                width: "auto", 
+                objectFit: "contain",
+                borderRadius: "8px",
+                boxShadow: "0 2px 8px rgba(0, 0, 0, 0.05)",
+                border: "1px solid rgba(0, 0, 0, 0.02)"
+              }}
+              onError={(e) => {
+                e.target.style.display = "none";
+              }}
+            />
           </Link>
 
           {/* Desktop Menu - Centered (Desktop Only - xl screens and up) */}
@@ -187,10 +227,10 @@ const Navbar = () => {
             {/* CATEGORIES Toggle */}
             <button
               className="btn btn-link text-dark text-decoration-none fw-bold p-0"
-              style={{ fontSize: "15px" }}
+              style={{ fontSize: "17px" }}
               onClick={() => setShowCategorySlider(!showCategorySlider)}
             >
-              CATEGORIES ▼
+              CATEGORIES →
             </button>
 
             {showCategorySlider && (
@@ -206,14 +246,14 @@ const Navbar = () => {
                 <Link
                   to="/about"
                   className="btn btn-link text-dark text-decoration-none fw-bold p-0"
-                  style={{ fontSize: "15px" }}
+                  style={{ fontSize: "17px" }}
                 >
                   ABOUT US
                 </Link>
 
                 <button
                   className="btn btn-link text-dark text-decoration-none fw-bold p-0"
-                  style={{ fontSize: "15px" }}
+                  style={{ fontSize: "17px" }}
                   onClick={scrollToFooter}
                 >
                   CONTACT US
