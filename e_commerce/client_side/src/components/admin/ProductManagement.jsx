@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Plus, Edit2, Trash2, Search, Filter, Loader2 } from "lucide-react";
 import "bootstrap/dist/css/bootstrap.min.css";
-import { CATEGORIES, SUB_CATEGORIES } from "../categories";
+import { CATEGORIES, SUB_CATEGORIES, SIZE_OPTIONS } from "../categories";
 import { useNotifications } from "../../context/NotificationContext";
 
 const ProductManagement = () => {
@@ -187,14 +187,31 @@ const ProductManagement = () => {
 
   const handleAddSize = () => {
     if (newSize.size && newSize.stock) {
+      // Check if size already exists
+      const sizeExists = formData.sizes.some(s => s.size === newSize.size);
+      if (sizeExists) {
+        addNotification(`Size ${newSize.size} already exists. Use edit feature to update stock.`, "warning");
+        return;
+      }
       const updatedSizes = [...(formData.sizes || []), { size: newSize.size, stock: parseInt(newSize.stock) }];
       setFormData({ ...formData, sizes: updatedSizes });
       setNewSize({ size: "", stock: "" });
+      addNotification(`${newSize.size} added successfully`, "success");
+    } else {
+      addNotification("Please select a size and enter stock quantity", "error");
     }
   };
 
   const handleRemoveSize = (index) => {
+    const removedSize = formData.sizes[index];
     const updatedSizes = formData.sizes.filter((_, i) => i !== index);
+    setFormData({ ...formData, sizes: updatedSizes });
+    addNotification(`${removedSize.size} removed`, "info");
+  };
+
+  const handleEditSizeStock = (index, newStock) => {
+    const updatedSizes = [...formData.sizes];
+    updatedSizes[index].stock = parseInt(newStock) || 0;
     setFormData({ ...formData, sizes: updatedSizes });
   };
 
@@ -501,25 +518,37 @@ const ProductManagement = () => {
                     ></textarea>
                   </div>
                   <div className="mb-3">
-                    <label className="form-label fw-bold">Available Sizes</label>
+                    <label className="form-label fw-bold">Available Sizes & Stock</label>
                     <div className="card border-light p-3 mb-3">
-                      <div className="row g-2 mb-2">
+                      <div className="row g-2 mb-3">
                         <div className="col-8">
-                          <input
-                            type="text"
-                            className="form-control"
-                            placeholder="Size (e.g., XS, S, M, L, XL, XXL)"
+                          <label className="form-label small fw-bold">Select Size</label>
+                          <select
+                            className="form-select"
                             value={newSize.size}
                             onChange={(e) => setNewSize({ ...newSize, size: e.target.value })}
-                          />
+                          >
+                            <option value="">-- Choose a size --</option>
+                            {SIZE_OPTIONS[formData.category]?.map((size) => {
+                              // Check if size already exists
+                              const sizeExists = formData.sizes.some(s => s.size === size);
+                              return (
+                                <option key={size} value={size} disabled={sizeExists}>
+                                  {size} {sizeExists ? "(Already added)" : ""}
+                                </option>
+                              );
+                            })}
+                          </select>
                         </div>
                         <div className="col-4">
+                          <label className="form-label small fw-bold">Stock</label>
                           <input
                             type="number"
                             className="form-control"
                             placeholder="Stock"
                             value={newSize.stock}
                             onChange={(e) => setNewSize({ ...newSize, stock: e.target.value })}
+                            min="1"
                           />
                         </div>
                       </div>
@@ -533,17 +562,36 @@ const ProductManagement = () => {
                     </div>
                     {formData.sizes && formData.sizes.length > 0 && (
                       <div>
-                        <p className="text-muted small mb-2">Added Sizes:</p>
-                        <div className="d-flex flex-wrap gap-2">
+                        <p className="text-muted small mb-2">Added Sizes (Click to edit stock):</p>
+                        <div className="row g-2">
                           {formData.sizes.map((s, idx) => (
-                            <div key={idx} className="badge bg-info p-2 d-flex align-items-center gap-2">
-                              <span>{s.size} ({s.stock})</span>
-                              <button
-                                type="button"
-                                className="btn-close btn-close-white"
-                                onClick={() => handleRemoveSize(idx)}
-                                style={{ fontSize: "0.75rem" }}
-                              ></button>
+                            <div key={idx} className="col-md-6">
+                              <div className="card border-info p-2">
+                                <div className="row g-2 align-items-center">
+                                  <div className="col-6">
+                                    <small className="text-muted">Size:</small>
+                                    <div className="fw-bold text-info">{s.size}</div>
+                                  </div>
+                                  <div className="col-4">
+                                    <small className="text-muted">Stock:</small>
+                                    <input
+                                      type="number"
+                                      className="form-control form-control-sm"
+                                      value={s.stock}
+                                      onChange={(e) => handleEditSizeStock(idx, e.target.value)}
+                                      min="0"
+                                    />
+                                  </div>
+                                  <div className="col-2">
+                                    <button
+                                      type="button"
+                                      className="btn btn-sm btn-close btn-danger"
+                                      onClick={() => handleRemoveSize(idx)}
+                                      title="Remove size"
+                                    ></button>
+                                  </div>
+                                </div>
+                              </div>
                             </div>
                           ))}
                         </div>
