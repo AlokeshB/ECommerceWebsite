@@ -31,7 +31,7 @@ const About = () => {
       <Navbar />
       <div className="flex-grow-1">
         {/* Navigation */}
-        <div
+        {/* <div
           className="border-bottom bg-white py-3 sticky-top"
           style={{ top: "50px" }}
         >
@@ -43,7 +43,7 @@ const About = () => {
               <ArrowLeft size={20} /> Back to Home
             </button>
           </div>
-        </div>
+        </div> */}
 
         {/* Hero Section with Animated Gradient */}
         <div
@@ -60,14 +60,14 @@ const About = () => {
               <center>
                 <div className="col-lg-6">
                   <div style={{ display: "flex", alignItems: "center", gap: "15px", marginBottom: "20px" }}>
-                    <img
+                    {/* <img
                       src="/Media (1).jpg"
                       alt="Fashion Hub Logo"
                       style={{ height: "60px", width: "auto", objectFit: "contain" }}
                       onError={(e) => {
                         e.target.style.display = "none";
                       }}
-                    />
+                    /> */}
                     <h1
                       className="display-4 fw-bold mb-0"
                       style={{ lineHeight: "1.2" }}
@@ -75,11 +75,11 @@ const About = () => {
                       Welcome to{" "}
                       <span
                         style={{
-                          textDecoration: "underline",
+                          
                           textDecorationColor: "#f093fb",
                         }}
                       >
-                        Fashion Hub
+                        FASHION HUB
                       </span>
                     </h1>
                   </div>
