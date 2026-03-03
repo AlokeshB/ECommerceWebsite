@@ -230,7 +230,7 @@ const Navbar = () => {
               style={{ fontSize: "17px" }}
               onClick={() => setShowCategorySlider(!showCategorySlider)}
             >
-              CATEGORIES →
+              CATEGORIES
             </button>
 
             {showCategorySlider && (
