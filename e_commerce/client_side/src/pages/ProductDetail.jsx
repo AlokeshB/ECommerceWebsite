@@ -492,11 +492,11 @@ const ProductDetail = () => {
                 </div>
 
                 {/* Share */}
-                <div className="mt-4 pt-4 border-top">
+                {/* <div className="mt-4 pt-4 border-top">
                   <button className="btn btn-link p-0 text-dark d-flex align-items-center gap-2">
                     <Share2 size={18} /> Share Product
                   </button>
-                </div>
+                </div> */}
               </div>
             </div>
           </div>
