@@ -18,6 +18,8 @@ const OrderManagement = () => {
   const [newStatus, setNewStatus] = useState(null);
   const [updatingStatus, setUpdatingStatus] = useState(false);
 
+
+
   const statuses = ["pending", "confirmed", "shipped", "delivered"];
   const allStatuses = ["All", ...statuses, "cancelled", "returned"];
 
@@ -256,7 +258,7 @@ const OrderManagement = () => {
                             {order.userId?.name || order.shippingAddress?.fullName || "N/A"}
                           </td>
                           <td className="small">
-                            {new Date(order.createdAt).toLocaleDateString("en-IN")}
+                            {formatDate(order.createdAt)}
                           </td>
                           <td className="small fw-bold">
                             ₹{order.totalAmount?.toLocaleString()}
@@ -362,14 +364,14 @@ const OrderManagement = () => {
                                       {order.items?.map((item, index) => (
                                         <tr key={index}>
                                           <td>
-                                            {item.product?.name || "Unknown Product"}
+                                            {item.productName || "Unknown Product"}
                                           </td>
                                           <td className="text-center">
                                             {item.quantity}
                                           </td>
-                                          <td className="text-end">₹{item.price}</td>
+                                          <td className="text-end">₹{Math.ceil(item.price)}</td>
                                           <td className="text-end fw-bold">
-                                            ₹{(item.price * item.quantity).toLocaleString()}
+                                            ₹{Math.ceil(item.price * item.quantity).toLocaleString()}
                                           </td>
                                         </tr>
                                       ))}
@@ -380,7 +382,7 @@ const OrderManagement = () => {
                                 <h6 className="fw-bold mb-2">Shipping Address</h6>
                                 <div className="p-3 border rounded bg-white">
                                   <p className="mb-1 small">
-                                    <strong>{order.shippingAddress?.fullName}</strong>
+                                    <strong>{order.shippingAddress?.name || order.shippingAddress?.fullName}</strong>
                                   </p>
                                   <p className="mb-1 small text-muted">
                                     {order.shippingAddress?.address}
