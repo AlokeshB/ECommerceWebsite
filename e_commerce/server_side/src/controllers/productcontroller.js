@@ -6,14 +6,18 @@ const APIFeatures = require("../utils/apiFeatures");
 // @access  Public
 exports.getAllProducts = async (req, res, next) => {
   try {
-    const resultPerPage = 10;
+    const resultPerPage = req.query.limit === "all" ? null : 10;
     const productsCount = await Product.countDocuments();
 
     const apiFeature = new APIFeatures(Product.find(), req.query)
       .search()
       .filter()
-      .sort()
-      .pagination(resultPerPage);
+      .sort();
+
+    // Only apply pagination if resultPerPage is not null
+    if (resultPerPage !== null) {
+      apiFeature.pagination(resultPerPage);
+    }
 
     const products = await apiFeature.query;
 
@@ -21,7 +25,7 @@ exports.getAllProducts = async (req, res, next) => {
       success: true,
       products,
       productsCount,
-      resultPerPage,
+      resultPerPage: resultPerPage || productsCount,
     });
   } catch (error) {
     next(error);
