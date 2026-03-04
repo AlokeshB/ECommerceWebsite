@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Plus, Edit2, Trash2, Search, Filter, Loader2 } from "lucide-react";
+import { Plus, Edit2, Trash2, Search, Filter, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { CATEGORIES, SUB_CATEGORIES, SIZE_OPTIONS } from "../categories";
 import { useNotifications } from "../../context/NotificationContext";
@@ -12,6 +12,8 @@ const ProductManagement = () => {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [showModal, setShowModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
   const { addNotification } = useNotifications();
   const [formData, setFormData] = useState({
     name: "",
@@ -30,6 +32,11 @@ const ProductManagement = () => {
   useEffect(() => {
     fetchProducts();
   }, []);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, selectedCategory]);
 
   const fetchProducts = async () => {
     try {
@@ -69,6 +76,18 @@ const ProductManagement = () => {
       productCategory === filterCat;
     return matchesSearch && matchesCategory;
   });
+
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedProducts = filteredProducts.slice(startIndex, endIndex);
+
+  const handlePageChange = (pageNumber) => {
+    if (pageNumber >= 1 && pageNumber <= totalPages) {
+      setCurrentPage(pageNumber);
+    }
+  };
 
   const handleAddProduct = () => {
     setEditingProduct(null);
@@ -300,8 +319,8 @@ const ProductManagement = () => {
                 </tr>
               </thead>
               <tbody>
-                {filteredProducts.length > 0 ? (
-                  filteredProducts.map((product) => (
+                {paginatedProducts.length > 0 ? (
+                  paginatedProducts.map((product) => (
                     <tr key={product._id}>
                       <td>
                         <img
@@ -352,13 +371,54 @@ const ProductManagement = () => {
                 ) : (
                   <tr>
                     <td colSpan="7" className="text-center py-4 text-muted">
-                      No products found
+                      {filteredProducts.length === 0 ? "No products found" : "No more products"}
                     </td>
                   </tr>
                 )}
               </tbody>
             </table>
           </div>
+          
+          {/* Pagination Controls */}
+          {filteredProducts.length > 0 && (
+            <div className="card-footer bg-light border-top d-flex justify-content-between align-items-center">
+              <div className="text-muted small">
+                Showing <strong>{startIndex + 1}</strong> to <strong>{Math.min(endIndex, filteredProducts.length)}</strong> of <strong>{filteredProducts.length}</strong> products
+              </div>
+              <div className="d-flex gap-2 align-items-center">
+                <button
+                  className="btn btn-sm btn-outline-secondary"
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1 || loading}
+                  title="Previous page"
+                >
+                  <ChevronLeft size={18} />
+                </button>
+                
+                <div className="d-flex gap-1">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
+                    <button
+                      key={pageNum}
+                      className={`btn btn-sm ${currentPage === pageNum ? "btn-primary" : "btn-outline-secondary"}`}
+                      onClick={() => handlePageChange(pageNum)}
+                      disabled={loading}
+                    >
+                      {pageNum}
+                    </button>
+                  ))}
+                </div>
+                
+                <button
+                  className="btn btn-sm btn-outline-secondary"
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages || loading}
+                  title="Next page"
+                >
+                  <ChevronRight size={18} />
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
