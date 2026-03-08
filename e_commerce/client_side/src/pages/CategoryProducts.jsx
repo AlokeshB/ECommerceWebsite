@@ -40,10 +40,24 @@ const CategoryProducts = () => {
 
   // Apply sorting to products
   const sortedProducts = [...products].sort((a, b) => {
+    // Get effective price (considering discounts)
+    const getEffectivePrice = (product) => {
+      if (product.discountPrice) {
+        return product.discountPrice;
+      }
+      if (product.discountPercentage && product.discountPercentage > 0) {
+        return product.price * (1 - product.discountPercentage / 100);
+      }
+      return product.price;
+    };
+
+    const priceA = getEffectivePrice(a);
+    const priceB = getEffectivePrice(b);
+
     if (sortBy === "price-low-to-high") {
-      return a.price - b.price;
+      return priceA - priceB;
     } else if (sortBy === "price-high-to-low") {
-      return b.price - a.price;
+      return priceB - priceA;
     }
     // Default: relevance (original order)
     return 0;

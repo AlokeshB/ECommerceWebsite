@@ -5,6 +5,7 @@ import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { useAuth } from "../context/AuthContext";
 import { useCart } from "../context/CartContext";
+import { useBuyNow } from "../context/BuyNowContext";
 import { useWishlist } from "../context/WishlistContext";
 import { useNotifications } from "../context/NotificationContext";
 
@@ -12,6 +13,7 @@ const Home = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { addToCart } = useCart();
+  const { setBuyNowProduct } = useBuyNow();
   const { isInWishlist, addToWishlist, removeFromWishlist } = useWishlist();
   const { addNotification } = useNotifications();
   const [products, setProducts] = useState([]);
@@ -51,7 +53,7 @@ const Home = () => {
     };
 
     fetchProducts();
-  }, [user]);
+  }, [user, isInWishlist]);
 
   const handleBuyNow = (product) => {
     if (!user) {
@@ -68,8 +70,8 @@ const Home = () => {
       return;
     }
     
-    // Add product without sizes directly to cart and proceed to checkout
-    addProductToCart(product._id, 1, null, "buy");
+    // Proceed directly to checkout with this single product
+    proceedToBuyNow(product, null);
   };
 
   const handleAddToCart = (product) => {
@@ -91,7 +93,18 @@ const Home = () => {
     addProductToCart(product._id, 1, null);
   };
 
-  const addProductToCart = async (productId, quantity, size, action = "cart") => {
+  const proceedToBuyNow = (product, size) => {
+    // Store the buy now product in context
+    setBuyNowProduct({
+      ...product,
+      selectedSize: size,
+      quantity: 1
+    });
+    addNotification("Proceeding to checkout...", "success");
+    navigate("/checkout");
+  };
+
+  const addProductToCart = async (productId, quantity, size) => {
     const result = await addToCart({
       _id: productId,
       qty: quantity,
@@ -99,13 +112,7 @@ const Home = () => {
     });
 
     if (result.success) {
-      if (action === "buy") {
-        addNotification("Proceeding to checkout...", "success");
-        sessionStorage.setItem("isBuyNowFlow", "true");
-        setTimeout(() => navigate("/checkout"), 300);
-      } else {
-        addNotification("Product added to cart!", "success");
-      }
+      addNotification("Product added to cart!", "success");
     } else {
       addNotification(result.error || "Failed to add to cart", "error");
     }
@@ -336,7 +343,7 @@ const Home = () => {
                     if (cartActionType === "cart") {
                       addProductToCart(sizeModalProduct._id, 1, selectedSize, "cart");
                     } else if (cartActionType === "buy") {
-                      addProductToCart(sizeModalProduct._id, 1, selectedSize, "buy");
+                      proceedToBuyNow(sizeModalProduct, selectedSize);
                     }
 
                     setSizeModalProduct(null);
@@ -345,7 +352,7 @@ const Home = () => {
                   }}
                   disabled={!selectedSize}
                 >
-                  {cartActionType === "cart" ? "Confirm & Add to Cart" : "Confirm & Buy Now"}
+                  {cartActionType === "buy" ? "Buy Now" : "Add to Cart"}
                 </button>
               </div>
             </div>
