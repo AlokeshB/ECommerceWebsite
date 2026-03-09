@@ -229,7 +229,12 @@ const Navbar = () => {
               style={{ fontSize: "clamp(12px, 2vw, 17px)", borderBottom: "2px solid transparent" }}
               onMouseEnter={(e) => e.target.style.borderBottomColor = "#333"}
               onMouseLeave={(e) => e.target.style.borderBottomColor = "transparent"}
-              onClick={() => navigate("/")}
+              onClick={() => {
+                navigate("/");
+                setTimeout(() => {
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }, 0);
+              }}
             >
               HOME
             </button>
