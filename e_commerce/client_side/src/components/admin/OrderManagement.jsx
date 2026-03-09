@@ -17,6 +17,8 @@ const OrderManagement = () => {
   const [selectedOrderForStatus, setSelectedOrderForStatus] = useState(null);
   const [newStatus, setNewStatus] = useState(null);
   const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [showCODPaidModal, setShowCODPaidModal] = useState(false);
+  const [codPaidOrder, setCodPaidOrder] = useState(null);
 
 
 
@@ -149,10 +151,18 @@ const OrderManagement = () => {
               : order
           )
         );
-        addNotification(
-          `Order #${selectedOrderForStatus.orderNumber} status updated to ${newStatus}`,
-          "success"
-        );
+        
+        // If changing to delivered for COD order, show price paid modal
+        if (newStatus === "delivered" && selectedOrderForStatus.paymentMethod === "cod") {
+          setCodPaidOrder(selectedOrderForStatus);
+          setShowCODPaidModal(true);
+        } else {
+          addNotification(
+            `Order #${selectedOrderForStatus.orderNumber} status updated to ${newStatus}`,
+            "success"
+          );
+        }
+        
         setShowStatusModal(false);
         setSelectedOrderForStatus(null);
         setNewStatus(null);

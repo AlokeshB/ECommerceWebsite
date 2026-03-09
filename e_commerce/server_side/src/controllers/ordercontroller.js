@@ -9,7 +9,7 @@ const Notification = require("../models/Notification");
 // @access  Private
 exports.createOrder = async (req, res, next) => {
   try {
-    const { shippingAddress, paymentMethod, paymentCard, cartTotal, discount, shippingCost, platformFee, finalTotal } = req.body;
+    const { shippingAddress, paymentMethod, paymentCard, cartTotal, discount, shippingCost, platformFee, finalTotal, isBuyNow, buyNowItem } = req.body;
 
     if (!shippingAddress) {
       return res.status(400).json({
@@ -18,30 +18,45 @@ exports.createOrder = async (req, res, next) => {
       });
     }
 
-    const cart = await Cart.findOne({ userId: req.user.id }).populate("items.productId");
+    let items = [];
+    let totalAmount = 0;
 
-    if (!cart || cart.items.length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: "Cart is empty",
-      });
+    // Handle Buy Now flow - use passed item instead of cart
+    if (isBuyNow && buyNowItem) {
+      items = [{
+        productId: buyNowItem._id,
+        productName: buyNowItem.name,
+        quantity: buyNowItem.quantity || 1,
+        price: buyNowItem.discountPrice || (buyNowItem.price * (1 - (buyNowItem.discountPercentage || 0) / 100)) || buyNowItem.price,
+        size: buyNowItem.selectedSize || null,
+      }];
+      totalAmount = items[0].price * items[0].quantity;
+    } else {
+      // Handle regular cart checkout
+      const cart = await Cart.findOne({ userId: req.user.id }).populate("items.productId");
+
+      if (!cart || cart.items.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: "Cart is empty",
+        });
+      }
+
+      items = cart.items.map((item) => ({
+        productId: item.productId._id,
+        productName: item.productId.name,
+        quantity: item.quantity,
+        price: item.price,
+        size: item.size || null,
+      }));
+
+      totalAmount = cart.items.reduce(
+        (total, item) => total + item.price * item.quantity,
+        0
+      );
     }
 
     const user = await User.findById(req.user.id);
-
-    // Prepare order items
-    const items = cart.items.map((item) => ({
-      productId: item.productId._id,
-      productName: item.productId.name,
-      quantity: item.quantity,
-      price: item.price,
-    }));
-
-    // Calculate total amount
-    const totalAmount = cart.items.reduce(
-      (total, item) => total + item.price * item.quantity,
-      0
-    );
 
     // Use provided breakdown or calculate defaults
     const orderShippingCost = shippingCost !== undefined ? shippingCost : (totalAmount > 500 ? 0 : 50);
@@ -49,12 +64,11 @@ exports.createOrder = async (req, res, next) => {
     const orderPlatformFee = platformFee !== undefined ? platformFee : (totalAmount > 0 ? 10 : 0);
     const orderTotal = finalTotal !== undefined ? finalTotal : (totalAmount - orderDiscount + orderShippingCost + orderPlatformFee);
     
-    // Generate unique order number - Format: ORDER<5-digit-random>
+    // Generate unique order number
     const randomNumber = Math.floor(10000 + Math.random() * 90000);
     const orderNumber = `ORDER${randomNumber}`;
 
-    // Ensure all required shipping address fields are present
-    // Concatenate address from street, address, and other fields if needed
+    // Prepare complete shipping address
     const addressParts = [];
     if (shippingAddress.street) addressParts.push(shippingAddress.street);
     if (shippingAddress.address) addressParts.push(shippingAddress.address);
@@ -71,6 +85,12 @@ exports.createOrder = async (req, res, next) => {
       country: shippingAddress.country || "India",
     };
 
+    // Determine payment status based on payment method
+    let initialPaymentStatus = "completed";
+    if (paymentMethod === "cod") {
+      initialPaymentStatus = "pending"; // COD payment is pending until delivery
+    }
+
     // Create order
     const order = await Order.create({
       orderNumber,
@@ -81,11 +101,12 @@ exports.createOrder = async (req, res, next) => {
       shippingCost: orderShippingCost,
       discount: orderDiscount,
       platformFee: orderPlatformFee,
-      paymentMethod: paymentMethod === "upi" ? "bank_transfer" : paymentMethod === "cod" ? "credit_card" : "credit_card",
+      paymentMethod: paymentMethod,
       paymentCardId: paymentCard || null,
       orderStatus: "pending",
-      paymentStatus: "completed", // Always set to completed since payment is simulated
-      estimatedDelivery: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
+      paymentStatus: initialPaymentStatus,
+      isBuyNow: isBuyNow || false,
+      estimatedDelivery: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
       statusHistory: [
         {
           status: "pending",
@@ -95,11 +116,10 @@ exports.createOrder = async (req, res, next) => {
     });
 
     // Update product stock based on sizes
-    for (let item of cart.items) {
-      const product = await Product.findById(item.productId._id);
+    for (let item of items) {
+      const product = await Product.findById(item.productId);
       
       if (product && product.sizes && product.sizes.length > 0) {
-        // Update size-based stock
         if (item.size) {
           const sizeIndex = product.sizes.findIndex(s => s.size === item.size);
           if (sizeIndex !== -1) {
@@ -111,8 +131,13 @@ exports.createOrder = async (req, res, next) => {
       await product.save();
     }
 
-    // Clear cart
-    await Cart.findByIdAndDelete(cart._id);
+    // Clear cart only for regular checkout, not for Buy Now
+    if (!isBuyNow) {
+      const cart = await Cart.findOne({ userId: req.user.id });
+      if (cart) {
+        await Cart.findByIdAndDelete(cart._id);
+      }
+    }
 
     // Create notification for admin about new order
     try {
@@ -129,10 +154,9 @@ exports.createOrder = async (req, res, next) => {
       await Promise.all(adminNotificationPromises);
     } catch (notificationError) {
       console.error("Error creating admin notifications:", notificationError);
-      // Don't fail order creation if notifications fail
     }
 
-    // Return success response with order details
+    // Return success response
     res.status(201).json({
       success: true,
       message: "Order created successfully",

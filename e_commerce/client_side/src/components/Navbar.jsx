@@ -45,8 +45,9 @@ const CategorySlider = ({ navigate, closeMobileMenu, isOpen, onToggle }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="position-relative d-flex align-items-center gap-2" style={{
-      animation: isOpen ? 'slideInSmooth 0.3s ease-in-out forwards' : 'slideOutSmooth 0.3s ease-in-out forwards'
+    <div className="position-relative d-flex align-items-center gap-2 flex-wrap" style={{
+      animation: isOpen ? 'slideInSmooth 0.3s ease-in-out forwards' : 'slideOutSmooth 0.3s ease-in-out forwards',
+      width: '100%'
     }}>
       <style>{`
         @keyframes slideInSmooth {
@@ -71,7 +72,7 @@ const CategorySlider = ({ navigate, closeMobileMenu, isOpen, onToggle }) => {
         }
       `}</style>
       <button
-        className="btn btn-sm p-1"
+        className="btn btn-sm p-1 d-none d-lg-block"
         style={{
           opacity: canScrollLeft ? 1 : 0.4,
           cursor: canScrollLeft ? "pointer" : "default",
@@ -88,21 +89,22 @@ const CategorySlider = ({ navigate, closeMobileMenu, isOpen, onToggle }) => {
 
       <div
         ref={sliderRef}
-        className="d-flex gap-2 overflow-hidden"
+        className="d-flex gap-2 gap-md-3 overflow-auto"
         style={{
           scrollBehavior: "smooth",
           flex: 1,
-          maxWidth: "300px",
+          maxWidth: "100%",
+          paddingBottom: "4px",
         }}
         onScroll={handleScroll}
       >
         {categories.map((cat) => (
           <button
             key={cat.id}
-            className="btn btn-outline-dark fw-6 text-nowrap px-3 py-2"
+            className="btn btn-outline-dark fw-6 text-nowrap px-2 px-md-3 py-2"
             style={{
-              fontSize: "13px",
-              minWidth: "90px",
+              fontSize: "clamp(12px, 2vw, 13px)",
+              minWidth: "80px",
               transition: "all 0.2s ease",
               borderRadius: "6px",
             }}
@@ -118,13 +120,13 @@ const CategorySlider = ({ navigate, closeMobileMenu, isOpen, onToggle }) => {
             }}
             onClick={() => handleCategoryClick(cat.id)}
           >
-            {cat.emoji} {cat.title}
+            {cat.emoji} <span className="d-inline">{cat.title}</span>
           </button>
         ))}
       </div>
 
       <button
-        className="btn btn-sm p-1"
+        className="btn btn-sm p-1 d-none d-lg-block"
         style={{
           opacity: canScrollRight ? 1 : 0.4,
           cursor: canScrollRight ? "pointer" : "default",
@@ -180,27 +182,27 @@ const Navbar = () => {
         style={{ top: 0, zIndex: 1000 }}
       >
         <div
-          className="container-fluid px-4 px-lg-6"
+          className="container-fluid px-2 px-md-4 px-lg-6"
           style={{
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            paddingLeft: "3rem",
-            paddingRight: "3rem",
+            paddingLeft: "0.75rem",
+            paddingRight: "0.75rem",
           }}
         >
           {/* Brand */}
           <Link
             className="navbar-brand fw-bold d-flex align-items-center"
             to="/"
-            style={{ fontSize: "18px", minWidth: "100px", margin: 0 }}
+            style={{ fontSize: "clamp(14px, 2vw, 18px)", minWidth: "auto", margin: 0 }}
             onClick={closeMobileMenu}
           >
             <img
               src="/Media (1).jpg"
               alt="Fashion Hub Logo"
               style={{ 
-                height: "80px", 
+                height: "clamp(50px, 10vw, 80px)", 
                 width: "auto", 
                 objectFit: "contain",
                 borderRadius: "8px",
@@ -213,21 +215,29 @@ const Navbar = () => {
             />
           </Link>
 
-          {/* Desktop Menu - Centered (Desktop Only - xl screens and up) */}
+          {/* Desktop Menu - Centered (LG and up) */}
           <div
-            className="d-none d-xl-flex gap-3 align-items-center"
+            className="d-none d-lg-flex gap-2 gap-md-3 align-items-center"
             style={{
               position: "absolute",
               left: "50%",
               transform: "translateX(-50%)",
-              minWidth: "400px",
+              minWidth: "auto",
               justifyContent: "center",
+              flexWrap: "wrap",
             }}
           >
+            <button
+              className="btn btn-link text-dark text-decoration-none fw-bold p-0"
+              style={{ fontSize: "clamp(12px, 2vw, 17px)" }}
+              onClick={() => navigate("/")}
+            >
+              HOME
+            </button>
             {/* CATEGORIES Toggle */}
             <button
               className="btn btn-link text-dark text-decoration-none fw-bold p-0"
-              style={{ fontSize: "17px" }}
+              style={{ fontSize: "clamp(12px, 2vw, 17px)" }}
               onClick={() => setShowCategorySlider(!showCategorySlider)}
             >
               CATEGORIES
@@ -246,14 +256,14 @@ const Navbar = () => {
                 <Link
                   to="/about"
                   className="btn btn-link text-dark text-decoration-none fw-bold p-0"
-                  style={{ fontSize: "17px" }}
+                  style={{ fontSize: "clamp(12px, 2vw, 17px)" }}
                 >
                   ABOUT US
                 </Link>
 
                 <button
                   className="btn btn-link text-dark text-decoration-none fw-bold p-0"
-                  style={{ fontSize: "17px" }}
+                  style={{ fontSize: "clamp(12px, 2vw, 17px)" }}
                   onClick={scrollToFooter}
                 >
                   CONTACT US
@@ -267,9 +277,9 @@ const Navbar = () => {
             className="d-flex align-items-center gap-2 gap-md-3"
             style={{ marginLeft: "auto" }}
           >
-            {/* Mobile Menu Toggle - Hide on xl and up */}
+            {/* Mobile Menu Toggle - Show on MD and below */}
             <button
-              className="btn btn-link d-xl-none p-0 text-dark me-2"
+              className="btn btn-link d-lg-none p-0 text-dark me-2"
               onClick={() => setShowMobileMenu(!showMobileMenu)}
               title="Menu"
             >
@@ -354,24 +364,35 @@ const Navbar = () => {
         </div>
       </nav>
 
-      {/* Mobile Menu */}
+      {/* Mobile Menu - Show on MD and below */}
       {showMobileMenu && (
         <div
-          className="d-xl-none bg-light border-bottom py-3 px-3"
+          className="d-lg-none bg-light border-bottom py-3 px-2 px-md-3"
           style={{ zIndex: 999 }}
         >
           <div className="d-flex flex-column gap-2">
+            {/* HOME Link */}
+            <Link
+              to="/"
+              className="btn btn-link text-dark text-decoration-none fw-bold p-0 text-start"
+              style={{ fontSize: "clamp(13px, 3vw, 15px)" }}
+              onClick={closeMobileMenu}
+            >
+              HOME
+            </Link>
+
             {/* Mobile Categories Toggle */}
             <button
-              className="btn btn-link text-dark text-decoration-none fw-bold p-0 text-start"
-              style={{ fontSize: "15px" }}
+              className="btn btn-link text-dark text-decoration-none fw-bold p-0 text-start w-100 d-flex justify-content-between align-items-center"
+              style={{ fontSize: "clamp(13px, 3vw, 15px)" }}
               onClick={() => setShowCategorySlider(!showCategorySlider)}
             >
-              CATEGORIES {showCategorySlider ? "▲" : "▼"}
+              <span>CATEGORIES</span>
+              <span style={{ fontSize: "12px" }}>{showCategorySlider ? "▲" : "▼"}</span>
             </button>
 
             {showCategorySlider && (
-              <div className="ms-2">
+              <div className="ms-2 mb-2 d-flex flex-column gap-2">
                 <CategorySlider
                   navigate={navigate}
                   closeMobileMenu={closeMobileMenu}
@@ -386,7 +407,7 @@ const Navbar = () => {
                 <Link
                   to="/about"
                   className="btn btn-link text-dark text-decoration-none fw-bold p-0 text-start"
-                  style={{ fontSize: "15px" }}
+                  style={{ fontSize: "clamp(13px, 3vw, 15px)" }}
                   onClick={closeMobileMenu}
                 >
                   ABOUT US
@@ -394,7 +415,7 @@ const Navbar = () => {
 
                 <button
                   className="btn btn-link text-dark text-decoration-none fw-bold p-0 w-100 text-start"
-                  style={{ fontSize: "15px" }}
+                  style={{ fontSize: "clamp(13px, 3vw, 15px)" }}
                   onClick={scrollToFooter}
                 >
                   CONTACT US

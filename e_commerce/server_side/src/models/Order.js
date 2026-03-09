@@ -89,7 +89,7 @@ const orderSchema = new mongoose.Schema(
     },
     paymentMethod: {
       type: String,
-      enum: ["credit_card", "debit_card", "paypal", "upi", "bank_transfer"],
+      enum: ["credit_card", "debit_card", "bank_transfer", "cod"],
       default: "credit_card",
     },
     paymentCardId: {
@@ -101,6 +101,10 @@ const orderSchema = new mongoose.Schema(
       type: String,
       enum: ["pending", "completed", "failed", "refunded"],
       default: "pending",
+    },
+    isBuyNow: {
+      type: Boolean,
+      default: false,
     },
     orderStatus: {
       type: String,

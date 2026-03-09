@@ -500,7 +500,7 @@ const UserProfile = () => {
                             }
                           />
                         </div>
-                        <div className="col-6">
+                        <div className="col-12 col-sm-6">
                           <input
                             className="form-control form-control-sm"
                             placeholder="City"
@@ -513,7 +513,7 @@ const UserProfile = () => {
                             }
                           />
                         </div>
-                        <div className="col-6">
+                        <div className="col-12 col-sm-6">
                           <input
                             className="form-control form-control-sm"
                             placeholder="Phone (Optional)"

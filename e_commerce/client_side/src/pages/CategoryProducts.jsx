@@ -119,7 +119,7 @@ const CategoryProducts = () => {
               {sortedProducts.length > 0 ? (
                 <div className="row g-3">
               {sortedProducts.map((product) => (
-                <div key={product._id} className="col-sm-6 col-lg-3">
+                <div key={product._id} className="col-12 col-sm-6 col-lg-3">
                   <div
                     className="bg-white rounded-3 overflow-hidden product-card h-100 cursor-pointer"
                     onClick={() => navigate(`/product/${product._id}`)}
