@@ -217,59 +217,117 @@ const Navbar = () => {
 
           {/* Desktop Menu - Centered (LG and up) */}
           <div
-            className="d-none d-lg-flex gap-2 gap-md-3 align-items-center"
+            className="d-none d-lg-flex gap-4 align-items-center justify-content-center"
             style={{
               position: "absolute",
               left: "50%",
               transform: "translateX(-50%)",
-              minWidth: "auto",
-              justifyContent: "center",
-              flexWrap: "wrap",
             }}
           >
             <button
-              className="btn btn-link text-dark text-decoration-none fw-bold p-0"
-              style={{ fontSize: "clamp(12px, 2vw, 17px)" }}
+              className="btn btn-link text-dark text-decoration-none fw-bold p-0 transition-all"
+              style={{ fontSize: "clamp(12px, 2vw, 17px)", borderBottom: "2px solid transparent" }}
+              onMouseEnter={(e) => e.target.style.borderBottomColor = "#333"}
+              onMouseLeave={(e) => e.target.style.borderBottomColor = "transparent"}
               onClick={() => navigate("/")}
             >
               HOME
             </button>
-            {/* CATEGORIES Toggle */}
-            <button
-              className="btn btn-link text-dark text-decoration-none fw-bold p-0"
-              style={{ fontSize: "clamp(12px, 2vw, 17px)" }}
-              onClick={() => setShowCategorySlider(!showCategorySlider)}
+
+            {/* CATEGORIES with Dropdown */}
+            <div style={{ position: "relative", display: "inline-block" }}>
+              <button
+                className="btn btn-link text-dark text-decoration-none fw-bold p-0 transition-all d-flex align-items-center gap-1"
+                style={{ fontSize: "clamp(12px, 2vw, 17px)", borderBottom: "2px solid transparent" }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderBottomColor = "#333";
+                  setShowCategorySlider(true);
+                }}
+                onMouseLeave={() => {
+                  // Don't hide on immediate leave
+                }}
+              >
+                CATEGORIES
+                <span style={{ fontSize: "12px" }}>▼</span>
+              </button>
+
+              {showCategorySlider && (
+                <div 
+                  style={{
+                    position: "absolute",
+                    top: "calc(100% + 8px)",
+                    left: "50%",
+                    transform: "translateX(-50%)",
+                    backgroundColor: "white",
+                    border: "1px solid #e0e0e0",
+                    borderRadius: "12px",
+                    boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
+                    padding: "16px 0",
+                    zIndex: 1001,
+                    minWidth: "240px",
+                  }}
+                  onMouseEnter={() => setShowCategorySlider(true)}
+                  onMouseLeave={() => setShowCategorySlider(false)}
+                >
+                  {[
+                    { id: "men", title: "Men", icon: "👔" },
+                    { id: "women", title: "Women", icon: "👗" },
+                    { id: "kids", title: "Kids", icon: "👶" }
+                  ].map((cat, idx) => (
+                    <div key={cat.id}>
+                      <button
+                        className="btn btn-link text-dark text-decoration-none w-100 fw-500 p-0"
+                        style={{ 
+                          fontSize: "14px",
+                          padding: "12px 20px !important",
+                          transition: "all 0.2s ease",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          gap: "10px",
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = "#f0f0f0";
+                          e.currentTarget.style.transform = "translateX(4px)";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = "transparent";
+                          e.currentTarget.style.transform = "translateX(0)";
+                        }}
+                        onClick={() => {
+                          navigate(`/category/${cat.id}`);
+                          setShowCategorySlider(false);
+                        }}
+                      >
+                        <span style={{ fontSize: "20px" }}>{cat.icon}</span>
+                        <span style={{ fontWeight: "600" }}>{cat.title}</span>
+                      </button>
+                      {idx < 2 && <hr style={{ margin: "4px 0", opacity: 0.2 }} />}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <Link
+              to="/about"
+              className="btn btn-link text-dark text-decoration-none fw-bold p-0 transition-all"
+              style={{ fontSize: "clamp(12px, 2vw, 17px)", borderBottom: "2px solid transparent" }}
+              onMouseEnter={(e) => e.target.style.borderBottomColor = "#333"}
+              onMouseLeave={(e) => e.target.style.borderBottomColor = "transparent"}
             >
-              CATEGORIES
+              ABOUT US
+            </Link>
+
+            <button
+              className="btn btn-link text-dark text-decoration-none fw-bold p-0 transition-all"
+              style={{ fontSize: "clamp(12px, 2vw, 17px)", borderBottom: "2px solid transparent" }}
+              onMouseEnter={(e) => e.target.style.borderBottomColor = "#333"}
+              onMouseLeave={(e) => e.target.style.borderBottomColor = "transparent"}
+              onClick={scrollToFooter}
+            >
+              CONTACT US
             </button>
-
-            {showCategorySlider && (
-              <CategorySlider
-                navigate={navigate}
-                isOpen={true}
-                onToggle={setShowCategorySlider}
-              />
-            )}
-
-            {!showCategorySlider && (
-              <>
-                <Link
-                  to="/about"
-                  className="btn btn-link text-dark text-decoration-none fw-bold p-0"
-                  style={{ fontSize: "clamp(12px, 2vw, 17px)" }}
-                >
-                  ABOUT US
-                </Link>
-
-                <button
-                  className="btn btn-link text-dark text-decoration-none fw-bold p-0"
-                  style={{ fontSize: "clamp(12px, 2vw, 17px)" }}
-                  onClick={scrollToFooter}
-                >
-                  CONTACT US
-                </button>
-              </>
-            )}
           </div>
 
           {/* Mobile Menu Toggle and Right side actions */}
