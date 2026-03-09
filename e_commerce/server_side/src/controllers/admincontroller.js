@@ -204,13 +204,20 @@ exports.updateOrderStatus = async (req, res, next) => {
         note: note || "Status updated by admin",
       });
 
+      // If order is being delivered and payment method is COD, mark payment as completed
+      if (orderStatus === "delivered" && order.paymentMethod === "cod") {
+        order.paymentStatus = "completed";
+      }
+
       // Create notification for user about order status change
       try {
         const statusMessages = {
           pending: "Your order is pending confirmation",
           confirmed: "Your order has been confirmed and will be shipped soon",
           shipped: `Your order has been shipped! Tracking number: ${trackingNumber || "Available soon"}`,
-          delivered: "Your order has been delivered. Thank you for shopping!",
+          delivered: order.paymentMethod === "cod" 
+            ? `Your order has been delivered and payment of ₹${order.totalAmount} has been received. Thank you!`
+            : "Your order has been delivered. Thank you for shopping!",
           cancelled: "Your order has been cancelled",
           returned: "Your order return has been processed",
         };

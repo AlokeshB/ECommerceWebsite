@@ -5,6 +5,7 @@ import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { useAuth } from "../context/AuthContext";
 import { useCart } from "../context/CartContext";
+import { useBuyNow } from "../context/BuyNowContext";
 import { useWishlist } from "../context/WishlistContext";
 import { useNotifications } from "../context/NotificationContext";
 import "bootstrap/dist/css/bootstrap.min.css";
@@ -13,6 +14,7 @@ const ProductDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { setBuyNowProduct } = useBuyNow();
   const { fetchCart } = useCart();
   const { isInWishlist, addToWishlist, removeFromWishlist } = useWishlist();
   const { addNotification } = useNotifications();
@@ -103,7 +105,7 @@ const ProductDetail = () => {
     }
   };
 
-  const handleBuyNow = async () => {
+  const handleBuyNow = () => {
     if (!user) {
       addNotification("Please login to purchase", "error");
       navigate("/login");
@@ -115,44 +117,15 @@ const ProductDetail = () => {
       return;
     }
 
-    try {
-      const authToken = sessionStorage.getItem("authToken");
-
-      // Add item to cart first
-      const response = await fetch("http://localhost:5000/api/cart/add", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${authToken}`,
-        },
-        body: JSON.stringify({
-          productId: product._id,
-          quantity: parseInt(quantity),
-          size: selectedSize || undefined,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        // Mark that we're coming from Buy Now to prevent redirect
-        sessionStorage.setItem("isBuyNowFlow", "true");
-        
-        // Refresh cart context to update the state
-        if (fetchCart) {
-          await fetchCart();
-        }
-        
-        addNotification("Proceeding to checkout...", "success");
-        // Navigate directly to checkout (skip cart page)
-        navigate("/checkout");
-      } else {
-        addNotification(data.message || "Error adding to cart", "error");
-      }
-    } catch (error) {
-      console.error("Error in Buy Now:", error);
-      addNotification("Error processing purchase", "error");
-    }
+    // Use BuyNowContext to store product and navigate to checkout
+    setBuyNowProduct({
+      ...product,
+      selectedSize: selectedSize || null,
+      quantity: parseInt(quantity) || 1,
+    });
+    
+    addNotification("Proceeding to checkout...", "success");
+    navigate("/checkout");
   };
 
   const handleWishlist = async () => {

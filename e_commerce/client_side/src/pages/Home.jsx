@@ -151,7 +151,7 @@ const Home = () => {
   };
 
   const ProductCard = ({ product }) => (
-    <div className="col-6 col-md-4 col-lg-3">
+    <div className="col-12 col-sm-6 col-md-4 col-lg-3">
       <Link to={`/product/${product._id}`} className="text-decoration-none">
         <div className="card border-0 shadow-sm h-100 overflow-hidden position-relative" style={{ transition: "transform 0.3s, box-shadow 0.3s" }} onMouseEnter={(e) => {
           e.currentTarget.style.transform = "translateY(-5px)";
@@ -251,9 +251,9 @@ const Home = () => {
   return (
     <div className="d-flex flex-column min-vh-100 bg-light">
       <Navbar />
-      <main className="flex-grow-1 p-4">
-        <div className="container">
-          <div className="bg-dark text-white rounded-2 p-5 mb-4 text-center">
+      <main className="flex-grow-1 p-2 p-md-4">
+        <div className="container-fluid">
+          <div className="bg-dark text-white rounded-2 p-3 p-md-5 mb-4 text-center">
             <h1 className="display-4 fw-bold">Welcome to FASHION-HUB</h1>
             <p className="lead mb-0">Discover the best deals on premium fashion today</p>
           </div>

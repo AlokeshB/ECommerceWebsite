@@ -236,7 +236,7 @@ const Wishlist = () => {
                 if (!product || !product._id) return null;
 
                 return (
-                  <div key={product._id} className="col-6 col-md-4 col-lg-3">
+                  <div key={product._id} className="col-12 col-sm-6 col-md-4 col-lg-3">
                     <Link
                       to={`/product/${product._id}`}
                       className="text-decoration-none"

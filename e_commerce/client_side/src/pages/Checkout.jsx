@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import { useBuyNow } from "../context/BuyNowContext";
 import { useAuth } from "../context/AuthContext";
-import { useOrder } from "../context/OrderContext";
 import { useNotifications } from "../context/NotificationContext";
 import Navbar from "../components/Navbar";
 import Login from "../pages/Login";
@@ -22,7 +21,6 @@ const Checkout = () => {
   const { cartItems, getCartTotal, clearCart, fetchCart, loading } = useCart();
   const { buyNowItem, clearBuyNow } = useBuyNow();
   const { user } = useAuth();
-  const { createOrder } = useOrder();
   const { addNotification } = useNotifications();
   const navigate = useNavigate();
 
@@ -31,7 +29,7 @@ const Checkout = () => {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showSidePopup, setShowSidePopup] = useState(false);
   const [isFinalizing, setIsFinalizing] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState("upi");
+  const [paymentMethod, setPaymentMethod] = useState("card");
   const [newOrderId, setNewOrderId] = useState("");
   const [addresses, setAddresses] = useState([]);
   const [paymentCards, setPaymentCards] = useState([]);
@@ -42,17 +40,28 @@ const Checkout = () => {
 
   // Determine if this is a Buy Now flow
   const isBuyNowCheckout = !!buyNowItem;
-  const checkoutItems = isBuyNowCheckout ? [buyNowItem] : cartItems;
-  const checkoutTotal = isBuyNowCheckout 
-    ? (buyNowItem.price || buyNowItem.discountPrice || (buyNowItem.price * (1 - (buyNowItem.discountPercentage || 0) / 100)))
-    : getCartTotal();
+  const checkoutItems = useMemo(() => isBuyNowCheckout ? [buyNowItem] : cartItems, [isBuyNowCheckout, buyNowItem, cartItems]);
+  const checkoutTotal = useMemo(() => {
+    if (isBuyNowCheckout && buyNowItem) {
+      // Calculate effective price (after discount)
+      if (buyNowItem.discountPrice) {
+        return buyNowItem.discountPrice * (buyNowItem.quantity || 1);
+      } else if (buyNowItem.discountPercentage && buyNowItem.price) {
+        return (buyNowItem.price * (1 - buyNowItem.discountPercentage / 100)) * (buyNowItem.quantity || 1);
+      } else if (buyNowItem.price) {
+        return buyNowItem.price * (buyNowItem.quantity || 1);
+      }
+      return 0;
+    }
+    return getCartTotal();
+  }, [isBuyNowCheckout, buyNowItem, getCartTotal]);
 
   // Fetch cart on component mount if not already loaded and not Buy Now
   useEffect(() => {
     if (user && !isBuyNowCheckout && cartItems.length === 0 && !loading) {
       fetchCart();
     }
-  }, [user, fetchCart, loading, isBuyNowCheckout]);
+  }, [user, fetchCart, loading, isBuyNowCheckout, cartItems.length]);
 
   useEffect(() => {
     // Only redirect to cart/home if checkout is empty and fully loaded
@@ -175,14 +184,15 @@ const Checkout = () => {
           country: user?.country || "India",
           phone: user?.phone || "",
         },
-        paymentMethod: paymentMethod,
+        paymentMethod: paymentMethod === "card" ? "credit_card" : paymentMethod,
         paymentCard: selectedCard || undefined,
         cartTotal: cartTotal,
         discount: discount,
         shippingCost: shippingCost,
         platformFee: platformFee,
         finalTotal: finalTotal,
-        isBuyNow: isBuyNowCheckout, // Flag to indicate Buy Now flow
+        isBuyNow: isBuyNowCheckout,
+        buyNowItem: isBuyNowCheckout ? buyNowItem : undefined,
       };
 
       // Call backend API
@@ -411,7 +421,7 @@ const Checkout = () => {
                 2. Payment Method
               </div>
               <div className="card-body">
-                {["upi", "card", "cod"].map((method) => (
+                {["card", "bank_transfer", "cod"].map((method) => (
                   <div key={method}>
                     <div
                       className={`form-check p-3 border rounded mb-2 ${paymentMethod === method ? "border-primary bg-light" : ""}`}
@@ -427,10 +437,10 @@ const Checkout = () => {
                         className="form-check-label fw-bold text-uppercase small"
                         htmlFor={method}
                       >
-                        {method === "upi"
-                          ? "UPI / PhonePe / GPay"
-                          : method === "card"
-                            ? "Credit / Debit Card"
+                        {method === "card"
+                          ? "Credit / Debit Card"
+                          : method === "bank_transfer"
+                            ? "Bank Transfer / UPI"
                             : "Cash on Delivery"}
                       </label>
                     </div>
@@ -511,6 +521,44 @@ const Checkout = () => {
           </div>
 
           <div className="col-lg-4">
+            {/* ORDER ITEMS */}
+            <div className="card border-0 shadow-sm mb-3">
+              <div className="card-header bg-white py-3 text-uppercase fw-bold small">
+                📦 Order Summary
+              </div>
+              <div className="card-body">
+                {checkoutItems && checkoutItems.length > 0 ? (
+                  <div>
+                    {checkoutItems.map((item, index) => (
+                      <div key={index} className="mb-3 pb-3 border-bottom d-flex gap-3">
+                        {item.image && (
+                          <img 
+                            src={item.image} 
+                            alt={item.name}
+                            style={{ width: "60px", height: "60px", objectFit: "cover", borderRadius: "4px" }}
+                          />
+                        )}
+                        <div className="flex-grow-1">
+                          <h6 className="fw-bold mb-1" style={{ fontSize: "14px" }}>
+                            {item.name}
+                          </h6>
+                          <div className="text-muted small mb-2">
+                            Qty: {item.quantity || 1}
+                            {item.selectedSize && <span> • Size: {item.selectedSize}</span>}
+                          </div>
+                          <div className="fw-bold text-dark">
+                            ₹{((item.discountPrice || (item.price * (1 - (item.discountPercentage || 0) / 100)) || item.price) * (item.quantity || 1)).toLocaleString()}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-muted text-center py-3">No items</p>
+                )}
+              </div>
+            </div>
+
             <div
               className="card border-0 shadow-sm sticky-top"
               style={{ top: "90px" }}
@@ -577,47 +625,58 @@ const Checkout = () => {
           }}
         >
           <div className="modal-dialog modal-dialog-centered">
-            <div className="modal-content border-0 shadow-lg text-center p-4">
-              <div className="modal-body">
-                <div className="mb-4">
-                  <div className="bg-success bg-opacity-10 rounded-circle d-inline-flex p-3 animate__animated animate__bounceIn">
-                    <CheckCircle size={60} className="text-success" />
-                  </div>
+            <div className="modal-content border-0 shadow-lg">
+              <div className="modal-body p-4 text-center">
+                {paymentMethod === "cod" ? (
+                  <>
+                    <div className="mb-4">
+                      <div
+                        className="rounded-circle d-inline-flex align-items-center justify-content-center mb-3 animate__animated animate__bounceIn"
+                        style={{ width: "80px", height: "80px", backgroundColor: "#fff3cd" }}
+                      >
+                        <span style={{ fontSize: "40px" }}>💰</span>
+                      </div>
+                    </div>
+                    <h4 className="fw-bold mb-2 text-dark">Payment on Delivery</h4>
+                    <p className="text-muted mb-3">
+                      Your order has been placed successfully! Payment of <strong>₹{(checkoutTotal - (checkoutTotal > 1000 ? 200 : 0) + (checkoutTotal > 500 || checkoutTotal === 0 ? 0 : 50) + (checkoutTotal > 0 ? 10 : 0)).toLocaleString()}</strong> will be collected at the time of delivery.
+                    </p>
+                    <p className="text-muted small">Order ID: <strong>{newOrderId}</strong></p>
+                  </>
+                ) : (
+                  <>
+                    <div className="mb-4">
+                      <div
+                        className="rounded-circle d-inline-flex align-items-center justify-content-center mb-3 animate__animated animate__bounceIn"
+                        style={{ width: "80px", height: "80px", backgroundColor: "#d4edda" }}
+                      >
+                        <CheckCircle className="text-success" size={40} />
+                      </div>
+                    </div>
+                    <h4 className="fw-bold mb-2 text-success">Payment Successful</h4>
+                    <p className="text-muted mb-3">
+                      Your order has been confirmed and payment received successfully!
+                    </p>
+                    <p className="text-muted small">Order ID: <strong>{newOrderId}</strong></p>
+                  </>
+                )}
+                <div className="d-flex gap-2 mt-4">
+                  <button
+                    className="btn btn-secondary flex-grow-1"
+                    onClick={() => {
+                      setShowSuccessModal(false);
+                      navigate("/");
+                    }}
+                  >
+                    Continue Shopping
+                  </button>
+                  <button
+                    className="btn btn-dark flex-grow-1"
+                    onClick={handleFinalRedirect}
+                  >
+                    Track Order
+                  </button>
                 </div>
-                <h2 className="fw-bold mb-1">Thank You!</h2>
-                <h3 className="h5 text-muted mb-3">Order Confirmed</h3>
-                <p className="text-muted mb-4">
-                  Thank you, <strong>{user?.fullName || user?.name}</strong>.
-                  Your order has been placed successfully. A confirmation email has been sent to your registered email address.
-                </p>
-                <div className="bg-light p-4 rounded-3 mb-4 border-2" style={{ borderColor: "#28a745" }}>
-                  <span className="small text-muted d-block text-uppercase mb-2">
-                    Order ID
-                  </span>
-                  <div className="d-flex align-items-center justify-content-center gap-2">
-                    <span className="fw-bold text-success fs-5">#{newOrderId}</span>
-                    <button
-                      className="btn btn-sm btn-outline-success"
-                      onClick={() => {
-                        navigator.clipboard.writeText(newOrderId);
-                        addNotification("Order ID copied to clipboard!", "success");
-                      }}
-                      title="Copy Order ID"
-                    >
-                      📋
-                    </button>
-                  </div>
-                </div>
-                <p className="text-muted small mb-4">
-                  Keep this Order ID for reference. You can use it to track your order status anytime.
-                </p>
-                <button
-                  className="btn btn-dark w-100 py-3 fw-bold d-flex align-items-center justify-content-center gap-2"
-                  onClick={handleFinalRedirect}
-                >
-                  <Zap size={18} />
-                  TRACK YOUR ORDER
-                </button>
               </div>
             </div>
           </div>
