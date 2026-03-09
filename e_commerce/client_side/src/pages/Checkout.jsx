@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
+import { useBuyNow } from "../context/BuyNowContext";
 import { useAuth } from "../context/AuthContext";
 import { useOrder } from "../context/OrderContext";
 import { useNotifications } from "../context/NotificationContext";
@@ -19,6 +20,7 @@ import {
 
 const Checkout = () => {
   const { cartItems, getCartTotal, clearCart, fetchCart, loading } = useCart();
+  const { buyNowItem, clearBuyNow } = useBuyNow();
   const { user } = useAuth();
   const { createOrder } = useOrder();
   const { addNotification } = useNotifications();
@@ -38,25 +40,26 @@ const Checkout = () => {
   const [loadingAddresses, setLoadingAddresses] = useState(true);
   const [loadingCards, setLoadingCards] = useState(true);
 
-  // Fetch cart on component mount if not already loaded
+  // Determine if this is a Buy Now flow
+  const isBuyNowCheckout = !!buyNowItem;
+  const checkoutItems = isBuyNowCheckout ? [buyNowItem] : cartItems;
+  const checkoutTotal = isBuyNowCheckout 
+    ? (buyNowItem.price || buyNowItem.discountPrice || (buyNowItem.price * (1 - (buyNowItem.discountPercentage || 0) / 100)))
+    : getCartTotal();
+
+  // Fetch cart on component mount if not already loaded and not Buy Now
   useEffect(() => {
-    if (user && cartItems.length === 0 && !loading) {
+    if (user && !isBuyNowCheckout && cartItems.length === 0 && !loading) {
       fetchCart();
     }
-  }, [user, fetchCart, loading]);
+  }, [user, fetchCart, loading, isBuyNowCheckout]);
 
   useEffect(() => {
-    // Only redirect to cart if cart is truly empty and fully loaded
-    // But NOT if we just came from Buy Now flow
-    const isBuyNowFlow = sessionStorage.getItem("isBuyNowFlow") === "true";
-    if (user && cartItems.length === 0 && !loading && !showSuccessModal && !isFinalizing && !isBuyNowFlow) {
+    // Only redirect to cart/home if checkout is empty and fully loaded
+    if (user && checkoutItems.length === 0 && !loading && !showSuccessModal && !isFinalizing && !isBuyNowCheckout) {
       navigate("/cart");
     }
-    // Clear the flag after checking
-    if (isBuyNowFlow) {
-      sessionStorage.removeItem("isBuyNowFlow");
-    }
-  }, [user, cartItems, navigate, showSuccessModal, isFinalizing, loading]);
+  }, [user, checkoutItems, navigate, showSuccessModal, isFinalizing, loading, isBuyNowCheckout]);
 
   // Fetch user addresses
   useEffect(() => {
@@ -130,8 +133,8 @@ const Checkout = () => {
       return;
     }
 
-    if (!cartItems || cartItems.length === 0) {
-      addNotification("Your cart is empty", "error");
+    if (!checkoutItems || checkoutItems.length === 0) {
+      addNotification(isBuyNowCheckout ? "Product information missing" : "Your cart is empty", "error");
       return;
     }
 
@@ -143,8 +146,8 @@ const Checkout = () => {
     setIsProcessing(true);
 
     try {
-      // Calculate pricing breakdown (matching frontend display)
-      const cartTotal = getCartTotal();
+      // Calculate pricing breakdown
+      let cartTotal = checkoutTotal;
       const discount = cartTotal > 1000 ? 200 : 0;
       const shippingCost = cartTotal > 500 || cartTotal === 0 ? 0 : 50;
       const platformFee = cartTotal > 0 ? 10 : 0;
@@ -179,6 +182,7 @@ const Checkout = () => {
         shippingCost: shippingCost,
         platformFee: platformFee,
         finalTotal: finalTotal,
+        isBuyNow: isBuyNowCheckout, // Flag to indicate Buy Now flow
       };
 
       // Call backend API
@@ -231,18 +235,25 @@ const Checkout = () => {
     setShowSuccessModal(false);
     setIsFinalizing(true);
 
-    // Clear cart via API
-    const authToken = sessionStorage.getItem("authToken");
-    fetch("http://localhost:5000/api/cart/clear", {
-      method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${authToken}`,
-      },
-    }).catch((error) => console.error("Error clearing cart:", error));
+    // Only clear cart if not Buy Now flow
+    if (!isBuyNowCheckout) {
+      const authToken = sessionStorage.getItem("authToken");
+      fetch("http://localhost:5000/api/cart/clear", {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+        },
+      }).catch((error) => console.error("Error clearing cart:", error));
+    }
+
+    // Clear Buy Now item
+    clearBuyNow();
 
     // Redirect to tracking page with order ID
     setTimeout(() => {
-      clearCart();
+      if (!isBuyNowCheckout) {
+        clearCart();
+      }
       navigate(`/tracking/${newOrderId}`);
     }, 2500);
   };
@@ -509,28 +520,28 @@ const Checkout = () => {
                   PRICE DETAILS
                 </h6>
                 <div className="d-flex justify-content-between my-3">
-                  <span>Price ({cartItems.length} items)</span>
-                  <span>₹{getCartTotal().toLocaleString()}</span>
+                  <span>Price ({isBuyNowCheckout ? "1 item" : `${cartItems.length} items`})</span>
+                  <span>₹{checkoutTotal.toLocaleString()}</span>
                 </div>
                 <div className="d-flex justify-content-between mb-3 text-success">
                   <span>Discount</span>
-                  <span>- ₹{(getCartTotal() > 1000 ? 200 : 0).toLocaleString()}</span>
+                  <span>- ₹{(checkoutTotal > 1000 ? 200 : 0).toLocaleString()}</span>
                 </div>
                 <div className="d-flex justify-content-between mb-3">
                   <span>Delivery Fee</span>
-                  <span className={getCartTotal() > 500 || getCartTotal() === 0 ? "text-success" : "text-dark"}>
-                    {getCartTotal() > 500 || getCartTotal() === 0 ? "FREE" : "₹50"}
+                  <span className={checkoutTotal > 500 || checkoutTotal === 0 ? "text-success" : "text-dark"}>
+                    {checkoutTotal > 500 || checkoutTotal === 0 ? "FREE" : "₹50"}
                   </span>
                 </div>
                 <div className="d-flex justify-content-between mb-3">
                   <span>Platform Fee</span>
-                  <span>₹{getCartTotal() > 0 ? 10 : 0}</span>
+                  <span>₹{checkoutTotal > 0 ? 10 : 0}</span>
                 </div>
                 <hr />
                 <div className="d-flex justify-content-between mb-4">
                   <h5 className="fw-bold">Total Payable</h5>
                   <h5 className="fw-bold text-dark">
-                    ₹{(getCartTotal() - (getCartTotal() > 1000 ? 200 : 0) + (getCartTotal() > 500 || getCartTotal() === 0 ? 0 : 50) + (getCartTotal() > 0 ? 10 : 0)).toLocaleString()}
+                    ₹{(checkoutTotal - (checkoutTotal > 1000 ? 200 : 0) + (checkoutTotal > 500 || checkoutTotal === 0 ? 0 : 50) + (checkoutTotal > 0 ? 10 : 0)).toLocaleString()}
                   </h5>
                 </div>
                 <button

@@ -8,20 +8,23 @@ import { OrderProvider } from "./context/OrderContext.jsx";
 import { ProductProvider } from "./context/ProductContext.jsx";
 import { NotificationProvider } from "./context/NotificationContext.jsx";
 import { WishlistProvider } from "./context/WishlistContext.jsx";
+import { BuyNowProvider } from "./context/BuyNowContext.jsx";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
     <NotificationProvider>
       <AuthProvider>
-        <ProductProvider>
-          <CartProvider>
-            <WishlistProvider>
-              <OrderProvider>
-                <App />
-              </OrderProvider>
-            </WishlistProvider>
-          </CartProvider>
-        </ProductProvider>
+        <BuyNowProvider>
+          <ProductProvider>
+            <CartProvider>
+              <WishlistProvider>
+                <OrderProvider>
+                  <App />
+                </OrderProvider>
+              </WishlistProvider>
+            </CartProvider>
+          </ProductProvider>
+        </BuyNowProvider>
       </AuthProvider>
     </NotificationProvider>
   </StrictMode>,
