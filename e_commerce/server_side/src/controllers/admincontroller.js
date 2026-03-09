@@ -19,7 +19,7 @@ exports.createProduct = async (req, res, next) => {
       });
     }
 
-    // If image is provided but not description, use image as a fallback
+    // If image is provided but not description, use "" as a fallback
     const productDescription = description || "";
 
     // Parse sizes if provided
