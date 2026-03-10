@@ -161,11 +161,8 @@ exports.deleteProduct = async (req, res, next) => {
 // @access  Private/Admin
 exports.getAllOrders = async (req, res, next) => {
   try {
-    const resultPerPage = 10;
-
     const apiFeature = new APIFeatures(Order.find().populate("userId", "name email"), req.query)
-      .sort()
-      .pagination(resultPerPage);
+      .sort();
 
     const orders = await apiFeature.query;
     const totalOrders = await Order.countDocuments();
@@ -174,7 +171,6 @@ exports.getAllOrders = async (req, res, next) => {
       success: true,
       orders,
       totalOrders,
-      resultPerPage,
     });
   } catch (error) {
     next(error);
