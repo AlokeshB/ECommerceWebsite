@@ -522,7 +522,7 @@ const Checkout = () => {
 
           <div className="col-lg-4">
             {/* ORDER ITEMS */}
-            <div className="card border-0 shadow-sm mb-3">
+            {/* <div className="card border-0 shadow-sm mb-3">
               <div className="card-header bg-white py-3 text-uppercase fw-bold small">
                 📦 Order Summary
               </div>
@@ -557,7 +557,7 @@ const Checkout = () => {
                   <p className="text-muted text-center py-3">No items</p>
                 )}
               </div>
-            </div>
+            </div> */}
 
             <div
               className="card border-0 shadow-sm sticky-top"
