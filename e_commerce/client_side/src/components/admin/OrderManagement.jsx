@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Eye, Edit2, X, Search, Filter, Loader2, AlertCircle } from "lucide-react";
+import { Eye, Edit2, X, Search, Filter, Loader2, AlertCircle, ChevronLeft, ChevronRight } from "lucide-react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { useNotifications } from "../../context/NotificationContext";
 
@@ -19,6 +19,8 @@ const OrderManagement = () => {
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const [showCODPaidModal, setShowCODPaidModal] = useState(false);
   const [codPaidOrder, setCodPaidOrder] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
 
 
 
@@ -63,6 +65,11 @@ const OrderManagement = () => {
     fetchOrders();
   }, [addNotification]);
 
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, selectedStatus]);
+
   const filteredOrders = orders.filter((order) => {
     const matchesSearch =
       order.orderNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -74,6 +81,18 @@ const OrderManagement = () => {
       selectedStatus === "All" || order.orderStatus === selectedStatus;
     return matchesSearch && matchesStatus;
   });
+
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedOrders = filteredOrders.slice(startIndex, endIndex);
+
+  const handlePageChange = (pageNumber) => {
+    if (pageNumber >= 1 && pageNumber <= totalPages) {
+      setCurrentPage(pageNumber);
+    }
+  };
 
   const handleCancelOrder = async () => {
     if (!selectedOrderForCancel) return;
@@ -259,8 +278,8 @@ const OrderManagement = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredOrders.length > 0 ? (
-                    filteredOrders.map((order) => (
+                  {paginatedOrders.length > 0 ? (
+                    paginatedOrders.map((order) => (
                       <React.Fragment key={order._id}>
                         <tr>
                           <td className="small fw-bold">{order.orderNumber}</td>
@@ -422,6 +441,47 @@ const OrderManagement = () => {
                 </tbody>
               </table>
             </div>
+            
+            {/* Pagination Controls */}
+            {filteredOrders.length > 0 && (
+              <div className="card-footer bg-light border-top d-flex justify-content-between align-items-center">
+                <div className="text-muted small">
+                  Showing <strong>{startIndex + 1}</strong> to <strong>{Math.min(endIndex, filteredOrders.length)}</strong> of <strong>{filteredOrders.length}</strong> orders
+                </div>
+                <div className="d-flex gap-2 align-items-center">
+                  <button
+                    className="btn btn-sm btn-outline-secondary"
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1 || loading}
+                    title="Previous page"
+                  >
+                    <ChevronLeft size={18} />
+                  </button>
+                  
+                  <div className="d-flex gap-1">
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
+                      <button
+                        key={pageNum}
+                        className={`btn btn-sm ${currentPage === pageNum ? "btn-primary" : "btn-outline-secondary"}`}
+                        onClick={() => handlePageChange(pageNum)}
+                        disabled={loading}
+                      >
+                        {pageNum}
+                      </button>
+                    ))}
+                  </div>
+                  
+                  <button
+                    className="btn btn-sm btn-outline-secondary"
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages || loading}
+                    title="Next page"
+                  >
+                    <ChevronRight size={18} />
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </>
       )}
