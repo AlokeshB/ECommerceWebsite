@@ -25,7 +25,7 @@ const OrderManagement = () => {
 
 
   const statuses = ["pending", "confirmed", "shipped", "delivered"];
-  const allStatuses = ["All", ...statuses, "cancelled", "returned"];
+  const allStatuses = ["All", ...statuses, "cancelled"];
 
   const statusColors = {
     pending: "warning",
@@ -33,7 +33,6 @@ const OrderManagement = () => {
     shipped: "primary",
     delivered: "success",
     cancelled: "danger",
-    returned: "secondary",
   };
 
   // Fetch orders from backend API
