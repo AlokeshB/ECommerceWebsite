@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Package, ShoppingCart, BarChart3, LogOut } from "lucide-react";
 import "bootstrap/dist/css/bootstrap.min.css";
@@ -6,8 +6,8 @@ import ProductManagement from "../components/admin/ProductManagement";
 import OrderManagement from "../components/admin/OrderManagement";
 import Analytics from "../components/admin/Analytics";
 import { useAuth } from "../context/AuthContext";
-import { useOrder } from "../context/OrderContext";
-import { useProduct } from "../context/ProductContext";
+// import { useOrder } from "../context/OrderContext";
+// import { useProduct } from "../context/ProductContext";
 import "../styles/AdminDashboard.css";
 import { NotificationBell } from "../components/NotificationBell";
 const AdminDashboard = () => {
@@ -89,7 +89,7 @@ const DashboardHome = ({ setActiveTab }) => {
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState(null);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const fetchAnalytics = async () => {
       try {
         setLoading(true);
@@ -201,7 +201,7 @@ const DashboardHome = ({ setActiveTab }) => {
   ];
 
   // Get recent orders from analytics
-  const recentOrders = [];
+  // const recentOrders = [];
 
   return (
     <div>
