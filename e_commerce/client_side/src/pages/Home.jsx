@@ -27,19 +27,22 @@ const Home = () => {
     // Fetch products from backend API
     const fetchProducts = async () => {
       try {
-        const response = await fetch("http://localhost:5000/api/products?limit=all", {
-          method: "GET",
-          headers: { "Content-Type": "application/json" },
-        });
+        const response = await fetch(
+          "http://localhost:5000/api/products?limit=all",
+          {
+            method: "GET",
+            headers: { "Content-Type": "application/json" },
+          },
+        );
 
         const data = await response.json();
-        
+
         if (data.success) {
           setProducts(data.products);
           // Check wishlist status for each product
           if (user) {
             const wishlistStatus = {};
-            data.products.forEach(product => {
+            data.products.forEach((product) => {
               wishlistStatus[product._id] = isInWishlist(product._id);
             });
             setWishlistItems(wishlistStatus);
@@ -61,7 +64,7 @@ const Home = () => {
       navigate("/login");
       return;
     }
-    
+
     // Check if product has sizes
     if (product.sizes && product.sizes.length > 0) {
       setSizeModalProduct(product);
@@ -69,7 +72,7 @@ const Home = () => {
       setCartActionType("buy");
       return;
     }
-    
+
     // Proceed directly to checkout with this single product
     proceedToBuyNow(product, null);
   };
@@ -80,7 +83,7 @@ const Home = () => {
       navigate("/login");
       return;
     }
-    
+
     // Check if product has sizes
     if (product.sizes && product.sizes.length > 0) {
       setSizeModalProduct(product);
@@ -88,7 +91,7 @@ const Home = () => {
       setCartActionType("cart");
       return;
     }
-    
+
     // Add product without size to cart
     addProductToCart(product._id, 1, null);
   };
@@ -98,7 +101,7 @@ const Home = () => {
     setBuyNowProduct({
       ...product,
       selectedSize: size,
-      quantity: 1
+      quantity: 1,
     });
     addNotification("Proceeding to checkout...", "success");
     navigate("/checkout");
@@ -153,13 +156,19 @@ const Home = () => {
   const ProductCard = ({ product }) => (
     <div className="col-12 col-sm-6 col-md-4 col-lg-3">
       <Link to={`/product/${product._id}`} className="text-decoration-none">
-        <div className="card border-0 shadow-sm h-100 overflow-hidden position-relative" style={{ transition: "transform 0.3s, box-shadow 0.3s" }} onMouseEnter={(e) => {
-          e.currentTarget.style.transform = "translateY(-5px)";
-          e.currentTarget.style.boxShadow = "0 10px 30px rgba(0,0,0,0.15)";
-        }} onMouseLeave={(e) => {
-          e.currentTarget.style.transform = "translateY(0)";
-          e.currentTarget.style.boxShadow = "0 0.125rem 0.25rem rgba(0, 0, 0, 0.075)";
-        }}>
+        <div
+          className="card border-0 shadow-sm h-100 overflow-hidden position-relative"
+          style={{ transition: "transform 0.3s, box-shadow 0.3s" }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = "translateY(-5px)";
+            e.currentTarget.style.boxShadow = "0 10px 30px rgba(0,0,0,0.15)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = "translateY(0)";
+            e.currentTarget.style.boxShadow =
+              "0 0.125rem 0.25rem rgba(0, 0, 0, 0.075)";
+          }}
+        >
           {/* Wishlist Heart */}
           <button
             onClick={(e) => handleWishlist(e, product)}
@@ -185,41 +194,86 @@ const Home = () => {
             />
           </button>
 
-          <div className="bg-light d-flex align-items-center justify-content-center" style={{ height: "180px" }}>
+          <div
+            className="bg-light d-flex align-items-center justify-content-center"
+            style={{ height: "180px" }}
+          >
             {product.image ? (
-              <img src={product.image} alt={product.name} style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }} onError={(e) => {
-                e.target.src = "https://via.placeholder.com/180?text=No+Image";
-              }} />
+              <img
+                src={product.image}
+                alt={product.name}
+                style={{
+                  maxWidth: "100%",
+                  maxHeight: "100%",
+                  objectFit: "contain",
+                }}
+                onError={(e) => {
+                  e.target.src =
+                    "https://via.placeholder.com/180?text=No+Image";
+                }}
+              />
             ) : (
               <span style={{ fontSize: "60px" }}>📦</span>
             )}
           </div>
 
           <div className="card-body p-2 p-md-3">
-            <span className="badge bg-light text-dark border mb-2" style={{ fontSize: "10px" }}>
+            <span
+              className="badge bg-light text-dark border mb-2"
+              style={{ fontSize: "10px" }}
+            >
               {product.category}
             </span>
-            <h6 className="fw-bold text-truncate mb-1" style={{ color: "#333" }}>{product.name}</h6>
-            
-            {/* Price with Discount */}
+            <h6
+              className="fw-bold text-truncate mb-1"
+              style={{ color: "#333" }}
+            >
+              {product.name}
+            </h6>
+            {/* Price with Discount */}{" "}
             <div className="mb-2">
+              {" "}
               {product.discountPercentage && product.discountPercentage > 0 ? (
                 <div className="d-flex align-items-center gap-2">
-                  <p className="text-muted mb-0" style={{ textDecoration: "line-through", fontSize: "12px" }}>
-                    ₹{product.price?.toLocaleString("en-IN") || 0}
-                  </p>
+                  {" "}
+                  <p
+                    className="text-muted mb-0"
+                    style={{ textDecoration: "line-through", fontSize: "12px" }}
+                  >
+                    {" "}
+                    ₹{product.price?.toLocaleString("en-IN") || 0}{" "}
+                  </p>{" "}
                   <p className="text-danger fw-bold mb-0">
-                    ₹{(product.price * (1 - product.discountPercentage / 100)).toFixed(0)}
-                  </p>
-                  <span className="badge bg-danger" style={{ fontSize: "10px" }}>
-                    {product.discountPercentage}% off
-                  </span>
+                    {" "}
+                    ₹
+                    {(
+                      product.price *
+                      (1 - product.discountPercentage / 100)
+                    ).toFixed(0)}{" "}
+                  </p>{" "}
+                  <span
+                    className="badge bg-danger"
+                    style={{ fontSize: "10px" }}
+                  >
+                    {" "}
+                    {product.discountPercentage}% off{" "}
+                  </span>{" "}
                 </div>
               ) : (
-                <p className="text-dark fw-bold mb-2">₹{product.price?.toLocaleString("en-IN") || 0}</p>
-              )}
+                <p className="text-dark fw-bold mb-2">
+                  ₹{product.price?.toLocaleString("en-IN") || 0}
+                </p>
+              )}{" "}
+              {product.maxRedeemCoins > 0 && (
+                <div className="mt-1">
+                  {" "}
+                  <span className="badge bg-warning small">
+                    {" "}
+                    Max {product.maxRedeemCoins} FashioCoins{" "}
+                  </span>{" "}
+                </div>
+              )}{" "}
             </div>
-
             <div className="d-flex gap-2">
               <button
                 className="btn btn-outline-dark btn-sm flex-fill d-flex align-items-center justify-content-center gap-1"
@@ -255,11 +309,16 @@ const Home = () => {
         <div className="container-fluid">
           <div className="bg-dark text-white rounded-2 p-3 p-md-5 mb-4 text-center">
             <h1 className="display-4 fw-bold">Welcome to FASHION-HUB</h1>
-            <p className="lead mb-0">Discover the best deals on premium fashion today</p>
+            <p className="lead mb-0">
+              Discover the best deals on premium fashion today
+            </p>
           </div>
 
           {loading ? (
-            <div className="d-flex justify-content-center align-items-center" style={{ minHeight: "400px" }}>
+            <div
+              className="d-flex justify-content-center align-items-center"
+              style={{ minHeight: "400px" }}
+            >
               <Loader2 className="spinner-border text-dark" />
             </div>
           ) : products.length === 0 ? (
@@ -281,7 +340,10 @@ const Home = () => {
 
       {/* Size Selection Modal */}
       {sizeModalProduct && (
-        <div className="modal d-block show" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
+        <div
+          className="modal d-block show"
+          style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+        >
           <div className="modal-dialog modal-dialog-centered">
             <div className="modal-content">
               <div className="modal-header">
@@ -296,12 +358,16 @@ const Home = () => {
                 ></button>
               </div>
               <div className="modal-body">
-                <p className="text-muted mb-3">Please select a size for {sizeModalProduct.name}</p>
+                <p className="text-muted mb-3">
+                  Please select a size for {sizeModalProduct.name}
+                </p>
                 <div className="d-flex gap-2 flex-wrap">
                   {sizeModalProduct.sizes.map((size, idx) => (
                     <button
                       key={idx}
-                      onClick={() => size.stock > 0 && setSelectedSize(size.size)}
+                      onClick={() =>
+                        size.stock > 0 && setSelectedSize(size.size)
+                      }
                       className={`btn ${
                         selectedSize === size.size
                           ? "btn-dark"
@@ -341,7 +407,12 @@ const Home = () => {
                     }
 
                     if (cartActionType === "cart") {
-                      addProductToCart(sizeModalProduct._id, 1, selectedSize, "cart");
+                      addProductToCart(
+                        sizeModalProduct._id,
+                        1,
+                        selectedSize,
+                        "cart",
+                      );
                     } else if (cartActionType === "buy") {
                       proceedToBuyNow(sizeModalProduct, selectedSize);
                     }

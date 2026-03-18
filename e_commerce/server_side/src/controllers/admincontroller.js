@@ -9,7 +9,7 @@ const APIFeatures = require("../utils/apiFeatures");
 // @access  Private/Admin
 exports.createProduct = async (req, res, next) => {
   try {
-    const { name, category, subCategory, price, discountPercentage, image, description, sizes, deliveryFee } = req.body;
+    const { name, category, subCategory, price, discountPercentage, image, description, sizes, deliveryFee, maxRedeemCoins } = req.body;
 
     // Validate required fields
     if (!name || !price || !category) {
@@ -47,6 +47,7 @@ exports.createProduct = async (req, res, next) => {
       description: productDescription,
       sizes: parsedSizes,
       deliveryFee: deliveryFee ? parseFloat(deliveryFee) : 0,
+      maxRedeemCoins: maxRedeemCoins ? parseInt(maxRedeemCoins) : 0,
       createdBy: req.user.id,
     });
 
@@ -83,7 +84,7 @@ exports.createProduct = async (req, res, next) => {
 // @access  Private/Admin
 exports.updateProduct = async (req, res, next) => {
   try {
-    const { name, category, subCategory, price, discountPercentage, image, description, isActive, sizes, deliveryFee } = req.body;
+    const { name, category, subCategory, price, discountPercentage, image, description, isActive, sizes, deliveryFee, maxRedeemCoins } = req.body;
 
     const product = await Product.findById(req.params.id);
 
@@ -105,6 +106,9 @@ exports.updateProduct = async (req, res, next) => {
     if (isActive !== undefined) product.isActive = isActive;
     if (sizes && Array.isArray(sizes)) {
       product.sizes = sizes.filter(s => s.size && s.stock !== undefined);
+    }
+    if (maxRedeemCoins !== undefined) {
+      product.maxRedeemCoins = parseInt(maxRedeemCoins) || 0;
     }
 
     // Calculate discount price from percentage if provided
@@ -310,7 +314,7 @@ exports.getDashboardAnalytics = async (req, res, next) => {
 
     // Log for debugging
     console.log("Total Orders:", totalOrders);
-    console.log("Revenue Data Match:", totalOrders);
+    console.log("Revenue Data Match:", revenueData.length > 0);
     console.log("Total Revenue Calculated:", totalRevenue);
 
     res.status(200).json({
@@ -391,3 +395,4 @@ exports.updateUserRole = async (req, res, next) => {
     next(error);
   }
 };
+

@@ -28,4 +28,14 @@ router.get("/addresses", authMiddleware, getAddresses);
 router.put("/addresses/:addressId", authMiddleware, updateAddress);
 router.delete("/addresses/:addressId", authMiddleware, deleteAddress);
 
+router.get("/fashio-coins", authMiddleware, async (req, res) => {
+  try {
+    const User = require("../models/User");
+    const user = await User.findById(req.user.id).select("fashioCoins");
+    res.json({ success: true, fashioCoins: user.fashioCoins || 0 });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Error fetching coins" });
+  }
+});
+
 module.exports = router;

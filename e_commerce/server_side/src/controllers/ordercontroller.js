@@ -4,6 +4,27 @@ const Product = require("../models/Product");
 const User = require("../models/User");
 const Notification = require("../models/Notification");
 
+// Credit FashioCoins to user (1 coin per 100 rupees)
+exports.creditFashioCoins = async (orderId) => {
+  try {
+    const order = await Order.findById(orderId).populate('userId');
+    if (!order || order.paymentStatus !== 'completed') return false;
+    
+    const coinsEarned = Math.floor(order.totalAmount / 100);
+    if (coinsEarned <= 0) return true;
+    
+    await User.findByIdAndUpdate(order.userId._id, {
+      $inc: { fashioCoins: coinsEarned }
+    });
+    
+    console.log(`Credited ${coinsEarned} FashioCoins to ${order.userId.email}`);
+    return true;
+  } catch (error) {
+    console.error('Error crediting FashioCoins:', error);
+    return false;
+  }
+};
+
 // @route   POST /api/orders/create
 // @desc    Create a new order
 // @access  Private
@@ -359,3 +380,4 @@ exports.trackOrder = async (req, res, next) => {
     next(error);
   }
 };
+

@@ -39,8 +39,8 @@ export const AuthProvider = ({ children }) => {
       if (response.ok) {
         const data = await response.json();
         if (data.success) {
-          sessionStorage.setItem("userData", JSON.stringify(data.user));
-          setUser(data.user);
+      sessionStorage.setItem("userData", JSON.stringify(data.user));
+      setUser({ ...data.user, fashioCoins: data.user.fashioCoins || 0 });
         }
       } else {
         // Token expired or invalid
@@ -152,7 +152,7 @@ export const AuthProvider = ({ children }) => {
       }
 
       sessionStorage.setItem("userData", JSON.stringify(data.user));
-      setUser(data.user);
+      setUser({ ...data.user, fashioCoins: data.user.fashioCoins || 0 });
       
       return { success: true, user: data.user };
     } catch (error) {

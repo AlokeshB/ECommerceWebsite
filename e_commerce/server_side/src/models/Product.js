@@ -104,6 +104,11 @@ const productSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
+    maxRedeemCoins: {
+      type: Number,
+      default: 0,
+      min: 0
+    },
   },
   {
     timestamps: true,

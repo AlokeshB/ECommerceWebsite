@@ -25,7 +25,9 @@ const ProductManagement = () => {
     description: "",
     sizes: [],
     deliveryFee: "",
+    maxRedeemCoins: "",
   });
+
   const [newSize, setNewSize] = useState({ size: "", stock: "" });
 
   // Fetch products from backend on component mount
@@ -91,7 +93,7 @@ const ProductManagement = () => {
 
   const handleAddProduct = () => {
     setEditingProduct(null);
-    setFormData({ name: "", category: "Men", subCategory: "Topwear", price: "", discountPercentage: "", image: "", description: "", sizes: [], deliveryFee: "" });
+setFormData({ name: "", category: "Men", subCategory: "Topwear", price: "", discountPercentage: "", image: "", description: "", sizes: [], deliveryFee: "", maxRedeemCoins: "" });
     setNewSize({ size: "", stock: "" });
     setShowModal(true);
   };
@@ -152,8 +154,10 @@ const ProductManagement = () => {
         image: formData.image,
         description: formData.description || "",
         sizes: formData.sizes || [],
-        deliveryFee: formData.deliveryFee ? parseFloat(formData.deliveryFee) : 0,
-      };
+    deliveryFee: formData.deliveryFee ? parseFloat(formData.deliveryFee) : 0,
+    maxRedeemCoins: formData.maxRedeemCoins ? parseInt(formData.maxRedeemCoins) : 0,
+  };
+
 
       if (editingProduct) {
         // Update product
@@ -537,8 +541,23 @@ const ProductManagement = () => {
                     />
                   </div>
 
+                  {/* Max FashioCoins Redeemable */}
+                  <div className="mb-3">
+                    <label className="form-label fw-bold">Max FashioCoins Redeemable</label>
+                    <input
+                      type="number"
+                      className="form-control"
+                      placeholder="0 for no redemption (optional)"
+                      value={formData.maxRedeemCoins}
+                      onChange={(e) => setFormData({ ...formData, maxRedeemCoins: e.target.value })}
+                      min="0"
+                    />
+                    <small className="text-muted">Max coins customer can redeem for this product (1 coin = ₹1 discount)</small>
+                  </div>
+
                   <div className="mb-3">
                     <label className="form-label fw-bold">Product Image URL</label>
+
                     <input
                       type="text"
                       className="form-control"

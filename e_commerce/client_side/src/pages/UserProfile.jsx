@@ -66,6 +66,7 @@ const UserProfile = () => {
       email: user.email || "",
       mobile: user.phone || "",
       profilePic: user.avatar || null,
+      fashioCoins: user.fashioCoins || 0,
     });
 
     // Load addresses from backend
@@ -392,6 +393,11 @@ const UserProfile = () => {
                 <h5 className="fw-bold m-0">{profileData.firstName}</h5>
                 <small className="text-muted">{user.email}</small>
                 <small className="text-muted d-block mt-1">📞 {user.phone || "Not provided"}</small>
+                <div className="mt-2 p-2 bg-warning bg-opacity-10 rounded border-warning border-1">
+                  <small className="fw-bold text-warning d-flex align-items-center">
+                    💰 FashioCoins: <span className="ms-1">{profileData.fashioCoins?.toLocaleString() || 0}</span>
+                  </small>
+                </div>
               </div>
               <div className="list-group list-group-flush">
                 {tabs.map((t) => (

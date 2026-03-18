@@ -1,6 +1,15 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Heart, ShoppingCart, Zap, Loader2, ArrowLeft, Share2, Star, Send } from "lucide-react";
+import {
+  Heart,
+  ShoppingCart,
+  Zap,
+  Loader2,
+  ArrowLeft,
+  Share2,
+  Star,
+  Send,
+} from "lucide-react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { useAuth } from "../context/AuthContext";
@@ -123,7 +132,7 @@ const ProductDetail = () => {
       selectedSize: selectedSize || null,
       quantity: parseInt(quantity) || 1,
     });
-    
+
     addNotification("Proceeding to checkout...", "success");
     navigate("/checkout");
   };
@@ -176,17 +185,20 @@ const ProductDetail = () => {
       setSubmittingReview(true);
       const authToken = sessionStorage.getItem("authToken");
 
-      const response = await fetch(`http://localhost:5000/api/products/${id}/review`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${authToken}`,
+      const response = await fetch(
+        `http://localhost:5000/api/products/${id}/review`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${authToken}`,
+          },
+          body: JSON.stringify({
+            rating: reviewRating,
+            comment: reviewComment,
+          }),
         },
-        body: JSON.stringify({
-          rating: reviewRating,
-          comment: reviewComment,
-        }),
-      });
+      );
 
       const data = await response.json();
 
@@ -207,14 +219,17 @@ const ProductDetail = () => {
     }
   };
 
-
   if (loading) {
     return (
       <div className="d-flex flex-column min-vh-100">
         <Navbar />
         <div className="flex-grow-1 d-flex align-items-center justify-content-center">
           <div className="text-center">
-            <Loader2 size={48} className="text-primary mb-3" style={{ animation: "spin 1s linear infinite" }} />
+            <Loader2
+              size={48}
+              className="text-primary mb-3"
+              style={{ animation: "spin 1s linear infinite" }}
+            />
             <p>Loading product details...</p>
           </div>
         </div>
@@ -230,7 +245,10 @@ const ProductDetail = () => {
         <div className="flex-grow-1 d-flex align-items-center justify-content-center">
           <div className="text-center">
             <p className="text-danger">Product not found</p>
-            <button className="btn btn-primary mt-3" onClick={() => navigate("/")}>
+            <button
+              className="btn btn-primary mt-3"
+              onClick={() => navigate("/")}
+            >
               Go to Home
             </button>
           </div>
@@ -246,7 +264,10 @@ const ProductDetail = () => {
   const discountPercent = product.discountPercentage || 0;
 
   return (
-    <div className="d-flex flex-column min-vh-100" style={{ background: "#f8f9fa" }}>
+    <div
+      className="d-flex flex-column min-vh-100"
+      style={{ background: "#f8f9fa" }}
+    >
       <Navbar />
 
       <div className="flex-grow-1 py-5">
@@ -263,7 +284,10 @@ const ProductDetail = () => {
           <div className="row g-5">
             {/* Product Image */}
             <div className="col-lg-5">
-              <div className="card border-0 shadow-sm position-relative h-100" style={{ overflow: "hidden" }}>
+              <div
+                className="card border-0 shadow-sm position-relative h-100"
+                style={{ overflow: "hidden" }}
+              >
                 <div
                   style={{
                     position: "relative",
@@ -285,7 +309,8 @@ const ProductDetail = () => {
                       objectFit: "cover",
                     }}
                     onError={(e) => {
-                      e.target.src = "https://via.placeholder.com/400?text=No+Image";
+                      e.target.src =
+                        "https://via.placeholder.com/400?text=No+Image";
                     }}
                   />
                 </div>
@@ -321,7 +346,8 @@ const ProductDetail = () => {
                     style={{
                       top: "15px",
                       left: "15px",
-                      background: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
+                      background:
+                        "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
                       color: "white",
                       padding: "8px 12px",
                       borderRadius: "8px",
@@ -339,55 +365,78 @@ const ProductDetail = () => {
               <div className="card border-0 shadow-sm p-4">
                 {/* Category */}
                 <div className="mb-3">
-                  <span className="badge bg-secondary me-2">{product.category}</span>
+                  <span className="badge bg-secondary me-2">
+                    {product.category}
+                  </span>
                   {product.subCategory && (
                     <span className="badge bg-info">{product.subCategory}</span>
                   )}
                 </div>
-
                 {/* Title */}
                 <h1 className="mb-3 fw-bold">{product.name}</h1>
-
                 {/* Rating */}
                 <div className="mb-3">
                   <div className="d-flex align-items-center gap-2">
-                    <span style={{ color: "#ffc107", fontSize: "1.2rem" }}>★★★★☆</span>
-                    <small className="text-muted">({product.numReviews || 0} reviews)</small>
+                    <span style={{ color: "#ffc107", fontSize: "1.2rem" }}>
+                      ★★★★☆
+                    </span>
+                    <small className="text-muted">
+                      ({product.numReviews || 0} reviews)
+                    </small>
                   </div>
                 </div>
-
-                {/* Price */}
+                {/* Price */}{" "}
                 <div className="mb-4">
-                  <div className="display-5 fw-bold" style={{ color: "#f5576c" }}>
-                    ₹{discountedPrice.toFixed(2)}
-                  </div>
+                  {" "}
+                  <div
+                    className="display-5 fw-bold"
+                    style={{ color: "#f5576c" }}
+                  >
+                    {" "}
+                    ₹{discountedPrice.toFixed(2)}{" "}
+                  </div>{" "}
                   {discountPercent > 0 && (
                     <small className="text-muted text-decoration-line-through">
-                      ₹{originalPrice.toFixed(2)}
+                      {" "}
+                      ₹{originalPrice.toFixed(2)}{" "}
                     </small>
-                  )}
+                  )}{" "}
                   {product.stock > 0 && (
                     <p className="text-success mt-2 mb-0">
-                      <strong>✓ In Stock ({product.stock} available)</strong>
+                      {" "}
+                      <strong>
+                        ✓ In Stock ({product.stock} available)
+                      </strong>{" "}
                     </p>
-                  )}
+                  )}{" "}
                   {product.stock === 0 && (
                     <p className="text-danger mt-2 mb-0">
-                      <strong>✗ Out of Stock</strong>
+                      {" "}
+                      <strong>✗ Out of Stock</strong>{" "}
                     </p>
-                  )}
+                  )}{" "}
+                  {product.maxRedeemCoins > 0 && (
+                    <p className="text-warning mt-2 mb-0">
+                      {" "}
+                      <strong>
+                        💰 Redeem up to {product.maxRedeemCoins} FashioCoins (1
+                        coin = ₹1)
+                      </strong>{" "}
+                    </p>
+                  )}{" "}
                 </div>
-
                 {/* Description */}
                 {product.description && (
                   <div className="mb-4">
                     <h6 className="fw-bold">Description</h6>
-                    <p className="text-muted" style={{ whiteSpace: "pre-wrap", lineHeight: "1.6" }}>
+                    <p
+                      className="text-muted"
+                      style={{ whiteSpace: "pre-wrap", lineHeight: "1.6" }}
+                    >
                       {product.description}
                     </p>
                   </div>
                 )}
-
                 {/* Sizes */}
                 {product.sizes && product.sizes.length > 0 && (
                   <div className="mb-4">
@@ -396,13 +445,16 @@ const ProductDetail = () => {
                       {product.sizes.map((size, idx) => (
                         <button
                           key={idx}
-                          onClick={() => size.stock > 0 && setSelectedSize(size.size)}
+                          onClick={() =>
+                            size.stock > 0 && setSelectedSize(size.size)
+                          }
                           className={`btn btn-outline-${
                             selectedSize === size.size ? "primary" : "secondary"
                           }`}
                           style={{
                             minWidth: "60px",
-                            borderWidth: selectedSize === size.size ? "2px" : "1px",
+                            borderWidth:
+                              selectedSize === size.size ? "2px" : "1px",
                           }}
                           disabled={size.stock === 0}
                         >
@@ -413,7 +465,6 @@ const ProductDetail = () => {
                     </div>
                   </div>
                 )}
-
                 {/* Quantity */}
                 <div className="mb-4">
                   <h6 className="fw-bold">Quantity</h6>
@@ -428,7 +479,9 @@ const ProductDetail = () => {
                       type="number"
                       className="form-control text-center"
                       value={quantity}
-                      onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                      onChange={(e) =>
+                        setQuantity(Math.max(1, parseInt(e.target.value) || 1))
+                      }
                       min="1"
                     />
                     <button
@@ -439,7 +492,6 @@ const ProductDetail = () => {
                     </button>
                   </div>
                 </div>
-
                 {/* Action Buttons */}
                 <div className="d-grid gap-3">
                   <button
@@ -455,7 +507,8 @@ const ProductDetail = () => {
                     onClick={handleBuyNow}
                     className="btn fw-bold py-3 text-white"
                     style={{
-                      background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                      background:
+                        "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
                     }}
                     disabled={product.stock === 0}
                   >
@@ -463,7 +516,6 @@ const ProductDetail = () => {
                     Buy Now
                   </button>
                 </div>
-
                 {/* Share */}
                 {/* <div className="mt-4 pt-4 border-top">
                   <button className="btn btn-link p-0 text-dark d-flex align-items-center gap-2">
@@ -480,7 +532,10 @@ const ProductDetail = () => {
               <div className="card border-0 shadow-sm p-4">
                 <h4 className="fw-bold mb-4">
                   Customer Reviews
-                  <small className="text-muted d-block" style={{ fontSize: "0.7em" }}>
+                  <small
+                    className="text-muted d-block"
+                    style={{ fontSize: "0.7em" }}
+                  >
                     ({product.numReviews || 0} reviews)
                   </small>
                 </h4>
@@ -489,7 +544,7 @@ const ProductDetail = () => {
                 {user && (
                   <div className="bg-light p-4 rounded mb-4">
                     <h6 className="fw-bold mb-3">Add Your Review</h6>
-                    
+
                     {/* Rating Selection */}
                     <div className="mb-3">
                       <label className="form-label fw-bold">Rating</label>
@@ -500,7 +555,8 @@ const ProductDetail = () => {
                             onClick={() => setReviewRating(star)}
                             className="btn btn-light p-1"
                             style={{
-                              background: star <= reviewRating ? "#ffc107" : "#e9ecef",
+                              background:
+                                star <= reviewRating ? "#ffc107" : "#e9ecef",
                               border: "none",
                               borderRadius: "50%",
                               width: "40px",
@@ -511,7 +567,11 @@ const ProductDetail = () => {
                               cursor: "pointer",
                             }}
                           >
-                            <Star size={20} fill={star <= reviewRating ? "#ffc107" : "none"} color={star <= reviewRating ? "#ffc107" : "#666"} />
+                            <Star
+                              size={20}
+                              fill={star <= reviewRating ? "#ffc107" : "none"}
+                              color={star <= reviewRating ? "#ffc107" : "#666"}
+                            />
                           </button>
                         ))}
                       </div>
@@ -536,7 +596,10 @@ const ProductDetail = () => {
                     >
                       {submittingReview ? (
                         <>
-                          <Loader2 size={18} style={{ animation: "spin 1s linear infinite" }} />
+                          <Loader2
+                            size={18}
+                            style={{ animation: "spin 1s linear infinite" }}
+                          />
                           Submitting...
                         </>
                       ) : (
@@ -569,11 +632,14 @@ const ProductDetail = () => {
                             </div>
                           </div>
                           <small className="text-muted">
-                            {new Date(review.createdAt).toLocaleDateString("en-IN", {
-                              year: "numeric",
-                              month: "short",
-                              day: "numeric",
-                            })}
+                            {new Date(review.createdAt).toLocaleDateString(
+                              "en-IN",
+                              {
+                                year: "numeric",
+                                month: "short",
+                                day: "numeric",
+                              },
+                            )}
                           </small>
                         </div>
                         <p className="text-muted mb-0">{review.comment}</p>
@@ -582,7 +648,9 @@ const ProductDetail = () => {
                   </div>
                 ) : (
                   <div className="text-center py-5">
-                    <p className="text-muted">No reviews yet. Be the first to review!</p>
+                    <p className="text-muted">
+                      No reviews yet. Be the first to review!
+                    </p>
                   </div>
                 )}
               </div>
